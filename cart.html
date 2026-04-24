@@ -1,0 +1,123 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shopping Cart — Niks Masala</title>
+<link rel="icon" href="nikslogomain.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div id="siteHeader"></div>
+
+<div class="page-head">
+  <h1>Shopping Cart</h1>
+  <p>Review your items before checkout</p>
+</div>
+
+<div class="breadcrumb"><div class="breadcrumb-inner container">
+  <a href="index.html">Home</a><span class="breadcrumb-sep">›</span>
+  <a href="shop.html">Shop</a><span class="breadcrumb-sep">›</span>
+  Cart
+</div></div>
+
+<div id="cartContent"></div>
+
+<div id="siteFooter"></div>
+
+<script src="assets/app.js"></script>
+<script>
+mountHeaderFooter('shop');
+
+function render(){
+  const cart=getCart();
+  const box=document.getElementById('cartContent');
+  if(cart.length===0){
+    box.innerHTML=`
+      <div style="max-width:720px;margin:60px auto;padding:40px;text-align:center">
+        <div class="cart-empty-box">
+          <span class="ic">🛒</span>
+          <h3>Your cart is empty</h3>
+          <p>Looks like you haven't added any spices yet. Let's fix that!</p>
+          <a href="shop.html" class="btn btn-primary">Continue Shopping →</a>
+        </div>
+      </div>`;
+    return;
+  }
+  const sub=cartSubtotal();
+  const s=getSettings();
+  const ship=computeShipping();
+  const total=sub+ship;
+  box.innerHTML=`
+    <div class="cart-wrap">
+      <div class="cart-list">
+        <table>
+          <thead><tr><th>Product</th><th>Price</th><th>Quantity</th><th>Subtotal</th><th></th></tr></thead>
+          <tbody>
+            ${cart.map(i=>`
+              <tr>
+                <td><div class="cart-prod-cell">
+                  <div class="thumb"><img src="${i.image}" alt="${i.name}" onerror="this.src='assets/products/garam-masala.png'"></div>
+                  <div>
+                    <strong><a href="product.html?id=${i.id}">${i.name}</a></strong>
+                    <small style="display:block;color:var(--muted);margin-top:2px">${i.pack||''}</small>
+                  </div>
+                </div></td>
+                <td>${money(i.price)}</td>
+                <td><div class="qty-box" style="height:40px">
+                  <button onclick="updateCartItem('${i.cartKey}',${i.qty-1});render()" style="height:38px">−</button>
+                  <input type="number" value="${i.qty}" min="1" onchange="updateCartItem('${i.cartKey}',+this.value);render()" style="height:38px;width:46px">
+                  <button onclick="updateCartItem('${i.cartKey}',${i.qty+1});render()" style="height:38px">+</button>
+                </div></td>
+                <td><strong style="color:var(--red)">${money(i.price*i.qty)}</strong></td>
+                <td><button onclick="removeFromCart('${i.cartKey}');render()" style="color:var(--muted);font-size:20px;padding:4px 8px" title="Remove">×</button></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div style="padding:18px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <a href="shop.html" class="btn btn-ghost">← Continue Shopping</a>
+          <button class="btn btn-ghost" onclick="if(confirm('Clear cart?')){setCart([]);render()}">Clear Cart</button>
+        </div>
+      </div>
+      <div class="cart-summary">
+        <h3>Order Summary</h3>
+        <div class="row"><span>Subtotal (${cart.reduce((s,i)=>s+i.qty,0)} items)</span><span>${money(sub)}</span></div>
+        <div class="row"><span>Shipping</span><span>${ship===0?'<strong style="color:var(--ok)">FREE</strong>':money(ship)}</span></div>
+        ${ship>0?`<div style="font-size:12px;color:var(--muted);margin:6px 0">Add ${money(s.shippingFree-sub)} more for FREE shipping!</div>`:''}
+        <div class="coupon-row">
+          <input type="text" id="coupon" placeholder="Coupon code">
+          <button class="btn btn-primary btn-sm" onclick="applyCoupon()">Apply</button>
+        </div>
+        <div id="discountRow"></div>
+        <div class="row total"><span>Total</span><span>${money(total)}</span></div>
+        <a href="checkout.html" class="btn btn-primary" style="width:100%;margin-top:14px;display:block">PROCEED TO CHECKOUT →</a>
+        <div style="display:flex;justify-content:center;gap:14px;margin-top:18px;color:var(--muted);font-size:12px">
+          <span>🔒 Secure</span><span>✓ UPI/Cards</span><span>💰 COD</span>
+        </div>
+      </div>
+    </div>`;
+}
+function applyCoupon(){
+  const c=document.getElementById('coupon').value.trim().toUpperCase();
+  if(c==='NIKS10'){localStorage.setItem('niks_discount','10');toast('✓ 10% discount applied!','ok');render();updateDiscount()}
+  else toast('Invalid coupon code','err');
+}
+function updateDiscount(){
+  const d=+localStorage.getItem('niks_discount')||0;
+  if(d&&document.getElementById('discountRow')){
+    const sub=cartSubtotal();const off=Math.round(sub*d/100);
+    document.getElementById('discountRow').innerHTML=`<div class="row" style="color:var(--ok)"><span>Discount (${d}%)</span><span>-${money(off)}</span></div>`;
+  }
+}
+render();
+// hide floating cart btn on cart page itself
+window.addEventListener('DOMContentLoaded',()=>{
+  const b=document.getElementById('mobileCartBtn');
+  if(b) b.style.display='none';
+});
+</script>
+</body>
+</html>
+

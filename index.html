@@ -1,0 +1,392 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Niks Masala — The Taste of Mangalorean Tradition</title>
+<meta name="description" content="Authentic Mangalorean masalas & spices handcrafted at our FSSAI-certified facility in Mangalore. Chicken Ghee Roast, Fish Fry, Kundapura, Sukka & more.">
+<link rel="icon" href="nikslogomain.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div id="siteHeader"></div>
+
+<!-- HERO -->
+<section class="hero-banner">
+  <div class="hero-inner">
+    <div class="eyebrow">✦ AUTHENTIC MANGALOREAN MASALAS ✦</div>
+    <h1>The Taste of<br><em>Mangalore.</em></h1>
+    <p>Handpicked. Sun-dried. Stone-ground. Every Niks Masala blend carries the soul of coastal Karnataka — pure, aromatic, and crafted the traditional way.</p>
+    <a href="shop.html" class="btn btn-gold">Shop Collection</a>
+    <a href="about.html" class="btn btn-outline" style="margin-left:10px">Our Story</a>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<div class="features-strip">
+  <div class="features-grid">
+    <div class="feature"><div class="feature-icon">🌿</div><div><h4>100% Pure & Natural</h4><p>No preservatives. No shortcuts.</p></div></div>
+    <div class="feature"><div class="feature-icon">🚚</div><div><h4>Pan-India Shipping</h4><p>Free above ₹799</p></div></div>
+    <div class="feature"><div class="feature-icon">🔄</div><div><h4>Easy Returns</h4><p>7-day replacement guarantee</p></div></div>
+    <div class="feature"><div class="feature-icon">🔒</div><div><h4>Secure Payments</h4><p>UPI · Cards · COD</p></div></div>
+  </div>
+</div>
+
+<!-- CATEGORIES -->
+<section class="block">
+  <div class="section-head">
+    <div class="eyebrow">Shop by Category</div>
+    <h2>Explore Our Collection</h2>
+    <p>From signature Mangalorean masalas to everyday ground spices — find the perfect flavor for every dish.</p>
+  </div>
+  <div class="cat-row">
+    <a href="shop.html?cat=Direct%20Grinding" class="cat-tile">
+      <img src="niksmasala1.jpg" alt="Direct Grinding">
+      <div class="cat-content"><h3>Direct Grinding</h3></div>
+    </a>
+    <a href="shop.html?cat=Non-Veg%20Specialities" class="cat-tile">
+      <img src="niksmasala2.jpg" alt="Non-Veg Specialities">
+      <div class="cat-content"><h3>Non-Veg Specialities</h3></div>
+    </a>
+    <a href="shop.html?cat=Veg%20Specialities" class="cat-tile">
+      <img src="niksmasala3.jpg" alt="Veg Specialities">
+      <div class="cat-content"><h3>Veg Specialities</h3></div>
+    </a>
+    <a href="shop.html?cat=Ready-Mix%20Products" class="cat-tile">
+      <img src="niksmasala4.jpg" alt="Ready-Mix Products">
+      <div class="cat-content"><h3>Ready-Mix Products</h3></div>
+    </a>
+  </div>
+</section>
+
+<!-- VIDEO SHOWCASE -->
+<section class="video-showcase">
+  <div class="vs-inner">
+    <div class="vs-text">
+      <div class="eyebrow">Watch Niks</div>
+      <h2>From Our Kitchen<br>to Yours</h2>
+      <p>See the authentic Mangalorean masalas in action — straight from our facility to your kitchen.</p>
+      <a href="shop.html" class="btn btn-primary" style="margin-top:8px">Shop Now →</a>
+    </div>
+    <div class="vs-reel">
+      <div class="reel-card" onclick="toggleReel(this)">
+        <video src="IMG_1944.MOV" playsinline preload="metadata"></video>
+        <div class="reel-play"></div>
+        <div class="reel-sound-badge">▶ Tap to play</div>
+        <button class="reel-mute-btn" onclick="event.stopPropagation();toggleMute(this)" title="Mute / Unmute">🔊</button>
+        <div class="reel-label">Niks Masala Ad</div>
+      </div>
+      <div class="reel-card" onclick="toggleReel(this)">
+        <video src="IMG_1947.MOV" playsinline preload="metadata"></video>
+        <div class="reel-play"></div>
+        <div class="reel-sound-badge">▶ Tap to play</div>
+        <button class="reel-mute-btn" onclick="event.stopPropagation();toggleMute(this)" title="Mute / Unmute">🔊</button>
+        <div class="reel-label">Our Kitchen</div>
+      </div>
+      <div class="reel-card" onclick="toggleReel(this)">
+        <video src="IMG_1948.MOV" playsinline preload="metadata"></video>
+        <div class="reel-play"></div>
+        <div class="reel-sound-badge">▶ Tap to play</div>
+        <button class="reel-mute-btn" onclick="event.stopPropagation();toggleMute(this)" title="Mute / Unmute">🔊</button>
+        <div class="reel-label">The Craft</div>
+      </div>
+      <div class="reel-card" onclick="toggleReel(this)">
+        <video src="IMG_1949.MOV" playsinline preload="metadata"></video>
+        <div class="reel-play"></div>
+        <div class="reel-sound-badge">▶ Tap to play</div>
+        <button class="reel-mute-btn" onclick="event.stopPropagation();toggleMute(this)" title="Mute / Unmute">🔊</button>
+        <div class="reel-label">Real Flavour</div>
+      </div>
+    </div>
+  </div>
+</section>
+<script>
+function toggleReel(card){
+  const vid=card.querySelector('video');
+  const badge=card.querySelector('.reel-sound-badge');
+  // Pause all other playing videos first
+  document.querySelectorAll('.reel-card').forEach(c=>{
+    if(c!==card){
+      const v=c.querySelector('video');
+      v.pause();v.currentTime=0;
+      c.classList.remove('playing');
+      c.querySelector('.reel-sound-badge').textContent='▶ Tap to play';
+    }
+  });
+  if(vid.paused){
+    vid.play();
+    card.classList.add('playing');
+    badge.textContent='⏹ Tap to stop';
+    // Auto-stop when video ends (plays once)
+    vid.onended=function(){
+      card.classList.remove('playing');
+      badge.textContent='↺ Play again';
+    };
+  } else {
+    vid.pause();vid.currentTime=0;
+    card.classList.remove('playing');
+    badge.textContent='▶ Tap to play';
+  }
+}
+function toggleMute(btn){
+  const vid=btn.closest('.reel-card').querySelector('video');
+  vid.muted=!vid.muted;
+  btn.textContent=vid.muted?'🔇':'🔊';
+}
+</script>
+
+<!-- FEATURED PRODUCTS -->
+<section class="block" style="background:var(--cream)">
+  <div class="section-head">
+    <div class="eyebrow">Bestsellers</div>
+    <h2>Our Signature Masalas</h2>
+    <p>Every pack is handcrafted in small batches to lock in freshness and flavor.</p>
+  </div>
+  <div class="products-grid" id="featuredGrid"></div>
+  <div style="text-align:center;margin-top:36px"><a href="shop.html" class="btn btn-primary">View All Products →</a></div>
+</section>
+
+<!-- RECIPES -->
+<section id="recipes" class="block">
+  <div class="section-head">
+    <div class="eyebrow">Cook With Niks</div>
+    <h2>Recipes You'll Love</h2>
+    <p>Bring the taste of Mangalore to your table with these classic recipes using our signature masalas.</p>
+  </div>
+  <div class="recipes-grid">
+    <a href="shop.html?q=Ghee%20Roast" class="recipe-card">
+      <div class="recipe-img"><img src="https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=800&q=80" alt="Chicken Ghee Roast"></div>
+      <div class="recipe-body">
+        <span class="recipe-tag">Non-Veg · Mangalorean</span>
+        <h3>Chicken Ghee Roast</h3>
+        <p>A Mangalorean masterpiece — roasted spices, red chillies & pure ghee come together for that unmistakable coastal aroma and taste.</p>
+        <div class="recipe-meta"><span>⏱ 40 min</span><span>🍽 Serves 4</span></div>
+      </div>
+    </a>
+    <a href="shop.html?q=Kundapura" class="recipe-card">
+      <div class="recipe-img"><img src="https://images.unsplash.com/photo-1604503468506-a8da13d82791?w=800&q=80" alt="Chicken Kundapura"></div>
+      <div class="recipe-body">
+        <span class="recipe-tag">Non-Veg · Coastal</span>
+        <h3>Chicken Kundapura</h3>
+        <p>Fiery, flavourful, and full of heritage — handpicked spices and coastal magic bring Mangalore's famous kitchens to your plate.</p>
+        <div class="recipe-meta"><span>⏱ 45 min</span><span>🍽 Serves 4</span></div>
+      </div>
+    </a>
+    <a href="shop.html?q=Fish%20Fry" class="recipe-card">
+      <div class="recipe-img"><img src="https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=800&q=80" alt="Fish Fry"></div>
+      <div class="recipe-body">
+        <span class="recipe-tag">Seafood · Coastal</span>
+        <h3>Coastal Fish Fry</h3>
+        <p>Crispy outside, juicy inside. Niks Fish Fry Masala gives your fish the authentic colour, aroma and unforgettable taste of the coast.</p>
+        <div class="recipe-meta"><span>⏱ 25 min</span><span>🍽 Serves 3</span></div>
+      </div>
+    </a>
+    <a href="shop.html?q=Sambar" class="recipe-card">
+      <div class="recipe-img"><img src="https://images.unsplash.com/photo-1552611052-33e04de081de?w=800&q=80" alt="Udupi Sambar"></div>
+      <div class="recipe-body">
+        <span class="recipe-tag">Veg · South Indian</span>
+        <h3>Udupi Sambar</h3>
+        <p>A timeless South Indian favourite — lentils, tamarind and hand-roasted spices delivering that homely, authentic aroma.</p>
+        <div class="recipe-meta"><span>⏱ 35 min</span><span>🍽 Serves 4</span></div>
+      </div>
+    </a>
+    <a href="shop.html?q=Kabab" class="recipe-card">
+      <div class="recipe-img"><img src="https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=800&q=80" alt="Chicken 65"></div>
+      <div class="recipe-body">
+        <span class="recipe-tag">Starter · Non-Veg</span>
+        <h3>Chicken Kabab / 65</h3>
+        <p>Juicy, crispy, bursting with bold spices. Restaurant-style Chicken Kabab & 65 at home with Niks Masala.</p>
+        <div class="recipe-meta"><span>⏱ 30 min</span><span>🍽 Serves 3</span></div>
+      </div>
+    </a>
+    <a href="shop.html?q=Rasam" class="recipe-card">
+      <div class="recipe-img"><img src="https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=800&q=80" alt="Udupi Rasam"></div>
+      <div class="recipe-body">
+        <span class="recipe-tag">Veg · Comfort</span>
+        <h3>Udupi Rasam</h3>
+        <p>A bowl of warmth rooted in tradition — light, aromatic and deeply comforting, just like the rasam you grew up loving.</p>
+        <div class="recipe-meta"><span>⏱ 20 min</span><span>🍽 Serves 4</span></div>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- PROMO -->
+<section class="promo-banner">
+  <div class="eyebrow" style="color:var(--gold)">Limited Time</div>
+  <h2>Get 10% Off Your First Order</h2>
+  <p>Use code <strong style="color:var(--gold);letter-spacing:2px">NIKS10</strong> at checkout. Experience the taste of authentic Mangalorean spices.</p>
+  <a href="shop.html" class="btn btn-gold">Shop Now</a>
+</section>
+
+<!-- ABOUT TEASER -->
+<section class="block">
+  <div class="about-teaser">
+    <div class="about-img">
+      <img src="https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=900&q=80" alt="Niks Masala story">
+    </div>
+    <div>
+      <div class="eyebrow">Our Story</div>
+      <h2>Rooted in Mangalore.<br>Made for Every Kitchen.</h2>
+      <p>At Niks Masala, we bring you the true essence of Mangalorean cuisine — a perfect fusion of authentic flavours passed down through generations.</p>
+      <p>Every blend is handcrafted at our state-of-the-art 11,000 sq.ft. facility in Yeyyadi, Mangalore, using premium-quality ingredients to ensure each dish bursts with the freshness, aroma, and taste of Mangalore's spice heritage.</p>
+      <div class="about-stats">
+        <div><strong>50+</strong><span>UNIQUE BLENDS</span></div>
+        <div><strong>11,000</strong><span>SQ.FT FACILITY</span></div>
+        <div><strong>100%</strong><span>PURE & NATURAL</span></div>
+      </div>
+      <a href="about.html" class="btn btn-primary">Read Our Story →</a>
+    </div>
+  </div>
+</section>
+
+<!-- SHIPPING -->
+<section class="block" style="background:var(--cream)">
+  <div class="section-head">
+    <div class="eyebrow">Delivery</div>
+    <h2>Simple, Transparent Shipping</h2>
+    <p>Clear, fair shipping charges — no surprises at checkout.</p>
+  </div>
+  <div class="shipping-wrap">
+    <table class="shipping-table">
+      <thead>
+        <tr><th>Order Value</th><th>Weight</th><th>Shipping Fee</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Below ₹799</td><td>Up to 1 kg</td><td>₹60</td></tr>
+        <tr><td>Below ₹799</td><td>Above 1 kg</td><td>₹120</td></tr>
+        <tr><td><strong>₹799 and above</strong></td><td>Any weight</td><td><strong style="color:#1f6b3a">FREE</strong></td></tr>
+      </tbody>
+    </table>
+    <div class="shipping-note">
+      📦 Orders are dispatched within <strong>24–48 hours</strong> from our Mangalore facility. Delivery takes <strong>3–7 business days</strong> across India via trusted courier partners. Cash on Delivery available.
+    </div>
+  </div>
+</section>
+
+<!-- INSTAGRAM -->
+<section class="ig-section">
+  <div class="ig-header">
+    <div>
+      <div class="ig-profile-row">
+        <div class="ig-avatar">
+          <img src="nikslogomain.jpg" alt="Niks Masala">
+        </div>
+        <div>
+          <div class="eyebrow" style="margin-bottom:2px">Follow on Instagram</div>
+          <h2 style="margin:0">@niks.masala</h2>
+          <div class="ig-handle">Authentic Mangalorean Masalas · Mangalore, India</div>
+        </div>
+      </div>
+      <p style="margin-top:10px">Recipes, behind-the-scenes & coastal food stories from our kitchen.</p>
+    </div>
+    <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener" class="ig-follow-btn">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+      Follow Us
+    </a>
+  </div>
+
+  <div class="ig-grid">
+    <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener" class="ig-post">
+      <img src="assets/products/chicken-masala.png" alt="Chicken Masala" loading="lazy">
+      <div class="ig-overlay">
+        <div class="ig-overlay-caption">Chicken Masala — rich, aromatic, bold 🌶️</div>
+        <div class="ig-overlay-handle">@niks.masala</div>
+      </div>
+    </a>
+    <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener" class="ig-post">
+      <img src="assets/products/ghee-roast.png" alt="Ghee Roast" loading="lazy">
+      <div class="ig-overlay">
+        <div class="ig-overlay-caption">Chicken Ghee Roast ✨</div>
+        <div class="ig-overlay-handle">@niks.masala</div>
+      </div>
+    </a>
+    <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener" class="ig-post">
+      <img src="assets/products/fish-masala.png" alt="Fish Masala" loading="lazy">
+      <div class="ig-overlay">
+        <div class="ig-overlay-caption">Coastal Fish Fry Masala 🐟</div>
+        <div class="ig-overlay-handle">@niks.masala</div>
+      </div>
+    </a>
+    <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener" class="ig-post">
+      <img src="assets/products/kundapura.png" alt="Kundapura Masala" loading="lazy">
+      <div class="ig-overlay">
+        <div class="ig-overlay-caption">Kundapura Koli Saaru 🍛</div>
+        <div class="ig-overlay-handle">@niks.masala</div>
+      </div>
+    </a>
+    <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener" class="ig-post">
+      <img src="assets/products/turmeric.png" alt="Turmeric" loading="lazy">
+      <div class="ig-overlay">
+        <div class="ig-overlay-caption">Pure stone-ground turmeric 💛</div>
+        <div class="ig-overlay-handle">@niks.masala</div>
+      </div>
+    </a>
+    <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener" class="ig-post">
+      <img src="assets/products/garam-masala.png" alt="Garam Masala" loading="lazy">
+      <div class="ig-overlay">
+        <div class="ig-overlay-caption">Garam Masala — a pinch of magic ✨</div>
+        <div class="ig-overlay-handle">@niks.masala</div>
+      </div>
+    </a>
+    <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener" class="ig-post">
+      <img src="assets/products/tandoori.png" alt="Tandoori" loading="lazy">
+      <div class="ig-overlay">
+        <div class="ig-overlay-caption">Tandoori Masala 🔥</div>
+        <div class="ig-overlay-handle">@niks.masala</div>
+      </div>
+    </a>
+  </div>
+
+  <div class="ig-cta-strip">
+    <div>
+      <h3>We post every week 📸</h3>
+      <p>New recipes, spice tips & behind-the-scenes from our Mangalore facility.</p>
+    </div>
+    <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener">
+      Open Instagram →
+    </a>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="block">
+  <div class="section-head">
+    <div class="eyebrow">Reviews</div>
+    <h2>Loved Across the Coast</h2>
+    <p>What our customers are saying about Niks Masala.</p>
+  </div>
+  <div class="test-grid">
+    <div class="test-card">
+      <div class="stars">★★★★★</div>
+      <p>"The Chicken Ghee Roast masala is absolutely divine! Tastes exactly like the one from Mangalore's best restaurants."</p>
+      <div class="test-author"><div class="test-avatar">P</div><div><strong>Priya Sharma</strong><small>Mumbai</small></div></div>
+    </div>
+    <div class="test-card">
+      <div class="stars">★★★★★</div>
+      <p>"Freshness you can smell the moment you open the pack. Niks has become a staple in my kitchen."</p>
+      <div class="test-author"><div class="test-avatar">R</div><div><strong>Rahul Mehta</strong><small>Bengaluru</small></div></div>
+    </div>
+    <div class="test-card">
+      <div class="stars">★★★★★</div>
+      <p>"Authentic coastal flavour, premium quality, and beautiful packaging. Worth every rupee!"</p>
+      <div class="test-author"><div class="test-avatar">A</div><div><strong>Anjali Nair</strong><small>Goa</small></div></div>
+    </div>
+  </div>
+</section>
+
+<div id="siteFooter"></div>
+
+<script src="assets/app.js"></script>
+<script>
+  mountHeaderFooter('home');
+  const all=getProducts();
+  const featured = all.filter(p=>p.badge==='BESTSELLER').concat(all).slice(0,8);
+  document.getElementById('featuredGrid').innerHTML=featured.map(productCardHTML).join('');
+</script>
+</body>
+</html>
+

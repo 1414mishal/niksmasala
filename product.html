@@ -1,0 +1,175 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title id="docTitle">Product — Niks Masala</title>
+<link rel="icon" href="nikslogomain.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div id="siteHeader"></div>
+
+<div class="breadcrumb"><div class="breadcrumb-inner container">
+  <a href="index.html">Home</a><span class="breadcrumb-sep">›</span>
+  <a href="shop.html">Shop</a><span class="breadcrumb-sep">›</span>
+  <span id="crumbName">Product</span>
+</div></div>
+
+<div id="productContainer"></div>
+
+<section class="block" style="background:var(--cream)">
+  <div class="section-head">
+    <div class="eyebrow">You may also like</div>
+    <h2>Related Products</h2>
+  </div>
+  <div class="products-grid" id="relatedGrid"></div>
+</section>
+
+<div id="siteFooter"></div>
+
+<script src="assets/app.js"></script>
+<script>
+mountHeaderFooter('shop');
+
+const id = qs('id');
+const p = getProducts().find(x => x.id===id);
+
+if(!p){
+  document.getElementById('productContainer').innerHTML = `
+    <div style="max-width:720px;margin:80px auto;text-align:center;padding:40px">
+      <h2 style="font-size:32px;margin-bottom:16px">Product Not Found</h2>
+      <p style="color:var(--muted);margin-bottom:24px">The product you're looking for doesn't exist or has been removed.</p>
+      <a href="shop.html" class="btn btn-primary">← Back to Shop</a>
+    </div>`;
+} else {
+  document.getElementById('docTitle').textContent = p.name+' — Niks Masala';
+  document.getElementById('crumbName').textContent = p.name;
+  const stars = '★'.repeat(Math.round(p.rating||4.5))+'☆'.repeat(5-Math.round(p.rating||4.5));
+  const variants = p.variants || [{pack:p.weight||'',grams:p.grams||100,price:p.price}];
+
+  document.getElementById('productContainer').innerHTML = `
+    <div class="product-single">
+      <div class="product-gallery">
+        <div class="main-img">
+          <img id="mainImg" src="${p.image}" alt="${p.name}" onerror="this.src='assets/products/garam-masala.png'">
+        </div>
+        <div class="product-thumbs">
+          <img src="${p.image}" class="active-thumb" onclick="document.getElementById('mainImg').src=this.src">
+        </div>
+      </div>
+      <div class="product-info">
+        <div class="product-cat-tag" style="color:var(--red);margin-bottom:10px">${p.category}${p.badge?' · <span style="color:var(--gold);font-weight:700">'+p.badge+'</span>':''}</div>
+        <h1>${p.name}</h1>
+        <div class="stars" style="font-size:16px">${stars} <span>(${p.reviews||0} reviews)</span></div>
+
+        <!-- Variant selector -->
+        <div class="pv-label">Choose Size / Pack:</div>
+        <div class="pv-pills" id="pvPills">
+          ${variants.map((v,i)=>`
+            <button class="pv-pill${i===0?' active':''}" onclick="pickVariant(${i})">
+              <span class="pv-pack">${v.pack}</span>
+              <span class="pv-price">${money(v.price)}</span>
+            </button>`).join('')}
+        </div>
+
+        <div class="price-row" style="margin-top:14px">
+          <span class="price" id="pvPrice">${money(variants[0].price)}</span>
+        </div>
+        <p class="product-desc-short">${p.long||p.desc}</p>
+        <div class="qty-row">
+          <div class="qty-box">
+            <button onclick="setQty(-1)">−</button>
+            <input type="number" id="qty" value="1" min="1" max="${p.stock||99}">
+            <button onclick="setQty(1)">+</button>
+          </div>
+          <button class="btn btn-primary" style="flex:1" onclick="addAndGo()">ADD TO CART</button>
+          <button class="btn btn-dark" style="flex:1" onclick="buyNow()">BUY NOW</button>
+        </div>
+        <div class="trust-badges">
+          <span class="trust-badge">🌿 100% Pure & Natural</span>
+          <span class="trust-badge">✓ FSSAI Certified</span>
+          <span class="trust-badge">🚚 Free Shipping ₹799+</span>
+          <span class="trust-badge">💰 Cash on Delivery</span>
+        </div>
+        <div class="product-meta">
+          <div><strong>Pack:</strong> <span id="pvPackMeta">${variants[0].pack}</span></div>
+          <div><strong>Availability:</strong> <span style="color:${p.stock>0?'var(--ok)':'var(--red)'}">${p.stock>0?'✓ In Stock':'Out of Stock'}</span></div>
+          <div><strong>Category:</strong> <span><a href="shop.html?cat=${encodeURIComponent(p.category)}" style="color:var(--red)">${p.category}</a></span></div>
+          <div><strong>Shipping:</strong> <span>Free above ${money(getSettings().shippingFree)}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="tabs">
+        <div class="tab-heads">
+          <button class="tab-head active" onclick="showTab(0)">Description</button>
+          <button class="tab-head" onclick="showTab(1)">How to Use</button>
+          <button class="tab-head" onclick="showTab(2)">Reviews (${p.reviews||0})</button>
+          <button class="tab-head" onclick="showTab(3)">Shipping & Returns</button>
+        </div>
+        <div class="tab-body" id="tab0">
+          <h3 style="font-size:20px;margin-bottom:12px">About this product</h3>
+          <p style="margin-bottom:14px">${p.long||p.desc}</p>
+          <p>At Niks Masala, every spice is sourced from trusted farms, roasted in small batches, and stone-ground to preserve every ounce of flavor and aroma. No artificial colors, no preservatives — just pure, honest spice.</p>
+          <ul style="margin-top:14px;padding-left:22px;color:var(--text)">
+            <li>100% Pure & Natural — no additives</li>
+            <li>Small-batch crafted for freshness</li>
+            <li>Stone-ground to preserve essential oils</li>
+            <li>Sourced ethically from Indian farms</li>
+            <li>Sealed packaging for long-lasting aroma</li>
+          </ul>
+        </div>
+        <div class="tab-body hidden" id="tab1">
+          <h3 style="font-size:20px;margin-bottom:12px">How to use</h3>
+          <p>Add ground spice to hot oil or ghee at the start of cooking to release aroma, or sprinkle as a finishing touch. Typical usage: 1 teaspoon per dish (serves 2–3).</p>
+          <p style="margin-top:14px"><strong>Storage:</strong> Keep in an airtight container in a cool, dry place. Use within 12 months of opening for best flavor.</p>
+        </div>
+        <div class="tab-body hidden" id="tab2">
+          <h3 style="font-size:20px;margin-bottom:20px">Customer Reviews</h3>
+          <div style="display:grid;gap:18px">
+            <div style="padding:16px;border:1px solid var(--line);border-radius:8px">
+              <div class="stars">★★★★★</div><strong>Absolutely amazing!</strong>
+              <p style="color:var(--muted);margin-top:6px">"Best ${p.name.toLowerCase()} I've ever had. The aroma is incredible!" — <strong style="color:var(--ink)">Ritu S.</strong></p>
+            </div>
+            <div style="padding:16px;border:1px solid var(--line);border-radius:8px">
+              <div class="stars">★★★★★</div><strong>Worth every rupee</strong>
+              <p style="color:var(--muted);margin-top:6px">"Premium quality, fast delivery, authentic taste. Highly recommended." — <strong style="color:var(--ink)">Karthik M.</strong></p>
+            </div>
+          </div>
+        </div>
+        <div class="tab-body hidden" id="tab3">
+          <h3 style="font-size:20px;margin-bottom:12px">Shipping & Returns</h3>
+          <p><strong>Shipping:</strong> Free shipping on orders above ₹799. Below that, ₹60 (up to 1 kg) or ₹120 (above 1 kg). Standard delivery in 3–7 business days across India. Cash on Delivery available.</p>
+          <p style="margin-top:10px"><strong>Returns:</strong> 7-day easy replacement for unopened products. Not satisfied? We'll make it right.</p>
+        </div>
+      </div>
+    </div>`;
+
+  // Related
+  const related = getProducts().filter(x=>x.category===p.category && x.id!==p.id).slice(0,4);
+  const rel = related.length ? related : getProducts().filter(x=>x.id!==p.id).slice(0,4);
+  document.getElementById('relatedGrid').innerHTML = rel.map(productCardHTML).join('');
+}
+
+function setQty(d){const q=document.getElementById('qty');q.value=Math.max(1,+q.value+d)}
+function pickVariant(i){
+  _selectedVariant[id]=i;
+  const variants=(p&&p.variants)||[];
+  const v=variants[i]; if(!v) return;
+  document.getElementById('pvPrice').textContent=money(v.price);
+  document.getElementById('pvPackMeta').textContent=v.pack;
+  document.querySelectorAll('.pv-pill').forEach((el,x)=>el.classList.toggle('active',x===i));
+}
+function addAndGo(){addToCart(id,+document.getElementById('qty').value)}
+function buyNow(){addToCart(id,+document.getElementById('qty').value);setTimeout(()=>location.href='checkout.html',600)}
+function showTab(i){
+  document.querySelectorAll('.tab-head').forEach((t,x)=>t.classList.toggle('active',x===i));
+  document.querySelectorAll('.tab-body').forEach((t,x)=>t.classList.toggle('hidden',x!==i));
+}
+</script>
+</body>
+</html>
+

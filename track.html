@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Track Your Order — Niks Masala</title>
+<link rel="icon" href="nikslogomain.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.track-wrap{max-width:720px;margin:60px auto;padding:0 20px 80px}
+.track-search{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:32px;margin-bottom:28px;text-align:center}
+.track-search h2{font-size:24px;margin-bottom:8px}
+.track-search p{color:var(--muted);margin-bottom:22px;font-size:14.5px}
+.track-input-row{display:flex;gap:10px;max-width:440px;margin:0 auto}
+.track-input-row input{flex:1;padding:12px 16px;border:2px solid var(--line);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;transition:border-color .2s}
+.track-input-row input:focus{outline:none;border-color:var(--red)}
+.track-result{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.track-result-head{background:linear-gradient(135deg,var(--ink),#3a1a10);color:#fff;padding:24px 28px}
+.track-result-head h3{color:#fff;font-size:20px;margin-bottom:4px}
+.track-result-head p{color:rgba(255,255,255,.75);font-size:13.5px}
+.track-steps{padding:28px;display:flex;flex-direction:column;gap:0}
+.track-step{display:flex;gap:16px;position:relative}
+.track-step:not(:last-child)::after{
+  content:'';position:absolute;left:15px;top:34px;bottom:-2px;
+  width:2px;background:var(--line);z-index:0;
+}
+.track-step.done::after{background:var(--ok)}
+.track-step-dot{
+  width:32px;height:32px;border-radius:50%;
+  background:var(--line);border:2px solid #fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;flex-shrink:0;z-index:1;position:relative;
+  transition:all .3s;
+}
+.track-step.done .track-step-dot{background:var(--ok);color:#fff}
+.track-step.active .track-step-dot{background:var(--red);color:#fff;box-shadow:0 0 0 4px rgba(192,50,30,.18)}
+.track-step-body{padding-bottom:24px;flex:1}
+.track-step-body h4{font-size:14.5px;font-weight:700;color:var(--ink);margin-bottom:3px;margin-top:5px}
+.track-step-body p{font-size:13px;color:var(--muted)}
+.track-step.done .track-step-body h4{color:var(--ok)}
+.track-step.active .track-step-body h4{color:var(--red)}
+.track-order-info{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:0 28px 28px}
+.track-info-card{background:var(--cream);padding:14px;border-radius:var(--radius-sm);text-align:center}
+.track-info-card small{font-size:10.5px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;display:block;margin-bottom:4px}
+.track-info-card strong{font-size:15px;color:var(--ink)}
+.track-not-found{text-align:center;padding:40px 20px;color:var(--muted)}
+.track-not-found h3{font-size:22px;margin-bottom:10px;color:var(--ink)}
+</style>
+</head>
+<body>
+<div id="siteHeader"></div>
+
+<div class="page-head">
+  <h1>Track Your Order</h1>
+  <p>Enter your order ID to see live status updates</p>
+</div>
+
+<div class="breadcrumb"><div class="breadcrumb-inner container">
+  <a href="index.html">Home</a><span class="breadcrumb-sep">›</span>
+  Track Order
+</div></div>
+
+<div class="track-wrap">
+  <div class="track-search">
+    <h2>Where's My Order?</h2>
+    <p>Enter the order number from your confirmation page or email</p>
+    <div class="track-input-row">
+      <input type="text" id="trackInput" placeholder="e.g. NIKS-2026-1234" onkeydown="if(event.key==='Enter')lookupOrder()">
+      <button class="btn btn-primary" onclick="lookupOrder()">Track →</button>
+    </div>
+  </div>
+
+  <div id="trackResult"></div>
+</div>
+
+<div id="siteFooter"></div>
+
+<script src="assets/app.js"></script>
+<script>
+mountHeaderFooter('');
+
+const STEPS = [
+  {key:'placed',   label:'Order Placed',      desc:'We have received your order and payment.'},
+  {key:'processing',label:'Processing',       desc:'Your order is being prepared in our facility.'},
+  {key:'packed',   label:'Packed & Ready',    desc:'Your order is packed and awaiting pickup.'},
+  {key:'shipped',  label:'Shipped',           desc:'Your order is on its way to you.'},
+  {key:'delivery', label:'Out for Delivery',  desc:'Your package is out for delivery today.'},
+  {key:'delivered',label:'Delivered',         desc:'Your order has been delivered. Enjoy!'}
+];
+
+// Auto-search if order ID in URL
+const urlId = qs('id');
+if(urlId){
+  document.getElementById('trackInput').value = urlId;
+  lookupOrder();
+}
+
+function lookupOrder(){
+  const id = document.getElementById('trackInput').value.trim().toUpperCase();
+  if(!id){ alert('Please enter an order ID'); return; }
+  const result = document.getElementById('trackResult');
+  result.innerHTML = '';
+
+  // Check localStorage first (same device)
+  const orders = JSON.parse(localStorage.getItem('niks_orders')||'[]');
+  let order = orders.find(o => o.id && o.id.toUpperCase() === id);
+
+  if(!order){
+    const last = JSON.parse(localStorage.getItem('niks_last_order')||'null');
+    if(last && last.id && last.id.toUpperCase() === id) order = last;
+  }
+
+  if(order){
+    renderTrackResult(order);
+  } else {
+    // Try Supabase
+    fetchFromSupabase(id).then(o=>{
+      if(o) renderTrackResult(o);
+      else result.innerHTML = `<div class="track-result"><div class="track-not-found">
+        <h3>Order Not Found</h3>
+        <p>We couldn't find an order with ID <strong>${id}</strong>.</p>
+        <p style="margin-top:12px">Please check your confirmation email or contact us at <a href="tel:+917338519975" style="color:var(--red)">+91 73385 19975</a>.</p>
+        <a href="contact.html" class="btn btn-primary" style="margin-top:20px;display:inline-block">Contact Support</a>
+      </div></div>`;
+    });
+  }
+}
+
+async function fetchFromSupabase(id){
+  try{
+    const res = await fetch(`https://jvjjqbzwqrnvrpiihbnt.supabase.co/rest/v1/orders?select=*&id=eq.${encodeURIComponent(id)}`,{
+      headers:{
+        'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2ampxYnp3cXJudnJwaWloYm50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3ODU0NTksImV4cCI6MjA5MjM2MTQ1OX0.35q6KQU0yAV0IQn__1t2sVkRpgxiswG_ne50C87sFps',
+        'Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2ampxYnp3cXJudnJwaWloYm50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3ODU0NTksImV4cCI6MjA5MjM2MTQ1OX0.35q6KQU0yAV0IQn__1t2sVkRpgxiswG_ne50C87sFps'
+      }
+    });
+    const data = await res.json();
+    return data && data[0] ? data[0] : null;
+  }catch(e){ return null; }
+}
+
+function renderTrackResult(order){
+  const trackStatus = order.trackingStatus || order.tracking_status || 'placed';
+  const stepIdx = STEPS.findIndex(s=>s.key===trackStatus);
+  const activeIdx = stepIdx >= 0 ? stepIdx : 0;
+  const date = order.date ? new Date(order.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : '—';
+  const total = order.total ? money(order.total) : '—';
+
+  document.getElementById('trackResult').innerHTML = `
+    <div class="track-result">
+      <div class="track-result-head">
+        <h3>Order ${order.id}</h3>
+        <p>Placed on ${date} · ${total} · ${order.payment||''}</p>
+      </div>
+      <div class="track-order-info">
+        <div class="track-info-card"><small>Customer</small><strong>${(order.customer&&order.customer.name)||'—'}</strong></div>
+        <div class="track-info-card"><small>City</small><strong>${(order.customer&&order.customer.city)||'—'}</strong></div>
+        <div class="track-info-card"><small>Est. Delivery</small><strong>3–7 Business Days</strong></div>
+      </div>
+      <div class="track-steps">
+        ${STEPS.map((s,i)=>{
+          const cls = i<activeIdx?'done':i===activeIdx?'active':'';
+          const icon = i<activeIdx?'✓':i===activeIdx?'●':'○';
+          return `<div class="track-step ${cls}">
+            <div class="track-step-dot">${icon}</div>
+            <div class="track-step-body">
+              <h4>${s.label}</h4>
+              <p>${i<=activeIdx?s.desc:'Pending'}</p>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      ${order.trackingNotes||order.tracking_notes?`<div style="padding:0 28px 28px"><div style="background:var(--cream-2);border-radius:var(--radius-sm);padding:14px 16px;font-size:13.5px"><strong>Update from Niks Masala:</strong> ${order.trackingNotes||order.tracking_notes}</div></div>`:''}
+    </div>`;
+}
+</script>
+</body>
+</html>

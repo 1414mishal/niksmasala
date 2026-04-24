@@ -1,0 +1,127 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shop All Spices — Niks Masala</title>
+<link rel="icon" href="nikslogomain.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div id="siteHeader"></div>
+
+<div class="page-head">
+  <h1 id="pageTitle">Shop All Spices</h1>
+  <p>Explore our complete range of authentic, handcrafted Indian spices.</p>
+</div>
+
+<div class="breadcrumb"><div class="breadcrumb-inner container">
+  <a href="index.html">Home</a><span class="breadcrumb-sep">›</span>
+  <a href="shop.html">Shop</a><span id="crumbCat"></span>
+</div></div>
+
+<div class="shop-wrap">
+  <aside class="shop-sidebar">
+    <div class="filter-box">
+      <h4>Categories</h4>
+      <ul class="filter-list" id="catList"></ul>
+    </div>
+    <div class="filter-box">
+      <h4>Price Range</h4>
+      <div class="price-range">
+        <input type="number" id="minP" placeholder="Min" min="0">
+        <input type="number" id="maxP" placeholder="Max" min="0">
+      </div>
+      <button class="btn btn-primary btn-sm" style="margin-top:12px;width:100%" onclick="applyPrice()">Apply</button>
+    </div>
+    <div class="filter-box">
+      <h4>Quick Filters</h4>
+      <ul class="filter-list">
+        <li onclick="filterBy('sale',true)">On Sale</li>
+        <li onclick="filterBy('badge','BESTSELLER')">Bestsellers</li>
+        <li onclick="filterBy('badge','NEW')">New Arrivals</li>
+        <li onclick="filterBy('badge','PREMIUM')">Premium</li>
+        <li onclick="resetFilters()" style="color:var(--red);font-weight:600">✕ Clear Filters</li>
+      </ul>
+    </div>
+  </aside>
+
+  <main>
+    <div class="shop-main-head">
+      <div class="count" id="count">Showing all products</div>
+      <div class="shop-sort">
+        <label style="font-size:13px;color:var(--muted);margin-right:8px">Sort:</label>
+        <select id="sortSel" onchange="renderShop()">
+          <option value="default">Default</option>
+          <option value="price-low">Price: Low to High</option>
+          <option value="price-high">Price: High to Low</option>
+          <option value="name">Name: A to Z</option>
+          <option value="rating">Top Rated</option>
+        </select>
+      </div>
+    </div>
+    <div class="products-grid" id="shopGrid"></div>
+  </main>
+</div>
+
+<div id="siteFooter"></div>
+
+<script src="assets/app.js"></script>
+<script>
+mountHeaderFooter('shop');
+
+let FILTER = {cat:qs('cat')||'', q:qs('q')||'', minP:null, maxP:null, sale:null, badge:null};
+
+function buildCatList(){
+  const cats=['All', ...new Set(getProducts().map(p=>p.category))];
+  const counts={};
+  getProducts().forEach(p=>counts[p.category]=(counts[p.category]||0)+1);
+  document.getElementById('catList').innerHTML=cats.map(c=>{
+    const active=(c==='All'&&!FILTER.cat)||c===FILTER.cat;
+    const n=c==='All'?getProducts().length:counts[c]||0;
+    return `<li class="${active?'active':''}" onclick="setCat('${c==='All'?'':c}')">${c} <span>(${n})</span></li>`;
+  }).join('');
+}
+
+function setCat(c){FILTER.cat=c;renderShop();buildCatList();updateURL()}
+function filterBy(k,v){FILTER[k]=v;renderShop()}
+function applyPrice(){
+  FILTER.minP=+document.getElementById('minP').value||null;
+  FILTER.maxP=+document.getElementById('maxP').value||null;
+  renderShop();
+}
+function resetFilters(){FILTER={cat:'',q:'',minP:null,maxP:null,sale:null,badge:null};document.getElementById('minP').value='';document.getElementById('maxP').value='';buildCatList();renderShop();updateURL()}
+function updateURL(){
+  const u=new URL(location);
+  if(FILTER.cat) u.searchParams.set('cat',FILTER.cat); else u.searchParams.delete('cat');
+  history.replaceState({},'',u);
+  document.getElementById('pageTitle').textContent=FILTER.cat||'Shop All Spices';
+  document.getElementById('crumbCat').innerHTML=FILTER.cat?`<span class="breadcrumb-sep">›</span>${FILTER.cat}`:'';
+}
+
+function renderShop(){
+  let list=[...getProducts()];
+  if(FILTER.cat) list=list.filter(p=>p.category===FILTER.cat);
+  if(FILTER.q){const q=FILTER.q.toLowerCase();list=list.filter(p=>(p.name+' '+(p.desc||'')+' '+p.category).toLowerCase().includes(q))}
+  // Price filter: pass if any variant falls in range
+  if(FILTER.minP) list=list.filter(p=>(p.variants||[{price:p.price}]).some(v=>v.price>=FILTER.minP));
+  if(FILTER.maxP) list=list.filter(p=>(p.variants||[{price:p.price}]).some(v=>v.price<=FILTER.maxP));
+  if(FILTER.sale) list=list.filter(p=>p.oldPrice);
+  if(FILTER.badge) list=list.filter(p=>p.badge===FILTER.badge);
+  const sort=document.getElementById('sortSel').value;
+  // Sort uses lowest variant price
+  if(sort==='price-low') list.sort((a,b)=>a.price-b.price);
+  if(sort==='price-high') list.sort((a,b)=>b.price-a.price);
+  if(sort==='name') list.sort((a,b)=>a.name.localeCompare(b.name));
+  if(sort==='rating') list.sort((a,b)=>(b.rating||0)-(a.rating||0));
+  document.getElementById('count').textContent=`Showing ${list.length} product${list.length===1?'':'s'}${FILTER.q?' matching "'+FILTER.q+'"':''}`;
+  document.getElementById('shopGrid').innerHTML=list.length?list.map(productCardHTML).join(''):
+    `<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)">No products found. <a href="shop.html" style="color:var(--red)">Clear filters</a></div>`;
+}
+
+updateURL();buildCatList();renderShop();
+</script>
+</body>
+</html>
+

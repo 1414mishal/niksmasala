@@ -1,0 +1,156 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact Us — Niks Masala</title>
+<link rel="icon" href="nikslogomain.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div id="siteHeader"></div>
+
+<div class="page-head">
+  <h1>Get in Touch</h1>
+  <p>We'd love to hear from you — for wholesale, partnerships, or just a friendly hello.</p>
+</div>
+
+<div class="breadcrumb"><div class="breadcrumb-inner container">
+  <a href="index.html">Home</a><span class="breadcrumb-sep">›</span>Contact
+</div></div>
+
+<div class="contact-wrap">
+  <div>
+    <div class="eyebrow">Reach Out</div>
+    <h2 style="font-size:clamp(28px,3.5vw,36px);margin-bottom:12px">We're Here to Help</h2>
+    <p style="color:var(--muted);margin-bottom:26px">Questions about a product? Want to stock Niks Masala in your store? Need a big batch for your restaurant? Drop us a line — we usually reply within 24 hours.</p>
+
+    <div class="contact-card">
+      <div class="contact-item">
+        <div class="contact-ic">📍</div>
+        <div><strong>Visit Us</strong><span id="c-addr">India</span></div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-ic">📞</div>
+        <div><strong>Call Us</strong><a id="c-phone" href="tel:">+91 99999 99999</a><br><small style="font-size:12px;color:var(--muted)">Mon-Sat, 10am to 7pm IST</small></div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-ic">✉️</div>
+        <div><strong>Email</strong><a id="c-email" href="mailto:">hello@niksmasala.com</a></div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-ic">📷</div>
+        <div><strong>Instagram</strong><a href="https://www.instagram.com/niks.masala/" target="_blank" style="color:var(--red);font-weight:600">@niks.masala</a></div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-ic">💬</div>
+        <div><strong>WhatsApp</strong><a id="c-wa" href="#" target="_blank">Chat with us</a></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="contact-card">
+    <h3 style="font-size:22px;margin-bottom:18px">Send us a Message</h3>
+    <form onsubmit="handleContact(event)">
+      <div class="form-grid-2">
+        <div class="form-row"><label>Name *</label><input type="text" name="name" required></div>
+        <div class="form-row"><label>Phone</label><input type="tel" name="phone"></div>
+      </div>
+      <div class="form-row"><label>Email *</label><input type="email" name="email" required></div>
+      <div class="form-row"><label>Subject *</label>
+        <select name="subject" required>
+          <option value="">Select a topic</option>
+          <option>General Inquiry</option>
+          <option>Order Support</option>
+          <option>Wholesale / Bulk Order</option>
+          <option>Partnership / Collaboration</option>
+          <option>Feedback</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Your Message *</label><textarea name="msg" rows="5" required placeholder="Tell us how we can help..."></textarea></div>
+      <button type="submit" class="btn btn-primary" style="width:100%">Send Message →</button>
+    </form>
+  </div>
+</div>
+
+<!-- SHIPPING / TRANSPORT FEE STRUCTURE -->
+<section id="shipping" class="block">
+  <div class="section-head">
+    <div class="eyebrow">Delivery</div>
+    <h2>Shipping & Transport Charges</h2>
+    <p>Simple, transparent shipping across India — no hidden fees.</p>
+  </div>
+  <div class="shipping-wrap">
+    <table class="shipping-table">
+      <thead>
+        <tr><th>Order Value</th><th>Total Weight</th><th>Shipping Fee</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Below ₹799</td><td>Up to 1 kg</td><td>₹60</td></tr>
+        <tr><td>Below ₹799</td><td>Above 1 kg</td><td>₹120</td></tr>
+        <tr><td><strong>₹799 and above</strong></td><td>Any weight</td><td><strong style="color:#1f6b3a">FREE</strong></td></tr>
+      </tbody>
+    </table>
+    <div class="shipping-note">
+      📦 <strong>Dispatch:</strong> Orders leave our Mangalore facility within 24–48 hours.<br>
+      🚚 <strong>Delivery time:</strong> 3–7 business days across India via trusted courier partners.<br>
+      💳 <strong>Payments:</strong> UPI, Credit/Debit Cards, Net Banking and Cash on Delivery accepted.<br>
+      ↩️ <strong>Returns:</strong> 7-day easy replacement on unopened products.
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="block" style="background:var(--cream)">
+  <div class="section-head">
+    <div class="eyebrow">Quick Answers</div>
+    <h2>Frequently Asked</h2>
+  </div>
+  <div style="max-width:820px;margin:0 auto;display:grid;gap:12px" id="faqList"></div>
+</section>
+
+<div id="siteFooter"></div>
+
+<script src="assets/app.js"></script>
+<script>
+mountHeaderFooter('contact');
+
+const s=getSettings();
+document.getElementById('c-phone').textContent=s.phone;
+document.getElementById('c-phone').href='tel:'+s.phone.replace(/\s/g,'');
+document.getElementById('c-email').textContent=s.email;
+document.getElementById('c-email').href='mailto:'+s.email;
+document.getElementById('c-addr').textContent=s.address;
+document.getElementById('c-wa').href='https://wa.me/'+s.phone.replace(/\D/g,'');
+
+const FAQ=[
+  ['How long does shipping take?','Orders are dispatched within 24–48 hours from our Mangalore facility. Standard delivery across India takes 3–7 business days. Shipping is FREE on orders above ₹799; below that, ₹60 (up to 1 kg) or ₹120 (heavier orders).'],
+  ['Do you offer Cash on Delivery?','Yes! COD is available on all orders across India.'],
+  ['Are your spices organic?','Our turmeric is certified organic, and most of our spices are sourced from farms practicing natural farming. Every blend is 100% pure with no additives.'],
+  ['How should I store Niks Masala products?','Store in an airtight container in a cool, dry place away from direct sunlight. Use within 12 months of opening for peak flavor.'],
+  ['Do you ship internationally?','Currently we ship within India only. International shipping is coming soon — follow us on Instagram for updates.'],
+  ['Can I order in bulk for my restaurant/store?','Absolutely! Email us at hello@niksmasala.com or WhatsApp us for wholesale pricing.'],
+  ['What is your return policy?','We offer a 7-day easy replacement on unopened products. Contact us and we\'ll make it right.']
+];
+document.getElementById('faqList').innerHTML=FAQ.map((f,i)=>`
+  <details style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px 20px">
+    <summary style="cursor:pointer;font-weight:600;font-size:15px;color:var(--ink);outline:none;list-style:none;display:flex;justify-content:space-between;align-items:center">${f[0]} <span style="color:var(--red);font-size:20px">+</span></summary>
+    <p style="margin-top:12px;color:var(--muted);font-size:14px;line-height:1.7">${f[1]}</p>
+  </details>
+`).join('');
+
+function handleContact(e){
+  e.preventDefault();
+  const f=new FormData(e.target);
+  const msgs=JSON.parse(localStorage.getItem('niks_messages')||'[]');
+  msgs.unshift({...Object.fromEntries(f),date:new Date().toISOString()});
+  localStorage.setItem('niks_messages',JSON.stringify(msgs));
+  toast('✓ Message sent! We\'ll get back within 24 hours.','ok');
+  e.target.reset();
+}
+</script>
+</body>
+</html>
+

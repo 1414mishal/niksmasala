@@ -1,0 +1,225 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkout — Niks Masala</title>
+<link rel="icon" href="nikslogomain.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+<div id="siteHeader"></div>
+
+<div class="page-head">
+  <h1>Checkout</h1>
+  <p>Almost there — just a few details to complete your order</p>
+</div>
+
+<div class="breadcrumb"><div class="breadcrumb-inner container">
+  <a href="index.html">Home</a><span class="breadcrumb-sep">›</span>
+  <a href="cart.html">Cart</a><span class="breadcrumb-sep">›</span>
+  Checkout
+</div></div>
+
+<!-- Checkout progress steps -->
+<div class="checkout-steps container">
+  <div class="checkout-step done">
+    <div class="step-dot">✓</div>
+    <div class="step-label">Cart</div>
+  </div>
+  <div class="checkout-step active">
+    <div class="step-dot">2</div>
+    <div class="step-label">Your Details</div>
+  </div>
+  <div class="checkout-step">
+    <div class="step-dot">3</div>
+    <div class="step-label">Payment</div>
+  </div>
+  <div class="checkout-step">
+    <div class="step-dot">4</div>
+    <div class="step-label">Confirmed</div>
+  </div>
+</div>
+
+<div id="checkoutContent"></div>
+
+<div id="siteFooter"></div>
+
+<script src="assets/app.js"></script>
+<script>
+mountHeaderFooter('shop');
+
+const cart=getCart();
+const s=getSettings();
+
+if(cart.length===0){
+  document.getElementById('checkoutContent').innerHTML=`
+    <div style="max-width:720px;margin:60px auto;padding:40px;text-align:center">
+      <h2 style="font-size:28px;margin-bottom:14px">Your cart is empty</h2>
+      <p style="color:var(--muted);margin-bottom:24px">Add some products before checking out.</p>
+      <a href="shop.html" class="btn btn-primary">Shop Now →</a>
+    </div>`;
+}else{
+  const sub=cartSubtotal();
+  const ship=computeShipping();
+  const disc=+localStorage.getItem('niks_discount')||0;
+  const discAmt=Math.round(sub*disc/100);
+  const total=sub+ship-discAmt;
+  document.getElementById('checkoutContent').innerHTML=`
+    <div class="checkout-wrap">
+      <form class="checkout-form-card" onsubmit="placeOrder(event)">
+        <h3>Contact Information</h3>
+        <div class="form-grid-2">
+          <div class="form-row"><label>First Name *</label><input type="text" name="fname" required></div>
+          <div class="form-row"><label>Last Name *</label><input type="text" name="lname" required></div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row"><label>Email *</label><input type="email" name="email" required></div>
+          <div class="form-row"><label>Phone *</label><input type="tel" name="phone" required pattern="[0-9]{10}" title="10 digit phone"></div>
+        </div>
+
+        <h3 style="margin-top:20px">Shipping Address</h3>
+        <div class="form-row"><label>Address Line *</label><input type="text" name="address" required placeholder="House no., Street, Area"></div>
+        <div class="form-row"><label>Landmark (optional)</label><input type="text" name="landmark"></div>
+        <div class="form-grid-2">
+          <div class="form-row"><label>City *</label><input type="text" name="city" required></div>
+          <div class="form-row"><label>State *</label>
+            <select name="state" required>
+              <option value="">Select State</option>
+              <option>Andhra Pradesh</option><option>Assam</option><option>Bihar</option>
+              <option>Delhi</option><option>Goa</option><option>Gujarat</option>
+              <option>Haryana</option><option>Karnataka</option><option>Kerala</option>
+              <option>Madhya Pradesh</option><option>Maharashtra</option><option>Odisha</option>
+              <option>Punjab</option><option>Rajasthan</option><option>Tamil Nadu</option>
+              <option>Telangana</option><option>Uttar Pradesh</option><option>West Bengal</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row"><label>Pincode *</label><input type="text" name="pin" required maxlength="6" pattern="[0-9]{6}"></div>
+          <div class="form-row"><label>Country</label><input type="text" value="India" readonly></div>
+        </div>
+
+        <h3 style="margin-top:20px">Payment Method</h3>
+        <div class="pay-options">
+          <label class="pay-option"><input type="radio" name="pay" value="UPI" checked><div><strong>💳 UPI Payment</strong><small>Google Pay · PhonePe · Paytm · BHIM</small></div></label>
+          <label class="pay-option"><input type="radio" name="pay" value="Card"><div><strong>💳 Credit / Debit Card</strong><small>Visa · Mastercard · RuPay</small></div></label>
+          <label class="pay-option"><input type="radio" name="pay" value="NetBanking"><div><strong>🏦 Net Banking</strong><small>All major banks</small></div></label>
+          <label class="pay-option"><input type="radio" name="pay" value="COD"><div><strong>💰 Cash on Delivery</strong><small>Pay when you receive</small></div></label>
+        </div>
+
+        <div class="form-row" style="margin-top:14px">
+          <label>Order Notes (optional)</label>
+          <textarea name="notes" rows="2" placeholder="Any special instructions..."></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;padding:18px;font-size:15px;margin-top:10px">PLACE ORDER · ${money(total)}</button>
+        <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:12px">🔒 Your information is secure and encrypted</p>
+      </form>
+
+      <aside>
+        <div class="cart-summary" style="position:sticky;top:120px">
+          <h3>Your Order</h3>
+          ${cart.map(i=>`
+            <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);align-items:center">
+              <div style="width:56px;height:56px;border-radius:6px;overflow:hidden;background:var(--cream);flex-shrink:0;position:relative">
+                <img src="${i.image}" style="width:100%;height:100%;object-fit:cover">
+                <span style="position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700">${i.qty}</span>
+              </div>
+              <div style="flex:1;min-width:0"><strong style="font-size:13px;display:block">${i.name}</strong><small style="color:var(--muted)">${money(i.price)} × ${i.qty}</small></div>
+              <strong style="color:var(--red);font-size:14px">${money(i.price*i.qty)}</strong>
+            </div>
+          `).join('')}
+          <div class="row" style="margin-top:12px"><span>Subtotal</span><span>${money(sub)}</span></div>
+          <div class="row"><span>Shipping</span><span>${ship===0?'<strong style="color:var(--ok)">FREE</strong>':money(ship)}</span></div>
+          ${disc?`<div class="row" style="color:var(--ok)"><span>Discount (${disc}%)</span><span>-${money(discAmt)}</span></div>`:''}
+          <div class="row total"><span>Total</span><span>${money(total)}</span></div>
+        </div>
+      </aside>
+    </div>`;
+}
+
+function placeOrder(e){
+  e.preventDefault();
+  const f=new FormData(e.target);
+  const sub=cartSubtotal();
+  const ship=computeShipping();
+  const disc=+localStorage.getItem('niks_discount')||0;
+  const discAmt=Math.round(sub*disc/100);
+  const total=sub+ship-discAmt;
+  const order={
+    id:'NM'+Date.now().toString().slice(-8),
+    date:new Date().toISOString(),
+    customer:{
+      name:f.get('fname')+' '+f.get('lname'),
+      email:f.get('email'),
+      phone:f.get('phone'),
+      address:f.get('address')+(f.get('landmark')?', '+f.get('landmark'):''),
+      city:f.get('city'),
+      state:f.get('state'),
+      pincode:f.get('pin')
+    },
+    notes:f.get('notes')||'',
+    items:cart,
+    subtotal:sub, shipping:ship, discount:discAmt, total:total,
+    payment:f.get('pay'), status:'Pending', trackingStatus:'placed'
+  };
+
+  // COD — skip Razorpay
+  if(order.payment==='COD'){
+    finalizeOrder(order);
+    return;
+  }
+
+  // Razorpay flow for UPI / Card / NetBanking
+  if(typeof Razorpay==='undefined'){
+    toast('Payment gateway not loaded. Please check your connection.','err');
+    return;
+  }
+  const rzp=new Razorpay({
+    key:s.razorpayKey,
+    amount:total*100,
+    currency:'INR',
+    name:'Niks Masala',
+    description:`Order ${order.id}`,
+    image:'nikslogomain.jpg',
+    prefill:{
+      name:order.customer.name,
+      email:order.customer.email,
+      contact:order.customer.phone
+    },
+    theme:{color:'#a82a1a'},
+    method:order.payment==='UPI'?{upi:true,card:false,netbanking:false,wallet:false}:
+           order.payment==='NetBanking'?{netbanking:true,upi:false,card:false,wallet:false}:
+           {card:true,upi:true,netbanking:true,wallet:true},
+    handler:async function(resp){
+      order.payment_id=resp.razorpay_payment_id;
+      order.status='Processing';
+      await finalizeOrder(order);
+    },
+    modal:{
+      ondismiss:function(){toast('Payment cancelled','err')}
+    }
+  });
+  rzp.on('payment.failed',function(resp){
+    toast('Payment failed: '+resp.error.description,'err');
+  });
+  rzp.open();
+}
+
+async function finalizeOrder(order){
+  const all=JSON.parse(localStorage.getItem('niks_orders')||'[]');
+  all.unshift(order);
+  localStorage.setItem('niks_orders',JSON.stringify(all));
+  localStorage.setItem('niks_last_order',JSON.stringify(order));
+  localStorage.removeItem('niks_discount');
+  setCart([]);
+  try{ await saveOrderToCloud(order); }catch(_){}  // wait for cloud save BEFORE navigating
+  location.href='thankyou.html?id='+order.id;
+}
+</script>
+</body>
+</html>
+

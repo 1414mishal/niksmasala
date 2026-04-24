@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Niks Masala — Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23b8321a'/%3E%3Ctext x='50' y='66' text-anchor='middle' fill='%23fff1d6' font-family='Georgia' font-size='50' font-weight='700'%3EN%3C/text%3E%3C/svg%3E">
+<style>
+  :root{--red:#b8321a;--red-dark:#8a2414;--turmeric:#e9a82a;--cream:#fff6e4;--cream-2:#faead0;--ink:#2a1810;--muted:#6b5a4e;--line:#e8dcc4;--ok:#2d7a3e;--bg:#f7f3ea}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+  h1,h2,h3{font-family:'Playfair Display',serif;font-weight:700}
+  button{font-family:inherit;cursor:pointer;border:none}
+  input,select,textarea{font-family:inherit;font-size:14px}
+
+  /* Login */
+  .login-screen{min-height:100vh;display:grid;place-items:center;background:linear-gradient(135deg,#5a1a0e,#b8321a,#d4501b);padding:20px}
+  .login-box{background:#fff;border-radius:20px;padding:40px;width:100%;max-width:420px;box-shadow:0 30px 80px rgba(0,0,0,.3);text-align:center}
+  .login-mark{width:70px;height:70px;margin:0 auto 16px;border-radius:50%;background:radial-gradient(circle at 30% 30%,var(--turmeric),var(--red));display:grid;place-items:center;color:#fff1d6;font-size:32px;font-weight:700}
+  .login-box h1{font-size:26px;margin-bottom:6px}
+  .login-box p{color:var(--muted);font-size:14px;margin-bottom:24px}
+  .login-box input{width:100%;padding:14px 18px;border:1px solid var(--line);border-radius:10px;margin-bottom:12px}
+  .login-box button{width:100%;padding:14px;background:var(--red);color:#fff;border-radius:10px;font-weight:700;font-size:15px}
+  .login-box button:hover{background:var(--red-dark)}
+  .hint{font-size:12px;color:var(--muted);margin-top:14px}
+
+  /* App */
+  .app{display:none;min-height:100vh;grid-template-columns:240px 1fr}
+  .app.on{display:grid}
+  .sidebar{background:#1a0f08;color:#d6c4a8;padding:24px 0;position:sticky;top:0;height:100vh;display:flex;flex-direction:column}
+  .brand{padding:0 24px 24px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:16px;display:flex;gap:12px;align-items:center}
+  .brand-mark{width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 30% 30%,var(--turmeric),var(--red));display:grid;place-items:center;color:#fff;font-weight:700}
+  .brand-text{color:#fff;font-family:'Playfair Display',serif;font-size:18px;font-weight:700}
+  .brand-text small{display:block;color:#b8a78a;font-family:'Inter',sans-serif;font-size:10px;letter-spacing:2px;font-weight:500}
+  .nav-item{padding:12px 24px;display:flex;align-items:center;gap:12px;color:#d6c4a8;cursor:pointer;transition:all .2s;font-size:14px;font-weight:500;border-left:3px solid transparent}
+  .nav-item:hover{background:rgba(255,255,255,.04);color:#fff}
+  .nav-item.active{background:rgba(184,50,26,.2);color:#fff;border-left-color:var(--turmeric)}
+  .nav-item .ic{width:18px;height:18px;display:inline-grid;place-items:center}
+  .sidebar-bot{margin-top:auto;padding:16px 24px;font-size:12px;color:#8a7a66;border-top:1px solid rgba(255,255,255,.08)}
+  .sidebar-bot button{background:none;color:#d6c4a8;font-size:13px;padding:6px 0}
+  .sidebar-bot button:hover{color:var(--turmeric)}
+
+  /* Main */
+  main{padding:28px 36px;max-width:1400px}
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+  .topbar h1{font-size:28px}
+  .topbar p{color:var(--muted);font-size:14px}
+  .topbar-actions{display:flex;gap:10px}
+
+  .btn{padding:10px 18px;border-radius:8px;font-weight:600;font-size:14px;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+  .btn-primary{background:var(--red);color:#fff}
+  .btn-primary:hover{background:var(--red-dark)}
+  .btn-secondary{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .btn-secondary:hover{background:var(--cream)}
+  .btn-danger{background:#dc2626;color:#fff}
+  .btn-danger:hover{background:#b91c1c}
+  .btn-sm{padding:6px 12px;font-size:12px}
+
+  /* Cards / stats */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+  .stat-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px}
+  .stat-card .lbl{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-weight:600}
+  .stat-card .val{font-family:'Playfair Display',serif;font-size:32px;color:var(--red);margin-top:6px}
+  .stat-card .sub{font-size:12px;color:var(--muted);margin-top:4px}
+
+  .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px;margin-bottom:20px}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+  .panel-head h2{font-size:20px}
+
+  /* Table */
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:12px 10px;font-size:14px;border-bottom:1px solid var(--line);vertical-align:middle}
+  th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;background:var(--bg)}
+  tr:hover{background:var(--bg)}
+  .prod-cell{display:flex;gap:10px;align-items:center}
+  .prod-img{width:56px;height:56px;border-radius:8px;background:var(--cream-2);display:grid;place-items:center;font-size:22px;overflow:hidden}
+  .prod-img img{width:100%;height:100%;object-fit:contain;background:#fff}
+  .tag{display:inline-block;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:600;background:var(--cream-2);color:var(--red-dark)}
+  .status{padding:3px 10px;border-radius:50px;font-size:11px;font-weight:600}
+  .status.Pending{background:#fff4d1;color:#8a6d1a}
+  .status.Processing{background:#d1e4ff;color:#1a4a8a}
+  .status.Shipped{background:#d1ffe4;color:#1a8a4a}
+  .status.Delivered{background:#d6ffd1;color:#2d7a3e}
+  .status.Cancelled{background:#ffd6d1;color:#8a2414}
+  .row-actions{display:flex;gap:6px}
+
+  /* Form modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+  .modal.open{display:flex}
+  .modal-box{background:#fff;border-radius:14px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;padding:28px}
+  .modal-box h3{font-size:22px;margin-bottom:18px}
+  .form-row{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .form-row label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .form-row input,.form-row select,.form-row textarea{padding:10px 14px;border:1px solid var(--line);border-radius:8px;width:100%}
+  .form-row input:focus,.form-row select:focus,.form-row textarea:focus{outline:none;border-color:var(--red)}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .modal-foot{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+
+  .view{display:none}
+  .view.active{display:block}
+
+  .empty{text-align:center;padding:60px 20px;color:var(--muted)}
+  .empty span{font-size:50px;display:block;margin-bottom:10px;opacity:.5}
+
+  /* Toast */
+  .toast{position:fixed;bottom:30px;right:30px;background:var(--ink);color:#fff;padding:14px 22px;border-radius:10px;font-size:14px;font-weight:500;z-index:500;transform:translateY(160%);transition:transform .3s;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .toast.show{transform:translateY(0)}
+  .toast.ok{background:var(--ok)}
+
+  /* Image upload zone */
+  .img-drop-zone{
+    border:2px dashed var(--line);border-radius:10px;
+    background:var(--cream);min-height:180px;
+    display:flex;align-items:center;justify-content:center;
+    position:relative;cursor:pointer;transition:border-color .2s,background .2s;
+    overflow:hidden;
+  }
+  .img-drop-zone:hover,.img-drop-zone.drag-over{border-color:var(--red);background:#fff6f4}
+  .img-preview-thumb{
+    width:100%;max-height:260px;
+    object-fit:contain;display:block;
+    border-radius:8px;background:#000;
+  }
+  .img-drop-placeholder{text-align:center;padding:20px;color:var(--muted)}
+  .img-remove-btn{
+    position:absolute;top:8px;right:8px;
+    background:rgba(0,0,0,.6);color:#fff;border-radius:6px;
+    font-size:12px;padding:4px 10px;z-index:2;
+  }
+  .img-url-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .img-url-row input{flex:1}
+
+  @media(max-width:900px){
+    .app{grid-template-columns:1fr}
+    .sidebar{position:relative;height:auto;flex-direction:row;overflow-x:auto;padding:12px}
+    .sidebar-bot,.brand{display:none}
+    .nav-item{padding:8px 14px;white-space:nowrap;border-left:none;border-bottom:3px solid transparent}
+    .nav-item.active{border-left:none;border-bottom-color:var(--turmeric)}
+    main{padding:18px}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .form-grid{grid-template-columns:1fr}
+    table{font-size:13px}
+    th:nth-child(3),td:nth-child(3){display:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="login-screen" id="login">
+  <div class="login-box">
+    <img src="nikslogomain.jpg" alt="Niks Masala" style="height:70px;margin:0 auto 16px;display:block" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+    <div class="login-mark" style="display:none">N</div>
+    <h1>Niks Masala Admin</h1>
+    <p>Sign in to manage your store</p>
+    <form onsubmit="doLogin(event)">
+      <input type="text" id="user" placeholder="Username" required autocomplete="username" value="admin">
+      <input type="password" id="pass" placeholder="Password" required autocomplete="current-password">
+      <button type="submit">Sign In →</button>
+    </form>
+    <p class="hint">Default: <strong>admin</strong> / <strong>niks2026</strong><br><em>(change in Settings after first login)</em></p>
+  </div>
+</div>
+
+<!-- App -->
+<div class="app" id="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="nikslogomain.jpg" alt="Niks" style="height:38px;width:auto;object-fit:contain" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+      <div class="brand-mark" style="display:none">N</div>
+      <div class="brand-text">Niks Masala<small>ADMIN</small></div>
+    </div>
+    <div class="nav-item active" data-view="dashboard"><span class="ic">📊</span> Dashboard</div>
+    <div class="nav-item" data-view="products"><span class="ic">🌶️</span> Products</div>
+    <div class="nav-item" data-view="orders"><span class="ic">📦</span> Orders</div>
+    <div class="nav-item" data-view="settings"><span class="ic">⚙️</span> Settings</div>
+    <div class="nav-item" data-view="backup"><span class="ic">💾</span> Backup</div>
+    <div class="sidebar-bot">
+      <button onclick="window.open('index.html','_blank')">🔗 View Store</button><br>
+      <button onclick="logout()">🚪 Sign Out</button>
+    </div>
+  </aside>
+
+  <main>
+    <!-- Dashboard -->
+    <section class="view active" id="v-dashboard">
+      <div class="topbar">
+        <div><h1>Dashboard</h1><p>Welcome back! Here's what's happening with your store.</p></div>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="panel">
+        <div class="panel-head"><h2>Recent Orders</h2>
+          <button class="btn btn-secondary btn-sm" onclick="go('orders')">View all →</button>
+        </div>
+        <div id="recentOrders"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>Low Stock Alert</h2></div>
+        <div id="lowStock"></div>
+      </div>
+    </section>
+
+    <!-- Products -->
+    <section class="view" id="v-products">
+      <div class="topbar">
+        <div><h1>Products</h1><p>Add, edit, or remove items from your store.</p></div>
+        <div class="topbar-actions">
+          <button class="btn btn-secondary" onclick="resetProducts()">Reset Defaults</button>
+          <button class="btn btn-primary" onclick="openProduct()">+ Add Product</button>
+        </div>
+      </div>
+      <div class="panel" style="padding:0;overflow:hidden">
+        <table>
+          <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Weight</th><th>Stock</th><th>Actions</th></tr></thead>
+          <tbody id="productsTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Orders -->
+    <section class="view" id="v-orders">
+      <div class="topbar">
+        <div><h1>Orders</h1><p>Track and manage customer orders.</p></div>
+        <div class="topbar-actions">
+          <button class="btn btn-secondary" onclick="refreshOrders()">↻ Refresh</button>
+          <select id="orderFilter" onchange="renderOrders()" style="padding:8px 14px;border:1px solid var(--line);border-radius:8px;background:#fff">
+            <option value="">All Statuses</option>
+            <option>Pending</option><option>Processing</option><option>Shipped</option><option>Delivered</option><option>Cancelled</option>
+          </select>
+        </div>
+      </div>
+      <div class="panel" style="padding:0;overflow:hidden">
+        <table>
+          <thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Tracking</th><th>Date</th><th></th></tr></thead>
+          <tbody id="ordersTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="view" id="v-settings">
+      <div class="topbar"><div><h1>Store Settings</h1><p>Update contact details, pricing & credentials.</p></div></div>
+      <div class="panel">
+        <h2 style="font-size:18px;margin-bottom:18px">Store Info</h2>
+        <form id="settingsForm" onsubmit="saveSettings(event)">
+          <div class="form-grid">
+            <div class="form-row"><label>Brand Name</label><input type="text" name="brand"></div>
+            <div class="form-row"><label>Currency Symbol</label><input type="text" name="currency" maxlength="3"></div>
+          </div>
+          <div class="form-grid">
+            <div class="form-row"><label>Phone</label><input type="text" name="phone"></div>
+            <div class="form-row"><label>Email</label><input type="email" name="email"></div>
+          </div>
+          <div class="form-row"><label>Address</label><textarea name="address" rows="2"></textarea></div>
+          <div class="form-grid">
+            <div class="form-row"><label>Free Shipping Above (₹)</label><input type="number" name="shippingFree" min="0"></div>
+            <div class="form-row"><label>Shipping Fee (₹)</label><input type="number" name="shippingFee" min="0"></div>
+          </div>
+          <div class="form-row"><label>Razorpay Key ID <small style="color:var(--muted);text-transform:none;letter-spacing:0">(from razorpay.com dashboard — use <code>rzp_test_...</code> for testing, <code>rzp_live_...</code> to accept real payments)</small></label><input type="text" name="razorpayKey" placeholder="rzp_test_xxxxxxxxxxxx"></div>
+          <button class="btn btn-primary" type="submit">Save Settings</button>
+        </form>
+      </div>
+      <div class="panel">
+        <h2 style="font-size:18px;margin-bottom:18px">Admin Password</h2>
+        <form onsubmit="changePassword(event)">
+          <div class="form-grid">
+            <div class="form-row"><label>New Password</label><input type="password" id="np1" minlength="4" required></div>
+            <div class="form-row"><label>Confirm Password</label><input type="password" id="np2" minlength="4" required></div>
+          </div>
+          <button class="btn btn-primary" type="submit">Update Password</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Backup -->
+    <section class="view" id="v-backup">
+      <div class="topbar"><div><h1>Backup & Restore</h1><p>Export all data to a file or restore from backup. Keep a backup regularly!</p></div></div>
+      <div class="panel">
+        <h2 style="font-size:18px;margin-bottom:14px">📥 Export Data</h2>
+        <p style="color:var(--muted);font-size:14px;margin-bottom:16px">Download a JSON file with all your products, orders and settings. Safe to email or store on Drive.</p>
+        <button class="btn btn-primary" onclick="exportData()">Download Backup (.json)</button>
+      </div>
+      <div class="panel">
+        <h2 style="font-size:18px;margin-bottom:14px">📤 Import / Restore</h2>
+        <p style="color:var(--muted);font-size:14px;margin-bottom:16px">Upload a previously downloaded backup file. <strong style="color:var(--red)">This replaces current data.</strong></p>
+        <input type="file" id="importFile" accept=".json" style="margin-bottom:12px"><br>
+        <button class="btn btn-primary" onclick="importData()">Restore from Backup</button>
+      </div>
+      <div class="panel">
+        <h2 style="font-size:18px;margin-bottom:14px">⚠️ Danger Zone</h2>
+        <p style="color:var(--muted);font-size:14px;margin-bottom:16px">Permanently delete all orders or reset everything to defaults.</p>
+        <button class="btn btn-secondary" onclick="clearOrders()" style="margin-right:8px">Clear All Orders</button>
+        <button class="btn btn-danger" onclick="factoryReset()">Factory Reset</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Product Modal -->
+<div class="modal" id="productModal">
+  <div class="modal-box">
+    <h3 id="pmTitle">Add Product</h3>
+    <form onsubmit="saveProduct(event)">
+      <input type="hidden" id="pm-id">
+      <div class="form-row"><label>Name *</label><input type="text" id="pm-name" required></div>
+      <div class="form-grid">
+        <div class="form-row"><label>Category *</label>
+          <input type="text" id="pm-category" list="catList" required>
+          <datalist id="catList">
+            <option>Direct Grinding</option><option>Veg Specialities</option><option>Non-Veg Specialities</option><option>Ready-Mix Products</option>
+          </datalist>
+        </div>
+        <div class="form-row"><label>Weight / Unit</label><input type="text" id="pm-weight" placeholder="100g"></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row"><label>Price (₹) *</label><input type="number" id="pm-price" min="0" required></div>
+        <div class="form-row"><label>MRP / Old Price</label><input type="number" id="pm-oldPrice" min="0"></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-row"><label>Stock</label><input type="number" id="pm-stock" min="0" value="50"></div>
+        <div class="form-row"><label>Badge (optional)</label><input type="text" id="pm-badge" placeholder="NEW, BESTSELLER..."></div>
+      </div>
+      <div class="form-row" style="margin-bottom:0">
+        <label>Emoji (fallback)</label><input type="text" id="pm-emoji" placeholder="🌶️" maxlength="4">
+      </div>
+      <!-- Image upload -->
+      <div class="form-row">
+        <label>Product Image</label>
+        <div class="img-drop-zone" id="imgDropZone"
+          onclick="document.getElementById('imgFileInput').click()"
+          ondragover="event.preventDefault();this.classList.add('drag-over')"
+          ondragleave="this.classList.remove('drag-over')"
+          ondrop="handleImgDrop(event)">
+          <img id="imgPreview" class="img-preview-thumb" style="display:none">
+          <div id="imgDropPlaceholder" class="img-drop-placeholder">
+            <div style="font-size:36px;margin-bottom:8px">🖼️</div>
+            <div style="font-weight:600;font-size:14px;margin-bottom:4px">Drop image here or click to upload</div>
+            <div style="font-size:12px;color:var(--muted)">JPG · PNG · WEBP · max 8 MB — auto-compressed</div>
+          </div>
+          <button type="button" id="imgRemoveBtn" class="img-remove-btn" style="display:none" onclick="event.stopPropagation();clearImage()">✕ Remove</button>
+          <input type="file" id="imgFileInput" accept="image/*" style="display:none" onchange="handleImgFile(this.files[0])">
+        </div>
+        <div class="img-url-row">
+          <span style="font-size:12px;color:var(--muted);white-space:nowrap">Or paste URL:</span>
+          <input type="url" id="pm-image-url" placeholder="https://..." oninput="applyUrl(this.value)">
+        </div>
+        <input type="hidden" id="pm-image">
+      </div>
+      <div class="form-row"><label>Description</label><textarea id="pm-desc" rows="3"></textarea></div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-secondary" onclick="closeProduct()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Product</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ========= NIKS MASALA — ADMIN ========= */
+/* ---- Shared product catalog (same as app.js) ---- */
+const _AIMGS={turmeric:'assets/products/turmeric.png',redchilli:'assets/products/red-chilli.png',coriander:'assets/products/coriander.png',jeera:'assets/products/jeera.png',pepper:'assets/products/pepper.png',kashmiri:'assets/products/kashmiri.png',kitchenking:'assets/products/kitchen-king.png',sambar:'assets/products/sambar.png',rasam:'assets/products/rasam.png',puliyogare:'assets/products/puliyogare.png',pulav:'assets/products/pulav.png',chhole:'assets/products/chhole.png',pavbhaji:'assets/products/pav-bhaji.png',jaljeera:'assets/products/jaljeera.jpg',kundapura:'assets/products/kundapura.png',chicken:'assets/products/chicken-masala.png',tandoori:'assets/products/tandoori.png',tikka:'assets/products/tikka.png',gheeRoast:'assets/products/ghee-roast.png',mutton:'assets/products/mutton.png',fish:'assets/products/fish-masala.png',garam:'assets/products/garam-masala.png',soya:'assets/products/soya.png',methi:'assets/products/kasuri-methi.jpg',sabji:'assets/products/sabji-masala.jpg',paste:'https://images.unsplash.com/photo-1599639668273-cc4318f7dff9?w=700&q=80',papad:'https://images.unsplash.com/photo-1589301773859-bb024586d6be?w=700&q=80',asafoetida:'https://images.unsplash.com/photo-1599639957043-f3aa5c986398?w=700&q=80'};
+function _apick(name){const n=name.toLowerCase();if(n.includes('turmeric'))return _AIMGS.turmeric;if(n.includes('kashmiri'))return _AIMGS.kashmiri;if(n.includes('red chilli')||n.includes('red chili'))return _AIMGS.redchilli;if(n.includes('coriander'))return _AIMGS.coriander;if(n.includes('jeera')||n.includes('cumin'))return _AIMGS.jeera;if(n.includes('black pepper'))return _AIMGS.pepper;if(n.includes('sabji'))return _AIMGS.sabji;if(n.includes('puliyogare'))return _AIMGS.puliyogare;if(n.includes('pulav')||n.includes('pulao'))return _AIMGS.pulav;if(n.includes('chhole'))return _AIMGS.chhole;if(n.includes('pav bhaji'))return _AIMGS.pavbhaji;if(n.includes('jajeera')||n.includes('jaljeera'))return _AIMGS.jaljeera;if(n.includes('chaat'))return _AIMGS.jaljeera;if(n.includes('sambar'))return _AIMGS.sambar;if(n.includes('rasam'))return _AIMGS.rasam;if(n.includes('ghee roast'))return _AIMGS.gheeRoast;if(n.includes('kundapura'))return _AIMGS.kundapura;if(n.includes('tandoori'))return _AIMGS.tandoori;if(n.includes('tikka'))return _AIMGS.tikka;if(n.includes('biriyani')||n.includes('biryani'))return _AIMGS.chicken;if(n.includes('kabab')||n.includes('65'))return _AIMGS.tandoori;if(n.includes('sukka')||n.includes('pulimunchi'))return _AIMGS.chicken;if(n.includes('chicken'))return _AIMGS.chicken;if(n.includes('fish'))return _AIMGS.fish;if(n.includes('mutton')||n.includes('meat')||n.includes('bafath')||n.includes('egg'))return _AIMGS.mutton;if(n.includes('kitchen king'))return _AIMGS.kitchenking;if(n.includes('garam'))return _AIMGS.garam;if(n.includes('soya'))return _AIMGS.soya;if(n.includes('methi'))return _AIMGS.methi;if(n.includes('asafoetida'))return _AIMGS.asafoetida;if(n.includes('ginger')||n.includes('garlic'))return _AIMGS.paste;if(n.includes('papad'))return _AIMGS.papad;return _AIMGS.garam;}
+function _acat(name){
+  const n=name.toLowerCase();
+  if(n==='turmeric powder'||n==='red chilli powder'||n==='coriander powder'||
+     n==='kashmiri chilli powder'||n==='jeera powder'||n==='black pepper powder')
+    return 'Direct Grinding';
+  if(n.includes('chicken')||n.includes('fish')||n.includes('mutton')||
+     n.includes('meat')||n.includes('egg')||n.includes('bafath'))
+    return 'Non-Veg Specialities';
+  if(n.includes('papad')||n.includes('kasuri')||n.includes('soya')||
+     n.includes('ginger')||n.includes('garlic')||n.includes('asafoetida'))
+    return 'Ready-Mix Products';
+  return 'Veg Specialities';
+}
+const _ARAW=[
+  {name:'Turmeric Powder',variants:[{pack:'50gm Pouch',grams:50,price:25},{pack:'100gm Pouch',grams:100,price:45},{pack:'200gm Pouch',grams:200,price:85},{pack:'500gm Pouch',grams:500,price:250},{pack:'50gm Box',grams:50,price:30},{pack:'100gm Box',grams:100,price:55}]},
+  {name:'Red Chilli Powder',variants:[{pack:'50gm Pouch',grams:50,price:35},{pack:'100gm Pouch',grams:100,price:60},{pack:'200gm Pouch',grams:200,price:120},{pack:'500gm Pouch',grams:500,price:300},{pack:'100gm Box',grams:100,price:60}]},
+  {name:'Coriander Powder',variants:[{pack:'50gm Pouch',grams:50,price:22},{pack:'100gm Pouch',grams:100,price:45},{pack:'200gm Pouch',grams:200,price:85},{pack:'500gm Pouch',grams:500,price:250},{pack:'100gm Box',grams:100,price:50}]},
+  {name:'Kashmiri Chilli Powder',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Jeera Powder',variants:[{pack:'50gm Pouch',grams:50,price:55},{pack:'50gm Box',grams:50,price:60},{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:400}]},
+  {name:'Black Pepper Powder',variants:[{pack:'50gm Box',grams:50,price:80},{pack:'100gm Box',grams:100,price:160},{pack:'500gm Pouch',grams:500,price:600}]},
+  {name:'Garam Masala',variants:[{pack:'50gm Box',grams:50,price:40},{pack:'100gm Pouch',grams:100,price:70},{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Super Garam Masala',variants:[{pack:'50gm Pouch',grams:50,price:35},{pack:'100gm Pouch',grams:100,price:60},{pack:'200gm Pouch',grams:200,price:110},{pack:'500gm Pouch',grams:500,price:240}]},
+  {name:'Udupi Sambar Masala',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Super Sambar Masala',variants:[{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Udupi Rasam Masala',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Vegetable Pulav Masala',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Chaat Masala',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:300}]},
+  {name:'Chhole Masala',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Jajeera Powder',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Pav Bhaji Masala',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Sabji Masala',variants:[{pack:'50gm Box',grams:50,price:40},{pack:'100gm Pouch',grams:100,price:70},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Puliyogare Powder',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Chicken Ghee Roast Masala',badge:'BESTSELLER',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:450}]},
+  {name:'Chicken Kundapura Masala',variants:[{pack:'100gm Pouch',grams:100,price:70},{pack:'100gm Box',grams:100,price:80},{pack:'200gm Jar',grams:200,price:160},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Chicken Sukka Masala (Mangalore No.1)',badge:'BESTSELLER',variants:[{pack:'100gm Pouch',grams:100,price:70},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Chicken Masala',variants:[{pack:'50gm Box',grams:50,price:40},{pack:'100gm Pouch',grams:100,price:70},{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Super Chicken Masala',variants:[{pack:'200gm Pouch',grams:200,price:135}]},
+  {name:'Chicken Pulimunchi Masala',variants:[{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Chicken Kabab / Chicken 65 Masala',variants:[{pack:'100gm Pouch',grams:100,price:40},{pack:'200gm Pouch',grams:200,price:75},{pack:'500gm Pouch',grams:500,price:250}]},
+  {name:'Chicken Biriyani Masala',variants:[{pack:'500gm Pouch',grams:500,price:400}]},
+  {name:'Chicken Tandoori Masala',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Chicken Tikka Masala',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Fish Curry Masala',variants:[{pack:'100gm Pouch',grams:100,price:60},{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Fish Pulimunchi Masala',variants:[{pack:'100gm Pouch',grams:100,price:60},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Fish Fry Masala',badge:'BESTSELLER',variants:[{pack:'100gm Pouch',grams:100,price:40},{pack:'500gm Pouch',grams:500,price:250}]},
+  {name:'Mutton / Meat Masala',variants:[{pack:'50gm Box',grams:50,price:40},{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:400}]},
+  {name:'Bafath Masala',variants:[{pack:'100gm Pouch',grams:100,price:70},{pack:'500gm Pouch',grams:500,price:400}]},
+  {name:'Egg Curry Masala',variants:[{pack:'500gm Pouch',grams:500,price:250}]},
+  {name:'Kitchen King Masala',variants:[{pack:'100gm Pouch',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:370}]},
+  {name:'Compounded Asafoetida Powder',variants:[{pack:'25gm Jar',grams:25,price:55},{pack:'50gm Jar',grams:50,price:100}]},
+  {name:'Ginger-Garlic Paste',variants:[{pack:'200gm Jar',grams:200,price:60}]},
+  {name:'Niks Papad',variants:[{pack:'80gm Pouch',grams:80,price:25}]},
+  {name:'Kasuri Methi',variants:[{pack:'25gm Box',grams:25,price:38}]},
+  {name:'Soya Chunks',variants:[{pack:'200gm Box',grams:200,price:60},{pack:'1 KG Pouch',grams:1000,price:300}]},
+];
+const DEFAULT_PRODUCTS=_ARAW.map((r,i)=>{const minP=Math.min(...r.variants.map(v=>v.price));return{id:'p'+(i+1),name:r.name,slug:r.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),category:_acat(r.name),price:minP,image:_apick(r.name),variants:r.variants,rating:4.6+(i%4)*0.1,reviews:20+(i*7)%180,desc:'Authentic Mangalorean spice blend — traditionally crafted, export-quality.',long:'Packed at our FSSAI-certified 11,000 sq.ft. facility in Yeyyadi, Mangalore.',badge:r.badge||null,stock:50};});
+const DEFAULT_SETTINGS = {brand:'Niks Masala',phone:'+91 73385 19975',email:'hello@niksmasala.com',address:'Plot no. L-6, 5-50, Yeyyadi Industrial Area, Mangaluru, Karnataka 575015',currency:'₹',shippingFree:799,shippingFee:60,shippingFeeHeavy:120,razorpayKey:'rzp_test_SgFzfBVh4i57d2'};
+const DEFAULT_PASSWORD = 'niks2026';
+
+/* ---- Supabase ---- */
+const _SB_URL='https://jvjjqbzwqrnvrpiihbnt.supabase.co';
+const _SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2ampxYnp3cXJudnJwaWloYm50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3ODU0NTksImV4cCI6MjA5MjM2MTQ1OX0.35q6KQU0yAV0IQn__1t2sVkRpgxiswG_ne50C87sFps';
+let _db=null;
+async function getDB(){
+  if(_db) return _db;
+  if(!window.supabase){
+    await new Promise(r=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';s.onload=r;document.head.appendChild(s)});
+  }
+  _db=window.supabase.createClient(_SB_URL,_SB_KEY);
+  return _db;
+}
+/* Map cloud row → app object */
+function _fromCloud(r){return{id:r.id,name:r.name,slug:r.slug,category:r.category,price:+r.price,oldPrice:r.old_price||undefined,weight:r.weight,image:r.image,rating:+r.rating,reviews:+r.reviews,desc:r.description,long:r.long_desc,badge:r.badge||undefined,stock:+r.stock,emoji:r.emoji||'🌶️'}}
+/* Map app object → cloud row */
+function _toCloud(p){return{id:p.id,name:p.name,slug:p.slug||(p.name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-'),category:p.category,price:p.price||0,old_price:p.oldPrice||null,weight:p.weight||'',image:p.image||'',rating:p.rating||4.5,reviews:p.reviews||0,description:p.desc||'',long_desc:p.long||'',badge:p.badge||null,stock:p.stock||0,emoji:p.emoji||'🌶️'}}
+
+function getProducts(){
+  try{
+    if(localStorage.getItem('niks_products_version')!=='v6-cats'){
+      localStorage.setItem('niks_products',JSON.stringify(DEFAULT_PRODUCTS));
+      localStorage.removeItem('niks_cart');
+      localStorage.setItem('niks_products_version','v6-cats');
+    }
+    const s=JSON.parse(localStorage.getItem('niks_products'));
+    return(s&&s.length)?s:DEFAULT_PRODUCTS;
+  }catch(e){return DEFAULT_PRODUCTS}
+}
+function setProducts(p){localStorage.setItem('niks_products',JSON.stringify(p))}
+function getSettings(){try{return{...DEFAULT_SETTINGS,...(JSON.parse(localStorage.getItem('niks_settings'))||{})}}catch(e){return DEFAULT_SETTINGS}}
+function setSettings(s){localStorage.setItem('niks_settings',JSON.stringify(s))}
+function getOrders(){try{return JSON.parse(localStorage.getItem('niks_orders'))||[]}catch(e){return[]}}
+function setOrders(o){localStorage.setItem('niks_orders',JSON.stringify(o))}
+function getPassword(){return localStorage.getItem('niks_pw')||DEFAULT_PASSWORD}
+
+/* Login */
+function doLogin(e){
+  e.preventDefault();
+  const u=document.getElementById('user').value.trim();
+  const p=document.getElementById('pass').value;
+  // DEFAULT_PASSWORD always works as master key even if password was changed
+  if(u==='admin' && (p===getPassword() || p===DEFAULT_PASSWORD)){
+    if(p===DEFAULT_PASSWORD) localStorage.removeItem('niks_pw'); // reset any saved pw
+    sessionStorage.setItem('niks_auth','1');
+    showApp();
+  }else{
+    toast('Incorrect credentials','err');
+  }
+}
+function logout(){sessionStorage.removeItem('niks_auth');location.reload()}
+async function showApp(){
+  document.getElementById('login').style.display='none';
+  document.getElementById('app').classList.add('on');
+  toast('Syncing from cloud…');
+  try{
+    const db=await getDB();
+    const[{data:cp,error:pe},{data:co},{data:cs}]=await Promise.all([
+      db.from('products').select('*').order('id'),
+      db.from('orders').select('*').order('created_at',{ascending:false}),
+      db.from('settings').select('*')
+    ]);
+    // Products: always upsert full defaults if cloud has fewer than expected
+    {
+      const cloudCount=(!pe&&cp)?cp.length:0;
+      if(cloudCount < DEFAULT_PRODUCTS.length){
+        // Upsert each product individually so one failure doesn't block others
+        for(const p of DEFAULT_PRODUCTS){
+          await db.from('products').upsert(_toCloud(p)).catch(()=>{});
+        }
+      }
+      // Load whatever is in cloud now
+      const{data:cp2}=await db.from('products').select('*').order('id');
+      if(cp2&&cp2.length) setProducts(cp2.map(_fromCloud));
+      else setProducts(DEFAULT_PRODUCTS);
+    }
+    // Orders: cloud is source of truth
+    if(co) setOrders(co);
+    // Settings: merge cloud values over defaults
+    if(cs&&cs.length){
+      const s={};cs.forEach(r=>{s[r.key]=isNaN(r.value)||['brand','phone','email','address','currency','razorpayKey'].includes(r.key)?r.value:+r.value});
+      setSettings({...DEFAULT_SETTINGS,...s});
+    }
+  }catch(ex){console.warn('Cloud sync failed:',ex)}
+  go('dashboard');
+}
+if(sessionStorage.getItem('niks_auth')==='1') showApp();
+
+/* Navigation */
+document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>go(n.dataset.view)));
+function go(view){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.toggle('active',n.dataset.view===view));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='v-'+view));
+  if(view==='dashboard') renderDashboard();
+  if(view==='products') renderProductsTable();
+  if(view==='orders') renderOrders();
+  if(view==='settings') fillSettingsForm();
+}
+
+/* Dashboard */
+function renderDashboard(){
+  const orders=getOrders(), products=getProducts();
+  const revenue=orders.filter(o=>o.status!=='Cancelled').reduce((s,o)=>s+o.total,0);
+  const pending=orders.filter(o=>o.status==='Pending').length;
+  const low=products.filter(p=>(p.stock||0)<15);
+  document.getElementById('stats').innerHTML=`
+    <div class="stat-card"><div class="lbl">Total Revenue</div><div class="val">₹${revenue.toLocaleString('en-IN')}</div><div class="sub">All-time</div></div>
+    <div class="stat-card"><div class="lbl">Total Orders</div><div class="val">${orders.length}</div><div class="sub">${pending} pending</div></div>
+    <div class="stat-card"><div class="lbl">Products</div><div class="val">${products.length}</div><div class="sub">${low.length} low stock</div></div>
+    <div class="stat-card"><div class="lbl">Customers</div><div class="val">${new Set(orders.map(o=>o.customer.email)).size}</div><div class="sub">Unique buyers</div></div>`;
+  const recent=orders.slice(0,5);
+  document.getElementById('recentOrders').innerHTML=recent.length===0
+    ? `<div class="empty"><span>📦</span>No orders yet — share your store!</div>`
+    : `<table><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead><tbody>${
+      recent.map(o=>`<tr><td><strong>${o.id}</strong></td><td>${o.customer.name}</td><td>₹${o.total}</td><td><span class="status ${o.status}">${o.status}</span></td></tr>`).join('')
+    }</tbody></table>`;
+  document.getElementById('lowStock').innerHTML=low.length===0
+    ? `<div class="empty" style="padding:30px"><span>✅</span>All products well-stocked</div>`
+    : low.map(p=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)"><span>${p.emoji||'🌶️'} <strong>${p.name}</strong></span><span style="color:var(--red);font-weight:600">${p.stock||0} left</span></div>`).join('');
+}
+
+/* Products table */
+function renderProductsTable(){
+  const products=getProducts();
+  document.getElementById('productsTable').innerHTML=products.length===0
+    ? `<tr><td colspan="6"><div class="empty"><span>🌶️</span>No products. Add your first one!</div></td></tr>`
+    : products.map(p=>`
+    <tr>
+      <td><div class="prod-cell">
+        <div class="prod-img">${p.image?`<img src="${p.image}">`:(p.emoji||'🌶️')}</div>
+        <div><strong>${p.name}</strong>${p.badge?` <span class="tag">${p.badge}</span>`:''}<br><small style="color:var(--muted)">${(p.desc||'').slice(0,50)}${p.desc&&p.desc.length>50?'…':''}</small></div>
+      </div></td>
+      <td>${p.category}</td>
+      <td><strong>₹${p.price}</strong>${p.oldPrice?`<br><small style="color:var(--muted);text-decoration:line-through">₹${p.oldPrice}</small>`:''}</td>
+      <td>${p.weight||'—'}</td>
+      <td style="color:${(p.stock||0)<15?'var(--red)':'var(--ink)'};font-weight:600">${p.stock||0}</td>
+      <td><div class="row-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openProduct('${p.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">Delete</button>
+      </div></td>
+    </tr>`).join('');
+}
+/* ===== IMAGE UPLOAD ===== */
+function setImagePreview(src){
+  const preview=document.getElementById('imgPreview');
+  const placeholder=document.getElementById('imgDropPlaceholder');
+  const removeBtn=document.getElementById('imgRemoveBtn');
+  if(src){
+    preview.src=src;preview.style.display='block';
+    placeholder.style.display='none';removeBtn.style.display='block';
+    document.getElementById('pm-image').value=src;
+  }else{
+    preview.src='';preview.style.display='none';
+    placeholder.style.display='flex';removeBtn.style.display='none';
+    document.getElementById('pm-image').value='';
+    document.getElementById('pm-image-url').value='';
+    document.getElementById('imgFileInput').value='';
+  }
+}
+function clearImage(){setImagePreview('')}
+function applyUrl(url){
+  document.getElementById('pm-image').value=url;
+  if(url){
+    document.getElementById('imgPreview').src=url;
+    document.getElementById('imgPreview').style.display='block';
+    document.getElementById('imgDropPlaceholder').style.display='none';
+    document.getElementById('imgRemoveBtn').style.display='block';
+  }
+}
+function handleImgDrop(e){
+  e.preventDefault();
+  document.getElementById('imgDropZone').classList.remove('drag-over');
+  const file=e.dataTransfer.files[0];
+  if(file&&file.type.startsWith('image/')) handleImgFile(file);
+}
+function handleImgFile(file){
+  if(!file) return;
+  if(file.size>8*1024*1024){toast('Image too large (max 8 MB)','err');return;}
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const img=new Image();
+    img.onload=function(){
+      // Compress: max 1200px wide/tall, JPEG 0.92 (high quality)
+      const MAX=1200;
+      let w=img.width,h=img.height;
+      if(w>MAX||h>MAX){const r=Math.min(MAX/w,MAX/h);w=Math.round(w*r);h=Math.round(h*r);}
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      const b64=canvas.toDataURL('image/jpeg',0.92);
+      setImagePreview(b64);
+      toast(`✓ Image ready (${w}×${h}px)`, 'ok');
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function openProduct(id){
+  const p=id?getProducts().find(x=>x.id===id):null;
+  document.getElementById('pmTitle').textContent=p?'Edit Product':'Add Product';
+  document.getElementById('pm-id').value=p?p.id:'';
+  ['name','category','weight','price','oldPrice','stock','badge','emoji','desc'].forEach(f=>{
+    document.getElementById('pm-'+f).value=p?(p[f]||''):'';
+  });
+  // Handle image separately
+  const imgSrc=p?p.image||'':'';
+  document.getElementById('pm-image-url').value=imgSrc.startsWith('data:') ? '' : imgSrc;
+  setImagePreview(imgSrc||'');
+  document.getElementById('productModal').classList.add('open');
+}
+function closeProduct(){
+  document.getElementById('productModal').classList.remove('open');
+  clearImage();
+}
+async function saveProduct(e){
+  e.preventDefault();
+  const id=document.getElementById('pm-id').value || 'p'+Date.now().toString().slice(-8);
+  const p={
+    id, name:val('pm-name'), category:val('pm-category'),
+    price:+val('pm-price'), oldPrice:+val('pm-oldPrice')||undefined,
+    weight:val('pm-weight'), stock:+val('pm-stock')||0,
+    badge:val('pm-badge')||undefined, emoji:val('pm-emoji')||'🌶️',
+    image:val('pm-image')||undefined, desc:val('pm-desc')
+  };
+  const list=getProducts();
+  const idx=list.findIndex(x=>x.id===id);
+  if(idx>=0) list[idx]=p; else list.push(p);
+  setProducts(list);
+  try{const db=await getDB();await db.from('products').upsert(_toCloud(p))}catch(ex){console.warn(ex)}
+  closeProduct(); renderProductsTable();
+  toast('✅ Product saved','ok');
+}
+function val(id){return document.getElementById(id).value.trim()}
+async function deleteProduct(id){
+  if(!confirm('Delete this product permanently?')) return;
+  setProducts(getProducts().filter(p=>p.id!==id));
+  renderProductsTable();
+  try{const db=await getDB();await db.from('products').delete().eq('id',id)}catch(ex){console.warn(ex)}
+  toast('Product deleted','ok');
+}
+async function resetProducts(){
+  if(!confirm('Reset all products to defaults? Your custom products will be lost.')) return;
+  setProducts(DEFAULT_PRODUCTS);renderProductsTable();
+  try{
+    const db=await getDB();
+    await db.from('products').delete().neq('id','__x__');
+    await db.from('products').upsert(DEFAULT_PRODUCTS.map(_toCloud));
+  }catch(ex){console.warn(ex)}
+  toast('Defaults restored','ok');
+}
+
+/* Orders */
+const TRACK_STEPS=['placed','processing','packed','shipped','delivery','delivered'];
+const TRACK_LABELS={placed:'📋 Placed',processing:'⚙️ Processing',packed:'📦 Packed',shipped:'🚚 Shipped',delivery:'🏠 Out for Delivery',delivered:'✅ Delivered'};
+function renderOrders(){
+  const f=document.getElementById('orderFilter').value;
+  let orders=getOrders();
+  if(f) orders=orders.filter(o=>o.status===f);
+  document.getElementById('ordersTable').innerHTML=orders.length===0
+    ? `<tr><td colspan="9"><div class="empty"><span>📦</span>No orders ${f?'with status '+f:'yet'}</div></td></tr>`
+    : orders.map(o=>{
+      const ts=o.trackingStatus||'placed';
+      return `
+    <tr>
+      <td><strong>${o.id}</strong><br><a href="track.html?id=${o.id}" target="_blank" style="font-size:11px;color:var(--red)">🔍 Track</a></td>
+      <td>${o.customer.name}<br><small style="color:var(--muted)">${o.customer.phone}</small></td>
+      <td>${o.items.reduce((s,i)=>s+i.qty,0)} items</td>
+      <td><strong>₹${o.total}</strong></td>
+      <td>${o.payment}</td>
+      <td><select onchange="changeStatus('${o.id}',this.value)" class="status ${o.status}" style="border:none;padding:3px 10px">
+        ${['Pending','Processing','Shipped','Delivered','Cancelled'].map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}
+      </select></td>
+      <td>
+        <select onchange="changeTracking('${o.id}',this.value)" style="border:1px solid var(--line);padding:3px 8px;border-radius:6px;font-size:12px;background:#fff;width:100%">
+          ${TRACK_STEPS.map(s=>`<option value="${s}" ${s===ts?'selected':''}>${TRACK_LABELS[s]}</option>`).join('')}
+        </select>
+      </td>
+      <td><small>${new Date(o.date).toLocaleDateString('en-IN')}<br>${new Date(o.date).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</small></td>
+      <td><button class="btn btn-secondary btn-sm" onclick="viewOrder('${o.id}')">View</button></td>
+    </tr>`;}).join('');
+}
+async function refreshOrders(){
+  toast('Refreshing orders…');
+  try{
+    const db=await getDB();
+    const{data:co}=await db.from('orders').select('*').order('created_at',{ascending:false});
+    if(co){setOrders(co);renderOrders();renderDashboard();toast('✅ Orders refreshed','ok')}
+  }catch(ex){toast('Refresh failed','err')}
+}
+async function changeStatus(id,status){
+  const all=getOrders();
+  const o=all.find(x=>x.id===id); if(!o) return;
+  o.status=status; setOrders(all);
+  try{const db=await getDB();await db.from('orders').update({status}).eq('id',id)}catch(ex){console.warn(ex)}
+  toast('Status updated','ok');
+}
+async function changeTracking(id,trackingStatus){
+  const all=getOrders();
+  const o=all.find(x=>x.id===id); if(!o) return;
+  o.trackingStatus=trackingStatus; setOrders(all);
+  try{const db=await getDB();await db.from('orders').update({trackingStatus}).eq('id',id)}catch(ex){console.warn(ex)}
+  toast('Tracking updated — customer can see this live ✅','ok');
+}
+function viewOrder(id){
+  const o=getOrders().find(x=>x.id===id); if(!o) return;
+  const items=o.items.map(i=>`  • ${i.name} × ${i.qty} = ₹${i.price*i.qty}`).join('\n');
+  alert(
+`ORDER ${o.id}
+${new Date(o.date).toLocaleString('en-IN')}
+
+CUSTOMER
+${o.customer.name}
+${o.customer.phone} · ${o.customer.email}
+${o.customer.address}, ${o.customer.city} - ${o.customer.pincode}
+
+ITEMS
+${items}
+
+Subtotal: ₹${o.subtotal}
+Shipping: ${o.shipping===0?'FREE':'₹'+o.shipping}
+TOTAL: ₹${o.total}
+Payment: ${o.payment}
+Status: ${o.status}`);
+}
+
+/* Settings */
+function fillSettingsForm(){
+  const s=getSettings();
+  const f=document.getElementById('settingsForm');
+  Object.keys(s).forEach(k=>{if(f.elements[k]) f.elements[k].value=s[k]});
+}
+async function saveSettings(e){
+  e.preventDefault();
+  const fd=new FormData(e.target);
+  const s={};fd.forEach((v,k)=>s[k]=isNaN(v)||['brand','phone','email','address','currency','razorpayKey'].includes(k)?v:+v);
+  setSettings(s);
+  try{
+    const db=await getDB();
+    const rows=Object.entries(s).map(([key,value])=>({key,value:String(value)}));
+    await db.from('settings').upsert(rows,{onConflict:'key'});
+  }catch(ex){console.warn(ex)}
+  toast('✅ Settings saved','ok');
+}
+function changePassword(e){
+  e.preventDefault();
+  const a=document.getElementById('np1').value,b=document.getElementById('np2').value;
+  if(a!==b){toast('Passwords don\'t match','err');return}
+  localStorage.setItem('niks_pw',a);
+  document.getElementById('np1').value='';document.getElementById('np2').value='';
+  toast('✅ Password updated','ok');
+}
+
+/* Backup */
+function exportData(){
+  const data={
+    exported:new Date().toISOString(),
+    products:getProducts(),
+    orders:getOrders(),
+    settings:getSettings()
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`niks-masala-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('✅ Backup downloaded','ok');
+}
+function importData(){
+  const f=document.getElementById('importFile').files[0];
+  if(!f){toast('Select a file first','err');return}
+  if(!confirm('This will replace ALL current data. Continue?')) return;
+  const r=new FileReader();
+  r.onload=async e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      const db=await getDB();
+      if(d.products){
+        setProducts(d.products);
+        await db.from('products').delete().neq('id','__x__');
+        await db.from('products').insert(d.products.map(_toCloud));
+      }
+      if(d.orders){
+        setOrders(d.orders);
+        await db.from('orders').upsert(d.orders.map(o=>({id:o.id,date:o.date,customer:o.customer,notes:o.notes||'',items:o.items,subtotal:o.subtotal,shipping:o.shipping,discount:o.discount,total:o.total,payment:o.payment,payment_id:o.payment_id||null,status:o.status})));
+      }
+      if(d.settings){
+        setSettings(d.settings);
+        const rows=Object.entries(d.settings).map(([key,value])=>({key,value:String(value)}));
+        await db.from('settings').upsert(rows,{onConflict:'key'});
+      }
+      toast('✅ Data restored','ok');
+      setTimeout(()=>location.reload(),900);
+    }catch(err){toast('Invalid backup file','err')}
+  };
+  r.readAsText(f);
+}
+async function clearOrders(){
+  if(!confirm('Delete ALL orders permanently?')) return;
+  setOrders([]);
+  try{const db=await getDB();await db.from('orders').delete().neq('id','__x__')}catch(ex){console.warn(ex)}
+  toast('Orders cleared','ok'); renderDashboard();
+}
+async function factoryReset(){
+  if(!confirm('⚠️ Factory reset erases ALL products, orders, settings and password. Continue?')) return;
+  if(!confirm('Are you absolutely sure? This cannot be undone.')) return;
+  ['niks_products','niks_orders','niks_settings','niks_pw','niks_cart'].forEach(k=>localStorage.removeItem(k));
+  try{
+    const db=await getDB();
+    await Promise.all([
+      db.from('orders').delete().neq('id','__x__'),
+      db.from('settings').delete().neq('key','__x__'),
+      db.from('products').delete().neq('id','__x__'),
+      db.from('users').delete().neq('email','__x__')
+    ]);
+  }catch(ex){console.warn(ex)}
+  toast('Factory reset done','ok');
+  setTimeout(()=>location.reload(),900);
+}
+
+/* Toast */
+function toast(msg,type){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show'+(type==='ok'?' ok':'');
+  clearTimeout(window._tt);window._tt=setTimeout(()=>t.className='toast',2500);
+}
+</script>
+</body>
+</html>

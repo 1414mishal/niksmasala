@@ -1,0 +1,307 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Account — Niks Masala</title>
+<link rel="icon" href="nikslogomain.jpg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div id="siteHeader"></div>
+
+<div class="page-head">
+  <h1 id="accHead">My Account</h1>
+  <p id="accSub">Sign in to manage your orders and preferences</p>
+</div>
+
+<div class="breadcrumb"><div class="breadcrumb-inner container">
+  <a href="index.html">Home</a><span class="breadcrumb-sep">›</span>Account
+</div></div>
+
+<div id="accPanel"></div>
+
+<div id="siteFooter"></div>
+
+<script src="assets/app.js"></script>
+<script>
+mountHeaderFooter('');
+
+function getUser(){try{return JSON.parse(localStorage.getItem('niks_user')||'null')}catch(e){return null}}
+function setUser(u){localStorage.setItem('niks_user',JSON.stringify(u))}
+function signOut(){localStorage.removeItem('niks_user');render()}
+
+/* Fetch this customer's orders — cloud first, localStorage fallback */
+async function getMyOrders(email){
+  try{
+    const all=await getOrdersFromCloud();
+    if(all&&all.length) return all.filter(o=>o.customer&&o.customer.email===email);
+  }catch(e){}
+  return JSON.parse(localStorage.getItem('niks_orders')||'[]').filter(o=>o.customer&&o.customer.email===email);
+}
+
+/* ---------- RENDER ---------- */
+async function render(){
+  const u=getUser();
+  const box=document.getElementById('accPanel');
+  if(!u){
+    document.getElementById('accHead').textContent='Sign In / Register';
+    box.innerHTML=`
+      <div style="max-width:980px;margin:50px auto;padding:0 24px;display:grid;grid-template-columns:1fr 1fr;gap:30px" id="authGrid">
+        <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px">
+          <h3 style="font-size:22px;margin-bottom:6px">Sign In</h3>
+          <p style="color:var(--muted);font-size:14px;margin-bottom:20px">Welcome back! Please sign in to your account.</p>
+          <form onsubmit="doLogin(event)">
+            <div class="form-row"><label>Email *</label><input type="email" name="email" required></div>
+            <div class="form-row"><label>Password *</label><input type="password" name="pw" required minlength="4"></div>
+            <button type="submit" class="btn btn-primary" style="width:100%">Sign In</button>
+            <p style="margin-top:12px;font-size:13px;color:var(--muted);text-align:center"><a href="#" onclick="showForgot();return false" style="color:var(--red);font-weight:600">Forgot password?</a></p>
+          </form>
+        </div>
+        <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px">
+          <h3 style="font-size:22px;margin-bottom:6px">Create Account</h3>
+          <p style="color:var(--muted);font-size:14px;margin-bottom:20px">New to Niks Masala? Create an account for faster checkout.</p>
+          <form onsubmit="doRegister(event)">
+            <div class="form-row"><label>Full Name *</label><input type="text" name="name" required></div>
+            <div class="form-row"><label>Email *</label><input type="email" name="email" required></div>
+            <div class="form-row"><label>Phone</label><input type="tel" name="phone"></div>
+            <div class="form-row"><label>Password *</label><input type="password" name="pw" required minlength="4"></div>
+            <div class="form-row"><label>Security Question *</label>
+              <select name="question" required>
+                <option value="">Select a question</option>
+                <option>What is your mother\'s maiden name?</option>
+                <option>What was the name of your first pet?</option>
+                <option>What city were you born in?</option>
+                <option>What was the name of your first school?</option>
+                <option>What is your favorite dish?</option>
+              </select>
+            </div>
+            <div class="form-row"><label>Answer *</label><input type="text" name="answer" required placeholder="Used if you forget your password"></div>
+            <button type="submit" class="btn btn-dark" style="width:100%">Create Account</button>
+          </form>
+        </div>
+      </div>`;
+    return;
+  }
+  document.getElementById('accHead').textContent=`Hello, ${u.name.split(' ')[0]} 👋`;
+  document.getElementById('accSub').textContent='Manage your orders, addresses & account details';
+  const orders=await getMyOrders(u.email);
+  box.innerHTML=`
+    <div style="max-width:1200px;margin:40px auto;padding:0 24px;display:grid;grid-template-columns:260px 1fr;gap:28px">
+      <aside style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px;align-self:start">
+        <div style="text-align:center;padding-bottom:18px;border-bottom:1px solid var(--line);margin-bottom:14px">
+          <div style="width:72px;height:72px;margin:0 auto 10px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:28px;font-weight:700">${u.name[0].toUpperCase()}</div>
+          <strong>${u.name}</strong><br>
+          <small style="color:var(--muted)">${u.email}</small>
+        </div>
+        <nav style="display:flex;flex-direction:column;gap:4px">
+          <a href="#" onclick="tab('dash');return false" class="acc-nav active" style="padding:10px 14px;border-radius:6px;font-size:14px">📊 Dashboard</a>
+          <a href="#" onclick="tab('orders');return false" class="acc-nav" style="padding:10px 14px;border-radius:6px;font-size:14px">📦 My Orders (${orders.length})</a>
+          <a href="#" onclick="tab('profile');return false" class="acc-nav" style="padding:10px 14px;border-radius:6px;font-size:14px">👤 Profile</a>
+          <a href="#" onclick="signOut()" class="acc-nav" style="padding:10px 14px;border-radius:6px;font-size:14px;color:var(--red)">🚪 Sign Out</a>
+        </nav>
+      </aside>
+      <main><div id="accTab"></div></main>
+    </div>`;
+  _drawTab('dash',orders,u);
+}
+
+/* ---------- TAB ---------- */
+async function tab(t){
+  document.querySelectorAll('.acc-nav').forEach(a=>a.classList.remove('active'));
+  const u=getUser(); if(!u) return;
+  const orders=await getMyOrders(u.email);
+  _drawTab(t,orders,u);
+}
+
+function _drawTab(t,orders,u){
+  const box=document.getElementById('accTab'); if(!box) return;
+  const total=orders.reduce((s,o)=>s+(+o.total||0),0);
+  if(t==='dash'){
+    box.innerHTML=`
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+        <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px"><div style="font-size:12px;color:var(--muted);letter-spacing:1px">ORDERS</div><div style="font-family:'Roboto Slab',serif;font-size:30px;color:var(--red);margin-top:4px">${orders.length}</div></div>
+        <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px"><div style="font-size:12px;color:var(--muted);letter-spacing:1px">TOTAL SPENT</div><div style="font-family:'Roboto Slab',serif;font-size:30px;color:var(--red);margin-top:4px">${money(total)}</div></div>
+        <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px"><div style="font-size:12px;color:var(--muted);letter-spacing:1px">LOYALTY POINTS</div><div style="font-family:'Roboto Slab',serif;font-size:30px;color:var(--gold);margin-top:4px">${Math.floor(total/10)}</div></div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:24px">
+        <h3 style="font-size:18px;margin-bottom:14px">Recent Orders</h3>
+        ${orders.length===0?'<p style="color:var(--muted);padding:20px 0">No orders yet. <a href="shop.html" style="color:var(--red)">Shop now →</a></p>':
+        orders.slice(0,3).map(o=>`<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)"><div><strong>${o.id}</strong><br><small style="color:var(--muted)">${new Date(o.date||o.created_at).toLocaleDateString('en-IN')}</small></div><div style="text-align:right"><strong style="color:var(--red)">${money(o.total)}</strong><br><small>${o.status}</small></div></div>`).join('')}
+      </div>`;
+  }
+  if(t==='orders'){
+    box.innerHTML=`
+      <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:24px">
+        <h3 style="font-size:18px;margin-bottom:18px">My Orders</h3>
+        ${orders.length===0?'<p style="color:var(--muted);text-align:center;padding:40px 0">No orders yet. <a href="shop.html" style="color:var(--red)">Start shopping →</a></p>':
+        orders.map(o=>`
+          <div style="border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+              <div><strong>${o.id}</strong> · <small style="color:var(--muted)">${new Date(o.date||o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</small></div>
+              <span style="background:var(--cream);color:var(--red);padding:4px 12px;border-radius:50px;font-size:12px;font-weight:600">${o.status}</span>
+            </div>
+            <div style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap">${(o.items||[]).map(i=>`<div style="width:48px;height:48px;border-radius:6px;overflow:hidden"><img src="${i.image}" style="width:100%;height:100%;object-fit:cover" title="${i.name}"></div>`).join('')}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--line);font-size:14px">
+              <span style="color:var(--muted)">${(o.items||[]).reduce((s,i)=>s+i.qty,0)} items · ${o.payment}</span>
+              <strong style="color:var(--red);font-size:16px">${money(o.total)}</strong>
+            </div>
+          </div>`).join('')}
+      </div>`;
+  }
+  if(t==='profile'){
+    box.innerHTML=`
+      <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:24px">
+        <h3 style="font-size:18px;margin-bottom:18px">Profile Details</h3>
+        <form onsubmit="saveProfile(event)">
+          <div class="form-grid-2">
+            <div class="form-row"><label>Full Name</label><input type="text" name="name" value="${u.name}" required></div>
+            <div class="form-row"><label>Phone</label><input type="tel" name="phone" value="${u.phone||''}"></div>
+          </div>
+          <div class="form-row"><label>Email</label><input type="email" name="email" value="${u.email}" required></div>
+          <button class="btn btn-primary">Save Changes</button>
+        </form>
+      </div>`;
+  }
+}
+
+/* ---------- AUTH ---------- */
+async function doLogin(e){
+  e.preventDefault();
+  const f=new FormData(e.target);
+  const email=f.get('email').trim().toLowerCase();
+  const pw=f.get('pw');
+  // Cloud first
+  const cu=await getUserFromCloud(email);
+  if(cu){
+    if(cu.pw!==pw){toast('Invalid email or password','err');return}
+    setUser({name:cu.name,email:cu.email,phone:cu.phone||''});
+    toast('Welcome back!','ok');render();return;
+  }
+  // localStorage fallback
+  const users=JSON.parse(localStorage.getItem('niks_users')||'[]');
+  const u=users.find(x=>x.email===email&&x.pw===pw);
+  if(!u){toast('Invalid email or password','err');return}
+  setUser({name:u.name,email:u.email,phone:u.phone||''});
+  toast('Welcome back!','ok');render();
+}
+
+async function doRegister(e){
+  e.preventDefault();
+  const f=new FormData(e.target);
+  const email=f.get('email').trim().toLowerCase();
+  const existing=await getUserFromCloud(email);
+  if(existing){toast('Email already registered','err');return}
+  const users=JSON.parse(localStorage.getItem('niks_users')||'[]');
+  if(users.find(x=>x.email===email)){toast('Email already registered','err');return}
+  const nu={name:f.get('name'),email,phone:f.get('phone')||'',pw:f.get('pw'),
+    question:f.get('question'),answer:(f.get('answer')||'').trim().toLowerCase()};
+  users.push(nu);
+  localStorage.setItem('niks_users',JSON.stringify(users));
+  saveUserToCloud(nu);
+  setUser({name:nu.name,email:nu.email,phone:nu.phone});
+  toast('Account created! 🎉','ok');render();
+}
+
+async function saveProfile(e){
+  e.preventDefault();
+  const f=new FormData(e.target);
+  const u={name:f.get('name'),email:f.get('email'),phone:f.get('phone')||''};
+  setUser(u);
+  const users=JSON.parse(localStorage.getItem('niks_users')||'[]');
+  const i=users.findIndex(x=>x.email===u.email);
+  if(i>=0){users[i]={...users[i],...u};localStorage.setItem('niks_users',JSON.stringify(users))}
+  try{const db=await getSB();await db.from('users').update({name:u.name,phone:u.phone}).eq('email',u.email)}catch(_){}
+  toast('Profile updated','ok');render();
+}
+
+/* ---------- FORGOT PASSWORD ---------- */
+function showForgot(){
+  document.getElementById('authGrid').innerHTML=`
+    <div style="grid-column:1/-1;max-width:480px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px">
+      <h3 style="font-size:22px;margin-bottom:6px">Forgot Password</h3>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:20px">Enter your registered email to continue.</p>
+      <form onsubmit="forgotStep1(event)">
+        <div class="form-row"><label>Email *</label><input type="email" name="email" required autofocus></div>
+        <button type="submit" class="btn btn-primary" style="width:100%">Continue →</button>
+        <p style="margin-top:12px;font-size:13px;text-align:center"><a href="#" onclick="render();return false" style="color:var(--muted)">← Back to sign in</a></p>
+      </form>
+    </div>`;
+}
+
+async function forgotStep1(e){
+  e.preventDefault();
+  const email=e.target.elements.email.value.trim().toLowerCase();
+  let u=await getUserFromCloud(email);
+  if(!u){
+    const users=JSON.parse(localStorage.getItem('niks_users')||'[]');
+    u=users.find(x=>x.email.toLowerCase()===email)||null;
+  }
+  if(!u){toast('No account found with that email','err');return}
+  if(!u.question){
+    if(confirm('This account has no security question. Reset via phone number?')){
+      const phone=prompt('Enter the phone on your account:');
+      if(!phone||phone.trim()!==(u.phone||'').trim()){toast('Phone number doesn\'t match','err');return}
+      forgotStep3(u);
+    }
+    return;
+  }
+  document.getElementById('authGrid').innerHTML=`
+    <div style="grid-column:1/-1;max-width:480px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px">
+      <h3 style="font-size:22px;margin-bottom:6px">Security Check</h3>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:6px">Answer your security question to continue.</p>
+      <p style="font-size:14px;margin-bottom:20px;background:var(--cream);padding:12px 14px;border-radius:6px;border-left:3px solid var(--red)"><strong>${u.question}</strong></p>
+      <form onsubmit="forgotStep2(event,'${u.email}')">
+        <div class="form-row"><label>Your Answer *</label><input type="text" name="answer" required autofocus></div>
+        <button type="submit" class="btn btn-primary" style="width:100%">Verify →</button>
+        <p style="margin-top:12px;font-size:13px;text-align:center"><a href="#" onclick="render();return false" style="color:var(--muted)">← Cancel</a></p>
+      </form>
+    </div>`;
+}
+
+async function forgotStep2(e,email){
+  e.preventDefault();
+  const answer=e.target.elements.answer.value.trim().toLowerCase();
+  let u=await getUserFromCloud(email);
+  if(!u){const users=JSON.parse(localStorage.getItem('niks_users')||'[]');u=users.find(x=>x.email===email)||null}
+  if(!u){toast('Account not found','err');render();return}
+  if(answer!==(u.answer||'').trim().toLowerCase()){toast('Incorrect answer. Try again.','err');return}
+  forgotStep3(u);
+}
+
+function forgotStep3(u){
+  document.getElementById('authGrid').innerHTML=`
+    <div style="grid-column:1/-1;max-width:480px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px">
+      <h3 style="font-size:22px;margin-bottom:6px">Set a New Password</h3>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:20px">✓ Verified. New password for <strong>${u.email}</strong>.</p>
+      <form onsubmit="forgotStep4(event,'${u.email}')">
+        <div class="form-row"><label>New Password *</label><input type="password" name="pw1" required minlength="4" autofocus></div>
+        <div class="form-row"><label>Confirm Password *</label><input type="password" name="pw2" required minlength="4"></div>
+        <button type="submit" class="btn btn-primary" style="width:100%">Reset Password</button>
+      </form>
+    </div>`;
+}
+
+async function forgotStep4(e,email){
+  e.preventDefault();
+  const p1=e.target.elements.pw1.value,p2=e.target.elements.pw2.value;
+  if(p1!==p2){toast('Passwords don\'t match','err');return}
+  const users=JSON.parse(localStorage.getItem('niks_users')||'[]');
+  const i=users.findIndex(x=>x.email===email);
+  if(i>=0){users[i].pw=p1;localStorage.setItem('niks_users',JSON.stringify(users))}
+  try{const db=await getSB();await db.from('users').update({pw:p1}).eq('email',email)}catch(_){}
+  toast('✓ Password reset! Please sign in.','ok');
+  setTimeout(render,800);
+}
+
+render();
+</script>
+<style>
+.acc-nav{color:var(--ink);text-decoration:none;transition:all .2s;display:block}
+.acc-nav:hover{background:var(--cream)}
+.acc-nav.active{background:var(--red);color:#fff}
+</style>
+</body>
+</html>
+
