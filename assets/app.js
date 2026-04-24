@@ -463,7 +463,6 @@ function productCardHTML(p){
       </a>
     </div>
     <div class="product-card-body">
-      <div class="product-cat-tag">${p.category}</div>
       <h3><a href="product.html?id=${p.id}">${p.name}</a></h3>
       <div class="stars">${stars} <span>(${p.reviews||0})</span></div>
       ${hasMany?`

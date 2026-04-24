@@ -7,6 +7,16 @@
 <link rel="icon" href="nikslogomain.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
+<style>
+@media(max-width:600px){
+  /* Order summary meta — stack to 2x2 */
+  #ty [style*="grid-template-columns:repeat(4,1fr)"]{grid-template-columns:repeat(2,1fr)!important}
+  /* Address + What's Next — stack to 1 column */
+  #ty [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important}
+  /* Tracking banner — stack */
+  #ty [style*="justify-content:space-between"]{flex-direction:column!important;gap:14px!important;align-items:flex-start!important}
+}
+</style>
 </head>
 <body>
 <div id="siteHeader"></div>
