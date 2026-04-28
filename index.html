@@ -75,28 +75,28 @@
     </div>
     <div class="vs-reel">
       <div class="reel-card" onclick="toggleReel(this)">
-        <video src="IMG_1944.MOV" playsinline preload="metadata"></video>
+        <video src="IMG_1944.MOV" poster="assets/IMG_1944-poster.jpg" playsinline preload="none"></video>
         <div class="reel-play"></div>
         <div class="reel-sound-badge">▶ Tap to play</div>
         <button class="reel-mute-btn" onclick="event.stopPropagation();toggleMute(this)" title="Mute / Unmute">🔊</button>
         <div class="reel-label">Niks Masala Ad</div>
       </div>
       <div class="reel-card" onclick="toggleReel(this)">
-        <video src="IMG_1947.MOV" playsinline preload="metadata"></video>
+        <video src="IMG_1947.MOV" poster="assets/IMG_1947-poster.jpg" playsinline preload="none"></video>
         <div class="reel-play"></div>
         <div class="reel-sound-badge">▶ Tap to play</div>
         <button class="reel-mute-btn" onclick="event.stopPropagation();toggleMute(this)" title="Mute / Unmute">🔊</button>
         <div class="reel-label">Our Kitchen</div>
       </div>
       <div class="reel-card" onclick="toggleReel(this)">
-        <video src="IMG_1948.MOV" playsinline preload="metadata"></video>
+        <video src="IMG_1948.MOV" poster="assets/IMG_1948-poster.jpg" playsinline preload="none"></video>
         <div class="reel-play"></div>
         <div class="reel-sound-badge">▶ Tap to play</div>
         <button class="reel-mute-btn" onclick="event.stopPropagation();toggleMute(this)" title="Mute / Unmute">🔊</button>
         <div class="reel-label">The Craft</div>
       </div>
       <div class="reel-card" onclick="toggleReel(this)">
-        <video src="IMG_1949.MOV" playsinline preload="metadata"></video>
+        <video src="IMG_1949.MOV" poster="assets/IMG_1949-poster.jpg" playsinline preload="none"></video>
         <div class="reel-play"></div>
         <div class="reel-sound-badge">▶ Tap to play</div>
         <button class="reel-mute-btn" onclick="event.stopPropagation();toggleMute(this)" title="Mute / Unmute">🔊</button>
@@ -119,7 +119,10 @@ function toggleReel(card){
     }
   });
   if(vid.paused){
-    vid.play();
+    // Force load on mobile (preload=none means video isn't ready)
+    if(vid.readyState===0) vid.load();
+    const p=vid.play();
+    if(p&&p.catch) p.catch(()=>{});
     card.classList.add('playing');
     badge.textContent='⏹ Tap to stop';
     // Auto-stop when video ends (plays once)
