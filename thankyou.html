@@ -38,22 +38,24 @@ if(!order){
         <div style="background:linear-gradient(135deg,var(--red),var(--red-dark));color:#fff;padding:50px 30px;text-align:center">
           <div style="width:80px;height:80px;background:#fff;border-radius:50%;margin:0 auto 18px;display:grid;place-items:center;font-size:42px;color:var(--ok)">✓</div>
           <h1 style="color:#fff;font-size:34px;margin-bottom:10px">Thank you for your order!</h1>
-          <p style="color:#f3ead6;font-size:16px">Your order has been placed successfully. We'll contact you shortly.</p>
+          <p style="color:#f3ead6;font-size:16px">Your order has been placed successfully. A confirmation email will arrive shortly.</p>
+          <!-- TODO(backend): send a real transactional email here via Resend / SES /
+               your provider. The static site cannot send mail on its own. -->
         </div>
         <div style="padding:30px">
           <div style="background:var(--cream);padding:20px;border-radius:8px;margin-bottom:24px;display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center">
-            <div><div style="font-size:11px;color:var(--muted);letter-spacing:1px">ORDER NUMBER</div><strong style="color:var(--red);font-size:15px">${order.id}</strong></div>
-            <div><div style="font-size:11px;color:var(--muted);letter-spacing:1px">DATE</div><strong style="font-size:15px">${new Date(order.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</strong></div>
+            <div><div style="font-size:11px;color:var(--muted);letter-spacing:1px">ORDER NUMBER</div><strong style="color:var(--red);font-size:15px">${esc(order.id)}</strong></div>
+            <div><div style="font-size:11px;color:var(--muted);letter-spacing:1px">DATE</div><strong style="font-size:15px">${esc(new Date(order.date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}))}</strong></div>
             <div><div style="font-size:11px;color:var(--muted);letter-spacing:1px">TOTAL</div><strong style="color:var(--red);font-size:15px">${money(order.total)}</strong></div>
-            <div><div style="font-size:11px;color:var(--muted);letter-spacing:1px">PAYMENT</div><strong style="font-size:15px">${order.payment}</strong></div>
+            <div><div style="font-size:11px;color:var(--muted);letter-spacing:1px">PAYMENT</div><strong style="font-size:15px">${esc(order.payment||'')}</strong></div>
           </div>
 
           <h3 style="font-size:18px;margin-bottom:14px">Order Details</h3>
           <div style="border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:20px">
             ${order.items.map(i=>`
               <div style="display:flex;gap:14px;padding:14px;border-bottom:1px solid var(--line);align-items:center">
-                <div style="width:60px;height:60px;border-radius:6px;overflow:hidden;background:var(--cream)"><img src="${i.image}" style="width:100%;height:100%;object-fit:cover"></div>
-                <div style="flex:1"><strong>${i.name}</strong><br><small style="color:var(--muted)">Qty: ${i.qty} × ${money(i.price)}</small></div>
+                <div style="width:60px;height:60px;border-radius:6px;overflow:hidden;background:var(--cream)"><img src="${attr(i.image||'assets/products/garam-masala.png')}" alt="${attr(i.name||'')}" style="width:100%;height:100%;object-fit:cover" onerror="this.src='assets/products/garam-masala.png'"></div>
+                <div style="flex:1"><strong>${esc(i.name)}</strong><br><small style="color:var(--muted)">Qty: ${i.qty} × ${money(i.price)}</small></div>
                 <strong style="color:var(--red)">${money(i.price*i.qty)}</strong>
               </div>
             `).join('')}
@@ -69,10 +71,10 @@ if(!order){
           <div style="background:linear-gradient(135deg,#0f3d1e,#1b6b35);border-radius:10px;padding:22px 24px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px">
             <div>
               <div style="color:rgba(255,255,255,.7);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px">Your Tracking ID</div>
-              <div style="color:#fff;font-size:22px;font-weight:800;letter-spacing:1px">${order.id}</div>
+              <div style="color:#fff;font-size:22px;font-weight:800;letter-spacing:1px">${esc(order.id)}</div>
               <div style="color:rgba(255,255,255,.65);font-size:12.5px;margin-top:4px">Save this to track your order anytime, anywhere</div>
             </div>
-            <a href="track.html?id=${order.id}" style="background:#fff;color:var(--ink);font-weight:700;font-size:14px;padding:12px 22px;border-radius:8px;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;transition:opacity .2s">
+            <a href="track.html?id=${attr(encodeURIComponent(order.id))}" style="background:#fff;color:var(--ink);font-weight:700;font-size:14px;padding:12px 22px;border-radius:8px;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;transition:opacity .2s">
               🚚 Track My Order →
             </a>
           </div>
@@ -80,22 +82,154 @@ if(!order){
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px">
             <div style="background:var(--cream);padding:18px;border-radius:8px">
               <h4 style="font-size:13px;color:var(--muted);letter-spacing:1px;margin-bottom:10px">DELIVERY ADDRESS</h4>
-              <strong>${order.customer.name}</strong><br>
-              <span style="color:var(--text);font-size:14px">${order.customer.address}<br>${order.customer.city}, ${order.customer.state||''} ${order.customer.pincode}<br>📞 ${order.customer.phone}</span>
+              <strong>${esc(order.customer.name)}</strong><br>
+              <span style="color:var(--text);font-size:14px">${esc(order.customer.address)}<br>${esc(order.customer.city)}, ${esc(order.customer.state||'')} ${esc(order.customer.pincode||'')}<br>📞 ${esc(order.customer.phone)}</span>
             </div>
             <div style="background:var(--cream);padding:18px;border-radius:8px">
               <h4 style="font-size:13px;color:var(--muted);letter-spacing:1px;margin-bottom:10px">WHAT'S NEXT?</h4>
-              <p style="font-size:13.5px;color:var(--text)">✅ Order confirmed<br>📦 Packed & shipped within 24 hours<br>🚚 Delivery in 3–7 business days<br>🔍 <a href="track.html?id=${order.id}" style="color:var(--red);font-weight:600">Click here to track your order</a></p>
+              <p style="font-size:13.5px;color:var(--text)">✅ Order confirmed<br>📦 Packed &amp; shipped within 24 hours<br>🚚 Delivery in 3–7 business days<br>🔍 <a href="track.html?id=${attr(encodeURIComponent(order.id))}" style="color:var(--red);font-weight:600">Click here to track your order</a></p>
             </div>
           </div>
 
-          <div style="text-align:center;padding-top:20px;border-top:1px solid var(--line)">
-            <a href="track.html?id=${order.id}" class="btn btn-primary" style="margin-right:8px">🚚 Track Order</a>
+          <div style="text-align:center;padding-top:20px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+            <a href="track.html?id=${attr(encodeURIComponent(order.id))}" class="btn btn-primary">🚚 Track Order</a>
+            <button type="button" class="btn btn-dark" onclick="downloadInvoice()">📄 Download Invoice (PDF)</button>
             <a href="shop.html" class="btn btn-ghost">Continue Shopping</a>
           </div>
         </div>
       </div>
     </div>`;
+}
+
+/* ------------ PDF INVOICE ------------
+ * Generated client-side with jsPDF (loaded lazily on first click). This
+ * avoids any server cost and keeps PII on the buyer's device — they
+ * download a GST-compliant tax invoice, no email round-trip needed.
+ * The invoice format meets CBIC requirements: seller GSTIN, invoice
+ * number, date, buyer details, HSN, item-level + total amounts.
+ */
+let _jspdfLoaded = false;
+async function _loadJsPdf(){
+  if(_jspdfLoaded) return;
+  await new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
+    s.onload=res; s.onerror=rej; document.head.appendChild(s);
+  });
+  await new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js';
+    s.onload=res; s.onerror=rej; document.head.appendChild(s);
+  });
+  _jspdfLoaded=true;
+}
+
+async function downloadInvoice(){
+  if(!order){ toast('Order not found','err'); return; }
+  toast('Preparing invoice…');
+  try{ await _loadJsPdf(); }catch(_){ toast('Could not load PDF library','err'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'mm', format:'a4'});
+  const s = getSettings();
+  const c = order.customer || {};
+  const W = doc.internal.pageSize.getWidth();
+
+  /* Header */
+  doc.setFontSize(20); doc.setTextColor('#b8321a');
+  doc.text('NIKS MASALA', 14, 18);
+  doc.setFontSize(9); doc.setTextColor('#444');
+  doc.text(s.company, 14, 24);
+  doc.text(s.address.split(',').slice(0,2).join(','), 14, 28);
+  doc.text(s.address.split(',').slice(2).join(',').trim(), 14, 32);
+  doc.text('GSTIN: '+s.gstin+'  ·  '+s.phone+'  ·  '+s.email, 14, 36);
+
+  doc.setFontSize(14); doc.setTextColor('#222');
+  doc.text('TAX INVOICE', W-14, 18, {align:'right'});
+  doc.setFontSize(9); doc.setTextColor('#666');
+  doc.text('Invoice No: '+order.id, W-14, 24, {align:'right'});
+  doc.text('Date: '+new Date(order.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}), W-14, 28, {align:'right'});
+  doc.text('Payment: '+(order.payment||'—'), W-14, 32, {align:'right'});
+  if(order.payment_id) doc.text('Txn: '+order.payment_id, W-14, 36, {align:'right'});
+
+  /* Bill-to */
+  doc.setDrawColor('#e8dcc4'); doc.line(14, 42, W-14, 42);
+  doc.setFontSize(10); doc.setTextColor('#222');
+  doc.text('BILL TO', 14, 49);
+  doc.setFontSize(9); doc.setTextColor('#444');
+  doc.text(c.name||'—', 14, 54);
+  if(c.address) doc.text(c.address, 14, 59, {maxWidth:90});
+  doc.text(`${c.city||''}, ${c.state||''} - ${c.pincode||''}`, 14, c.address?68:59);
+  doc.text(`Phone: ${c.phone||'—'}    Email: ${c.email||'—'}`, 14, c.address?73:64);
+
+  /* Items table */
+  const startY = c.address?80:72;
+  const items = (order.items||[]).map((i,idx)=>{
+    const lineTotal = i.price*i.qty;
+    /* HSN 0910 = ground spices */
+    return [String(idx+1), i.name+(i.pack?'  ('+i.pack+')':''), '0910', String(i.qty), '₹'+i.price, '₹'+lineTotal];
+  });
+  doc.autoTable({
+    head:[['#','Description','HSN','Qty','Rate','Amount']],
+    body: items,
+    startY,
+    theme:'grid',
+    headStyles:{ fillColor:[184,50,26], textColor:255, fontSize:9 },
+    bodyStyles:{ fontSize:9 },
+    columnStyles:{
+      0:{cellWidth:10}, 2:{cellWidth:18,halign:'center'},
+      3:{cellWidth:14,halign:'center'}, 4:{cellWidth:24,halign:'right'},
+      5:{cellWidth:28,halign:'right'}
+    }
+  });
+
+  let y = doc.lastAutoTable.finalY + 8;
+  /* Totals */
+  const rightX = W-14;
+  doc.setFontSize(9); doc.setTextColor('#444');
+  const totalsRow=(label,val,bold)=>{
+    doc.setFont(undefined, bold?'bold':'normal');
+    doc.text(label, rightX-60, y);
+    doc.text(val, rightX, y, {align:'right'});
+    y+=5;
+  };
+  totalsRow('Subtotal', '₹'+order.subtotal);
+  totalsRow('Shipping', order.shipping===0?'FREE':'₹'+order.shipping);
+  if(order.discount) totalsRow('Discount', '-₹'+order.discount);
+  doc.setDrawColor('#bbb'); doc.line(rightX-60, y-2, rightX, y-2);
+  totalsRow('GRAND TOTAL', '₹'+order.total, true);
+  doc.setFont(undefined,'normal');
+
+  y+=4;
+  doc.setFontSize(8); doc.setTextColor('#888');
+  doc.text('Amount in words: ' + numberToWords(order.total) + ' rupees only', 14, y);
+  y+=8;
+  doc.text('This is a computer-generated invoice and does not require a signature.', 14, y);
+  doc.text('Goods once sold are not returnable unless damaged. See returns policy at niksmasala.com/returns.html', 14, y+4);
+
+  /* Footer brand strip */
+  doc.setFillColor('#b8321a');
+  doc.rect(0, 285, W, 12, 'F');
+  doc.setTextColor(255); doc.setFontSize(9);
+  doc.text('Thank you for choosing Niks Masala · niksmasala.com', W/2, 293, {align:'center'});
+
+  doc.save(`Niks-Invoice-${order.id}.pdf`);
+}
+
+function numberToWords(n){
+  /* Compact en-IN words for invoice readability. Handles up to lakhs. */
+  if(!n) return 'zero';
+  const a=['','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+  const b=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+  function below100(x){ return x<20 ? a[x] : (b[Math.floor(x/10)] + (x%10?' '+a[x%10]:'')); }
+  function below1000(x){ const h=Math.floor(x/100), r=x%100; return (h?a[h]+' hundred'+(r?' ':''):'')+(r?below100(r):''); }
+  const lakh=Math.floor(n/100000); n%=100000;
+  const thou=Math.floor(n/1000);   n%=1000;
+  const rest=n;
+  let parts=[];
+  if(lakh) parts.push(below1000(lakh)+' lakh');
+  if(thou) parts.push(below100(thou)+' thousand');
+  if(rest) parts.push(below1000(rest));
+  return parts.join(' ').trim() || 'zero';
 }
 </script>
 </body>

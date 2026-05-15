@@ -12,3 +12,25 @@ desktop.ini
 
 # Claude internal
 .claude/
+
+# Large/sensitive files — do NOT ship to GitHub Pages
+*.pptx
+*.pdf
+*.psd
+*.ai
+*.sketch
+*.fig
+*.zip
+*.rar
+
+# Originals (commit optimised .mp4 / .webp instead)
+*.MOV
+*.mov
+# (existing IMG_*.MOV are already tracked — git rm them with --cached if you want to evict)
+
+# Local env / keys
+.env
+.env.*
+*.key
+*.pem
+secrets.json

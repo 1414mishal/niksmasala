@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /account.html
+Disallow: /checkout.html
+Disallow: /thankyou.html
+Disallow: /cart.html
+Disallow: /track.html
+
+Sitemap: https://niksmasala.com/sitemap.xml

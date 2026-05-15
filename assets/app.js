@@ -1,9 +1,44 @@
-﻿/* ========= NIKS MASALA — SHARED APP JS ========= */
-/* Handles: product catalog, cart, checkout, header/footer injection, utilities */
+/* ========= NIKS MASALA — SHARED APP JS =========
+ * Demo build. Issues that MUST be addressed before going live are
+ * flagged with "TODO(backend):" — these require a server (Cloudflare
+ * Worker / Vercel function / Supabase Edge Function) and CANNOT be
+ * fixed in a static-site context. Do not accept real money until
+ * those TODOs are closed.
+ */
 
 const LOGO = 'nikslogomain.jpg';
 
-/* Local product images — stored in assets/products/ */
+/* ---------- Safety helpers ---------- */
+/* HTML-escape any string before it goes into innerHTML. Prevents stored XSS
+   from admin-supplied product names, order notes, customer addresses, etc. */
+function esc(s){
+  if(s==null) return '';
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+/* attribute-context escape — same set, useful where context is an attr */
+const attr = esc;
+/* URL-encode for href/src */
+function uri(s){ return encodeURIComponent(s==null?'':String(s)); }
+
+/* SHA-256 hash for passwords (band-aid — a real backend with bcrypt is still required).
+   Used so passwords are not stored in plaintext in localStorage or Supabase. */
+async function hashPw(pw, salt){
+  const data = new TextEncoder().encode((salt||'niks')+':'+(pw||''));
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+/* Cryptographically random order ID — replaces predictable Date.now() */
+function newOrderId(){
+  const r = new Uint8Array(5); crypto.getRandomValues(r);
+  const hex = Array.from(r).map(b=>b.toString(16).padStart(2,'0')).join('').toUpperCase();
+  const yy = new Date().getFullYear().toString().slice(-2);
+  return 'NM' + yy + '-' + hex;
+}
+
+/* ---------- Product image lookup ---------- */
 const IMG = {
   turmeric:   'assets/products/turmeric.png',
   redchilli:  'assets/products/red-chilli.png',
@@ -29,15 +64,12 @@ const IMG = {
   garam:      'assets/products/garam-masala.png',
   soya:       'assets/products/soya.png',
   methi:      'assets/products/kasuri-methi.jpg',
-  sabji:      'assets/products/sabji-masala.jpg',
-  /* fallback Unsplash for products without a local image */
-  paste:      'https://images.unsplash.com/photo-1599639668273-cc4318f7dff9?w=700&q=80',
-  papad:      'https://images.unsplash.com/photo-1589301773859-bb024586d6be?w=700&q=80',
-  asafoetida: 'https://images.unsplash.com/photo-1599639957043-f3aa5c986398?w=700&q=80'
+  sabji:      'assets/products/sabji-masala.jpg'
 };
+const FALLBACK_IMG = 'assets/products/garam-masala.png';
 
 function _pick(name){
-  const n=name.toLowerCase();
+  const n=(name||'').toLowerCase();
   if(n.includes('turmeric'))                        return IMG.turmeric;
   if(n.includes('kashmiri'))                        return IMG.kashmiri;
   if(n.includes('red chilli')||n.includes('red chili')) return IMG.redchilli;
@@ -67,33 +99,27 @@ function _pick(name){
   if(n.includes('garam'))                           return IMG.garam;
   if(n.includes('soya'))                            return IMG.soya;
   if(n.includes('methi'))                           return IMG.methi;
-  if(n.includes('asafoetida'))                      return IMG.asafoetida;
-  if(n.includes('ginger')||n.includes('garlic'))    return IMG.paste;
-  if(n.includes('papad'))                           return IMG.papad;
-  return IMG.garam;
+  return FALLBACK_IMG;
 }
 
 function _cat(name){
-  const n=name.toLowerCase();
-  // Direct Grinding — pure single ground spices
+  const n=(name||'').toLowerCase();
   if(n==='turmeric powder'||n==='red chilli powder'||n==='coriander powder'||
      n==='kashmiri chilli powder'||n==='jeera powder'||n==='black pepper powder')
     return 'Direct Grinding';
-  // Non-Veg Specialities — all meat/fish/chicken/egg
   if(n.includes('chicken')||n.includes('fish')||n.includes('mutton')||
      n.includes('meat')||n.includes('egg')||n.includes('bafath'))
     return 'Non-Veg Specialities';
-  // Ready-Mix Products — pastes, convenience items, whole extras
   if(n.includes('papad')||n.includes('kasuri')||n.includes('soya')||
      n.includes('ginger')||n.includes('garlic')||n.includes('asafoetida'))
     return 'Ready-Mix Products';
-  // Veg Specialities — all remaining masala blends (sambar, rasam, garam, etc.)
   return 'Veg Specialities';
 }
 
 function _slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
 
-/* ---- Grouped catalog: one entry per product, variants = size/pack options ---- */
+/* ---- Grouped catalog: one entry per product, variants = size/pack options ----
+   SINGLE SOURCE OF TRUTH. admin.html now imports from this file. */
 const _RAW = [
   {name:'Turmeric Powder', variants:[
     {pack:'50gm Pouch',grams:50,price:25},{pack:'100gm Pouch',grams:100,price:45},
@@ -190,7 +216,7 @@ const _RAW = [
   {name:'Kasuri Methi', variants:[
     {pack:'25gm Box',grams:25,price:38}]},
   {name:'Soya Chunks', variants:[
-    {pack:'200gm Box',grams:200,price:60},{pack:'1 KG Pouch',grams:1000,price:300}]},
+    {pack:'200gm Box',grams:200,price:60},{pack:'1 KG Pouch',grams:1000,price:300}]}
 ];
 
 const _DESCRIPTIONS = {
@@ -209,6 +235,9 @@ const _DESCRIPTIONS = {
   'Coriander Powder':'Freshly ground coriander — earthy, fragrant and kitchen-essential.'
 };
 
+/* Ratings & review counts removed — we don't have real customer reviews yet.
+   Showing fabricated numbers is a violation of the Consumer Protection
+   (E-Commerce) Rules 2020 and ASCI guidelines. */
 const DEFAULT_PRODUCTS = _RAW.map((r,i)=>{
   const desc = _DESCRIPTIONS[r.name] || 'Authentic Mangalorean spice blend — traditionally crafted, export-quality.';
   const minPrice = Math.min(...r.variants.map(v=>v.price));
@@ -219,9 +248,7 @@ const DEFAULT_PRODUCTS = _RAW.map((r,i)=>{
     category: _cat(r.name),
     image: _pick(r.name),
     variants: r.variants,
-    price: minPrice,          // lowest variant price — used for sorting/filtering
-    rating: 4.6 + (i%4)*0.1,
-    reviews: 20 + (i*7)%180,
+    price: minPrice,
     desc,
     long: desc + ' Packed at our FSSAI-certified, 11,000 sq.ft. facility in Yeyyadi, Mangalore.',
     badge: r.badge || null,
@@ -241,6 +268,9 @@ const DEFAULT_SETTINGS = {
   shippingFee:60,
   shippingFeeHeavy:120,
   instagram:'https://www.instagram.com/niks.masala/',
+  /* TODO(backend): move this to a server env var and pass an `order_id`
+     issued by your Razorpay server-side `orders.create` call. Never trust
+     `amount` computed in the browser. */
   razorpayKey:'rzp_test_SgFzfBVh4i57d2'
 };
 
@@ -251,7 +281,6 @@ function setCart(c){localStorage.setItem('niks_cart',JSON.stringify(c));updateCa
 function cartCount(){return getCart().reduce((s,i)=>s+i.qty,0)}
 function cartSubtotal(){return getCart().reduce((s,i)=>s+i.price*i.qty,0)}
 function cartWeight(){
-  // Each cart item now carries its own grams value
   return getCart().reduce((s,i)=>s+(i.grams||100)*i.qty, 0);
 }
 function computeShipping(){
@@ -263,7 +292,6 @@ function computeShipping(){
   return w>=1000 ? s.shippingFeeHeavy : s.shippingFee;
 }
 
-/* Track which variant is selected per product card (variantIdx) */
 const _selectedVariant = {};
 
 function addToCart(id, qty=1){
@@ -284,7 +312,6 @@ function updateCartItem(cartKey,qty){
 }
 function removeFromCart(cartKey){setCart(getCart().filter(x=>x.cartKey!==cartKey))}
 
-/* Called by variant pill buttons to switch selected size */
 function selectVariant(id, idx){
   _selectedVariant[id]=idx;
   const p=getProducts().find(x=>x.id===id); if(!p) return;
@@ -322,17 +349,16 @@ function qs(n){return new URLSearchParams(location.search).get(n)}
 /* ====== HEADER + FOOTER INJECTION ====== */
 function buildHeader(activePage){
   const s=getSettings();
-  const logoHTML=`<a href="index.html" class="brand">
-    <img src="${LOGO}" alt="Niks Masala" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
-    <div class="brand-fallback" style="display:none">N</div>
+  const logoHTML=`<a href="index.html" class="brand" aria-label="Niks Masala home">
+    <img src="${attr(LOGO)}" alt="Niks Masala" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+    <div class="brand-fallback" style="display:none" aria-hidden="true">N</div>
   </a>`;
   const links=[
     {href:'index.html',label:'Home',key:'home'},
     {href:'shop.html',label:'Shop',key:'shop'},
-    {href:'shop.html?cat=Masala%20Blends',label:'Masala Blends',key:'masala'},
-    {href:'shop.html?cat=Non-Veg%20Masalas',label:'Non-Veg Masalas',key:'nonveg'},
-    {href:'shop.html?cat=Ground%20Spices',label:'Ground Spices',key:'ground'},
-    {href:'shop.html?cat=Specialty',label:'Specialty',key:'special'},
+    {href:'shop.html?cat=Direct%20Grinding',label:'Ground Spices',key:'ground'},
+    {href:'shop.html?cat=Veg%20Specialities',label:'Veg Masalas',key:'veg'},
+    {href:'shop.html?cat=Non-Veg%20Specialities',label:'Non-Veg Masalas',key:'nonveg'},
     {href:'index.html#recipes',label:'Recipes',key:'recipes'},
     {href:'about.html',label:'About',key:'about'},
     {href:'contact.html',label:'Contact',key:'contact'}
@@ -343,38 +369,37 @@ function buildHeader(activePage){
     <div class="container">
       <div class="header-main">
         ${logoHTML}
-        <form class="search-form" onsubmit="searchShop(event)">
-          <input type="text" name="q" placeholder="Search for spices, masalas, blends..." aria-label="Search">
+        <form class="search-form" onsubmit="searchShop(event)" role="search">
+          <input type="text" name="q" placeholder="Search for spices, masalas, blends..." aria-label="Search products">
           <button type="submit">🔍 <span>Search</span></button>
         </form>
         <div class="header-actions">
-          <a href="${s.instagram}" target="_blank" rel="noopener" class="icon-link ig-link" title="Instagram">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+          <a href="${attr(s.instagram)}" target="_blank" rel="noopener" class="icon-link ig-link" title="Instagram" aria-label="Instagram @niks.masala">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
             <span class="label"><span>Follow</span><strong>@niks.masala</strong></span>
           </a>
-          <a href="account.html" class="icon-link" title="Account">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+          <a href="account.html" class="icon-link" title="Account" aria-label="My account">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
             <span class="label"><span>Hello</span><strong>Account</strong></span>
           </a>
-          <a href="cart.html" class="icon-link" title="Cart" onclick="event.preventDefault();openCartDrawer()">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <a href="cart.html" class="icon-link" title="Cart" aria-label="Open shopping cart" onclick="event.preventDefault();openCartDrawer()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
             <span class="cart-badge" data-cart-count>0</span>
             <span class="label"><span>Your</span><strong>Cart</strong></span>
           </a>
         </div>
       </div>
     </div>
-    <nav class="main-nav">
+    <nav class="main-nav" aria-label="Main">
       <div class="container main-nav-inner">
-        <button class="menu-toggle" onclick="document.getElementById('mainMenu').classList.toggle('open')" aria-label="Menu">☰ Menu</button>
+        <button class="menu-toggle" onclick="document.getElementById('mainMenu').classList.toggle('open')" aria-label="Toggle menu" aria-expanded="false">☰ Menu</button>
         <ul id="mainMenu">
-          ${links.map(l=>`<li><a href="${l.href}" ${l.key===activePage?'class="active"':''}>${l.label}</a></li>`).join('')}
+          ${links.map(l=>`<li><a href="${attr(l.href)}" ${l.key===activePage?'class="active" aria-current="page"':''}>${esc(l.label)}</a></li>`).join('')}
         </ul>
-        <div class="main-nav-right">📞 <strong>${s.phone}</strong></div>
+        <div class="main-nav-right">📞 <strong>${esc(s.phone)}</strong></div>
       </div>
     </nav>
   </header>
-  <!-- Green brand strip -->
   <div class="green-strip">
     <div class="container green-strip-inner">
       <span>🌿 Authentic Mangalorean Flavours</span>
@@ -390,52 +415,57 @@ function buildFooter(){
   return `
   <section class="newsletter">
     <h2>Join the Niks Family</h2>
-    <p>Subscribe for exclusive recipes, early access to new blends & 10% off your first order.</p>
-    <form class="news-form" onsubmit="event.preventDefault();toast('Welcome aboard! 🌶️','ok');this.reset()">
-      <input type="email" placeholder="Your email address" required>
+    <p>Subscribe for exclusive recipes, early access to new blends &amp; 10% off your first order.</p>
+    <form class="news-form" onsubmit="handleNewsletter(event)">
+      <input type="email" name="email" placeholder="Your email address" required aria-label="Your email address">
       <button type="submit">Subscribe</button>
     </form>
   </section>
   <footer class="site-footer">
     <div class="footer-grid">
       <div class="footer-col">
-        <a href="index.html" class="brand" style="margin-bottom:14px">
-          <img src="${LOGO}" alt="Niks Masala" style="height:56px;background:#fff;padding:4px;border-radius:6px" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
-          <div class="brand-fallback" style="display:none;background:radial-gradient(circle at 30% 30%,var(--gold),var(--red))">N</div>
+        <a href="index.html" class="brand" style="margin-bottom:14px" aria-label="Niks Masala home">
+          <img src="${attr(LOGO)}" alt="Niks Masala" style="height:56px;background:#fff;padding:4px;border-radius:6px" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+          <div class="brand-fallback" style="display:none;background:radial-gradient(circle at 30% 30%,var(--gold),var(--red))" aria-hidden="true">N</div>
         </a>
-        <p>The Taste of Mangalorean Tradition. Premium, handcrafted Indian masalas & spices — delivered fresh from our Mangalore facility to your kitchen.</p>
+        <p>The Taste of Mangalorean Tradition. Premium, handcrafted Indian masalas &amp; spices — delivered fresh from our Mangalore facility to your kitchen.</p>
         <div class="socials">
-          <a href="${s.instagram}" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+          <a href="${attr(s.instagram)}" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
           </a>
-          <a href="https://wa.me/${s.phone.replace(/\D/g,'')}" target="_blank" rel="noopener" aria-label="WhatsApp">💬</a>
-          <a href="mailto:${s.email}" aria-label="Email">✉</a>
-          <a href="tel:${s.phone.replace(/\s/g,'')}" aria-label="Call">📞</a>
+          <a href="https://wa.me/${attr(s.phone.replace(/\D/g,''))}" target="_blank" rel="noopener" aria-label="WhatsApp">💬</a>
+          <a href="mailto:${attr(s.email)}" aria-label="Email">✉</a>
+          <a href="tel:${attr(s.phone.replace(/\s/g,''))}" aria-label="Call">📞</a>
         </div>
       </div>
       <div class="footer-col"><h5>Shop</h5><ul>
         <li><a href="shop.html">All Products</a></li>
-        <li><a href="shop.html?cat=Masala%20Blends">Masala Blends</a></li>
-        <li><a href="shop.html?cat=Non-Veg%20Masalas">Non-Veg Masalas</a></li>
-        <li><a href="shop.html?cat=Ground%20Spices">Ground Spices</a></li>
-        <li><a href="shop.html?cat=Specialty">Specialty</a></li>
+        <li><a href="shop.html?cat=Direct%20Grinding">Ground Spices</a></li>
+        <li><a href="shop.html?cat=Veg%20Specialities">Veg Masalas</a></li>
+        <li><a href="shop.html?cat=Non-Veg%20Specialities">Non-Veg Masalas</a></li>
+        <li><a href="shop.html?cat=Ready-Mix%20Products">Ready-Mix</a></li>
       </ul></div>
       <div class="footer-col"><h5>Company</h5><ul>
         <li><a href="about.html">About Us</a></li>
         <li><a href="index.html#recipes">Recipes</a></li>
         <li><a href="contact.html">Contact</a></li>
-        <li><a href="contact.html#shipping">Shipping Info</a></li>
-        <li><a href="admin.html">Admin Login</a></li>
+        <li><a href="track.html">Track Order</a></li>
+      </ul></div>
+      <div class="footer-col"><h5>Policies</h5><ul>
+        <li><a href="shipping.html">Shipping Policy</a></li>
+        <li><a href="returns.html">Returns &amp; Refunds</a></li>
+        <li><a href="privacy.html">Privacy Policy</a></li>
+        <li><a href="terms.html">Terms &amp; Conditions</a></li>
       </ul></div>
       <div class="footer-col"><h5>Get in Touch</h5>
-        <p style="font-size:13.5px;margin-bottom:10px"><strong>${s.company}</strong><br>${s.address}</p>
-        <p style="font-size:13px;margin-bottom:6px">📞 <a href="tel:${s.phone.replace(/\s/g,'')}">${s.phone}</a></p>
-        <p style="font-size:13px;margin-bottom:6px">✉ <a href="mailto:${s.email}">${s.email}</a></p>
-        <p style="font-size:12px;color:#c9b999;margin-top:8px">GSTIN: ${s.gstin}</p>
+        <p style="font-size:13.5px;margin-bottom:10px"><strong>${esc(s.company)}</strong><br>${esc(s.address)}</p>
+        <p style="font-size:13px;margin-bottom:6px">📞 <a href="tel:${attr(s.phone.replace(/\s/g,''))}">${esc(s.phone)}</a></p>
+        <p style="font-size:13px;margin-bottom:6px">✉ <a href="mailto:${attr(s.email)}">${esc(s.email)}</a></p>
+        <p style="font-size:12px;color:#c9b999;margin-top:8px">GSTIN: ${esc(s.gstin)} · FSSAI Lic. (display in production)</p>
       </div>
     </div>
     <div class="footer-bot">
-      <div>© ${new Date().getFullYear()} <strong style="color:#fff">Niks Masala</strong> · ${s.company}. All rights reserved.</div>
+      <div>© ${new Date().getFullYear()} <strong style="color:#fff">Niks Masala</strong> · ${esc(s.company)}. All rights reserved.</div>
       <div>Made with ❤️ in Mangalore · Pure · Aromatic · Traditional</div>
     </div>
   </footer>`;
@@ -444,36 +474,59 @@ function buildFooter(){
 function searchShop(e){
   e.preventDefault();
   const q=e.target.elements.q.value.trim();
-  if(q) location.href=`shop.html?q=${encodeURIComponent(q)}`;
+  if(q) location.href=`shop.html?q=${uri(q)}`;
 }
 
-/* ====== PRODUCT CARD TEMPLATE (variant-aware) ====== */
+/* Newsletter handler — POSTs to the Cloudflare Pages Function which
+   inserts via the SERVICE_ROLE key. Falls back to localStorage during
+   local development so the form still appears to work. */
+async function handleNewsletter(e){
+  e.preventDefault();
+  const email=(e.target.elements.email.value||'').trim().toLowerCase();
+  if(!email) return;
+  try{
+    const r=await fetch('/api/newsletter',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email})
+    });
+    if(!r.ok) throw new Error('api');
+  }catch(_){
+    const list=JSON.parse(localStorage.getItem('niks_newsletter')||'[]');
+    if(!list.includes(email)){list.push(email);localStorage.setItem('niks_newsletter',JSON.stringify(list))}
+  }
+  toast('Welcome aboard! 🌶️','ok');
+  e.target.reset();
+}
+
+/* ====== PRODUCT CARD TEMPLATE (XSS-safe, no fake ratings) ====== */
 function productCardHTML(p){
-  const stars = '★'.repeat(Math.round(p.rating||4.5)) + '☆'.repeat(5-Math.round(p.rating||4.5));
   const variants = p.variants || [{pack:p.weight||'',grams:p.grams||100,price:p.price}];
   const first = variants[0];
   const hasMany = variants.length > 1;
+  const badgeHtml = p.badge==='NEW'      ? `<span class="new-badge">NEW</span>`
+                  : p.badge==='BESTSELLER'? `<span class="new-badge bestseller-badge">BESTSELLER</span>`
+                  : p.badge              ? `<span class="new-badge">${esc(p.badge)}</span>`
+                                         : '';
   return `
   <article class="product-card">
     <div class="product-card-img">
-      ${p.badge==='NEW'?`<span class="new-badge">NEW</span>`:''}
-      ${p.badge==='BESTSELLER'?`<span class="new-badge bestseller-badge">BESTSELLER</span>`:''}
-      <a href="product.html?id=${p.id}">
-        <img src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.src='assets/products/garam-masala.png'">
+      ${badgeHtml}
+      <a href="product.html?id=${attr(p.id)}" aria-label="View ${attr(p.name)}">
+        <img src="${attr(p.image||FALLBACK_IMG)}" alt="${attr(p.name)}" loading="lazy" onerror="this.src='${FALLBACK_IMG}'">
       </a>
     </div>
     <div class="product-card-body">
-      <h3><a href="product.html?id=${p.id}">${p.name}</a></h3>
-      <div class="stars">${stars} <span>(${p.reviews||0})</span></div>
+      <h3><a href="product.html?id=${attr(p.id)}">${esc(p.name)}</a></h3>
       ${hasMany?`
-      <div class="variant-pills" id="vpills-${p.id}">
-        ${variants.map((v,i)=>`<button class="variant-pill${i===0?' active':''}" onclick="selectVariant('${p.id}',${i})">${v.pack}</button>`).join('')}
-      </div>`:`<div class="single-pack-tag">${first.pack}</div>`}
+      <div class="variant-pills" id="vpills-${attr(p.id)}">
+        ${variants.map((v,i)=>`<button type="button" class="variant-pill${i===0?' active':''}" onclick="selectVariant('${attr(p.id)}',${i})">${esc(v.pack)}</button>`).join('')}
+      </div>`:`<div class="single-pack-tag">${esc(first.pack)}</div>`}
       <div class="price-row">
         ${hasMany?`<span class="from-label">from</span>`:''}
-        <span class="price" id="vprice-${p.id}">${money(first.price)}</span>
+        <span class="price" id="vprice-${attr(p.id)}">${money(first.price)}</span>
       </div>
-      <button class="add-cart-btn" onclick="addToCart('${p.id}')">ADD TO CART</button>
+      <button class="add-cart-btn" onclick="addToCart('${attr(p.id)}')">ADD TO CART</button>
     </div>
   </article>`;
 }
@@ -482,7 +535,6 @@ function productCardHTML(p){
 function mountHeaderFooter(activeKey){
   const h=document.getElementById('siteHeader'); if(h) h.innerHTML=buildHeader(activeKey);
   const f=document.getElementById('siteFooter'); if(f) f.innerHTML=buildFooter();
-  // Cart drawer
   if(!document.getElementById('cartDrawer')){
     const ov=document.createElement('div');
     ov.id='cartDrawerOverlay'; ov.className='cart-drawer-overlay';
@@ -490,29 +542,53 @@ function mountHeaderFooter(activeKey){
     document.body.appendChild(ov);
     const dr=document.createElement('div');
     dr.id='cartDrawer'; dr.className='cart-drawer';
+    dr.setAttribute('role','dialog');
+    dr.setAttribute('aria-label','Shopping cart');
     dr.innerHTML=`
       <div class="cart-drawer-head">
         <div style="display:flex;align-items:center;gap:10px">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           <h3>Your Cart</h3><span class="cd-count-badge" id="cdCount">0</span>
         </div>
-        <button class="cd-close" onclick="closeCartDrawer()" aria-label="Close">✕</button>
+        <button class="cd-close" onclick="closeCartDrawer()" aria-label="Close cart">✕</button>
       </div>
       <div class="cart-drawer-body" id="cdBody"></div>
       <div class="cart-drawer-foot" id="cdFoot"></div>`;
     document.body.appendChild(dr);
   }
-  // Mobile floating cart button
-  if(!document.getElementById('mobileCartBtn')){
+  /* Mobile floating cart button — hidden on cart and checkout pages to avoid
+     duplicate UI; only shown when cart has items. */
+  const path=(location.pathname||'').toLowerCase();
+  const suppressMobileFab = /cart\.html$|checkout\.html$/.test(path);
+  if(!document.getElementById('mobileCartBtn') && !suppressMobileFab){
     const btn=document.createElement('a');
     btn.id='mobileCartBtn'; btn.href='cart.html'; btn.className='mobile-cart-btn';
+    btn.setAttribute('aria-label','View cart');
     btn.innerHTML=`🛒 <span>Cart</span> <span class="mobile-cart-count" id="mobileCartCount">${cartCount()}</span>`;
     document.body.appendChild(btn);
+  }
+  /* WhatsApp click-to-chat — free alternative to a paid SMS gateway. Clicking
+     opens the user's WhatsApp with a pre-filled message. Suppressed on
+     checkout to avoid distracting from purchase flow. */
+  const suppressWA = /checkout\.html$/.test(path);
+  if(!document.getElementById('waFab') && !suppressWA){
+    const s=getSettings();
+    const wa=document.createElement('a');
+    wa.id='waFab';
+    wa.href=`https://wa.me/${s.phone.replace(/\D/g,'')}?text=${encodeURIComponent('Hi Niks Masala — I have a question.')}`;
+    wa.target='_blank'; wa.rel='noopener';
+    wa.setAttribute('aria-label','Chat with us on WhatsApp');
+    wa.title='Chat on WhatsApp';
+    wa.style.cssText='position:fixed;bottom:18px;left:18px;width:54px;height:54px;border-radius:50%;background:#25D366;color:#fff;display:grid;place-items:center;font-size:28px;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:300;text-decoration:none;transition:transform .2s';
+    wa.onmouseover=()=>wa.style.transform='scale(1.08)';
+    wa.onmouseout=()=>wa.style.transform='scale(1)';
+    wa.innerHTML=`<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>`;
+    document.body.appendChild(wa);
   }
   updateCartBadge();
 }
 
-/* ====== CART DRAWER ====== */
+/* ====== CART DRAWER (XSS-safe) ====== */
 function openCartDrawer(){
   renderCartDrawer();
   document.getElementById('cartDrawer').classList.add('open');
@@ -539,20 +615,20 @@ function renderCartDrawer(){
   }
   body.innerHTML=cart.map(i=>`
     <div class="cd-item">
-      <img src="${i.image}" alt="${i.name}" onerror="this.src='assets/products/garam-masala.png'">
+      <img src="${attr(i.image||FALLBACK_IMG)}" alt="${attr(i.name)}" onerror="this.src='${FALLBACK_IMG}'">
       <div class="cd-item-info">
-        <div class="cd-item-name">${i.name}</div>
-        <div class="cd-item-pack">${i.pack||''}</div>
+        <div class="cd-item-name">${esc(i.name)}</div>
+        <div class="cd-item-pack">${esc(i.pack||'')}</div>
         <div class="cd-item-row">
           <div class="cd-qty">
-            <button onclick="updateCartItem('${i.cartKey}',${i.qty-1});renderCartDrawer()">−</button>
+            <button onclick="updateCartItem('${attr(i.cartKey)}',${i.qty-1});renderCartDrawer()" aria-label="Decrease quantity">−</button>
             <span>${i.qty}</span>
-            <button onclick="updateCartItem('${i.cartKey}',${i.qty+1});renderCartDrawer()">+</button>
+            <button onclick="updateCartItem('${attr(i.cartKey)}',${i.qty+1});renderCartDrawer()" aria-label="Increase quantity">+</button>
           </div>
           <span class="cd-item-price">${money(i.price*i.qty)}</span>
         </div>
       </div>
-      <button class="cd-remove" onclick="removeFromCart('${i.cartKey}');renderCartDrawer()" title="Remove">✕</button>
+      <button class="cd-remove" onclick="removeFromCart('${attr(i.cartKey)}');renderCartDrawer()" title="Remove" aria-label="Remove ${attr(i.name)}">✕</button>
     </div>`).join('');
   const sub=cartSubtotal();
   const ship=computeShipping();
@@ -566,14 +642,18 @@ function renderCartDrawer(){
       <div class="cd-total-row cd-grand"><span>Total</span><strong>${money(total)}</strong></div>
     </div>
     <a href="checkout.html" class="btn btn-primary cd-checkout-btn">CHECKOUT →</a>
-    <a href="cart.html" class="cd-viewcart-link" onclick="closeCartDrawer()">View Full Cart</a>`;
+    <a href="cart.html" class="cd-viewcart-link">View Full Cart</a>`;
 }
 
 window.addEventListener('storage',e=>{
   if(e.key==='niks_cart'){updateCartBadge();renderCartDrawer();}
 });
 
-/* ====== SUPABASE CLOUD SYNC ====== */
+/* ====== SUPABASE CLOUD SYNC ======
+ * NOTE: the anon key is intentionally public — that is how Supabase is
+ * designed. Security lives in Row Level Security (see supabase-schema.sql).
+ * Until RLS is correctly configured, treat *everything* in Supabase as
+ * publicly readable. Do NOT put production PII in this database. */
 const _SB_URL='https://jvjjqbzwqrnvrpiihbnt.supabase.co';
 const _SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2ampxYnp3cXJudnJwaWloYm50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3ODU0NTksImV4cCI6MjA5MjM2MTQ1OX0.35q6KQU0yAV0IQn__1t2sVkRpgxiswG_ne50C87sFps';
 let _sbClient=null;
@@ -581,10 +661,10 @@ let _sbClient=null;
 async function getSB(){
   if(_sbClient) return _sbClient;
   if(!window.supabase){
-    await new Promise(r=>{
+    await new Promise((res,rej)=>{
       const s=document.createElement('script');
       s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
-      s.onload=r; document.head.appendChild(s);
+      s.onload=res; s.onerror=rej; document.head.appendChild(s);
     });
   }
   _sbClient=window.supabase.createClient(_SB_URL,_SB_KEY);
@@ -614,6 +694,7 @@ async function getOrdersFromCloud(){
 }
 
 async function saveUserToCloud(u){
+  /* `u.pw` should already be SHA-256 hashed before reaching this function. */
   try{
     const db=await getSB();
     await db.from('users').upsert({
@@ -631,12 +712,33 @@ async function getUserFromCloud(email){
   }catch(e){return null}
 }
 
-/* Force-clear stale catalog from localStorage */
+/* ====== Cloudflare Web Analytics ======
+ * Free, no cookies, GDPR-friendly. Replace TOKEN below with the value
+ * from Cloudflare Dashboard → Web Analytics → Add a site → "JS snippet".
+ * The token is a public string and safe to commit. If unset, the snippet
+ * is a no-op — analytics simply doesn't run. */
+(function(){
+  const TOKEN = window.CF_ANALYTICS_TOKEN || ''; // set this once you have a Cloudflare account
+  if(!TOKEN) return;
+  if(document.querySelector('script[data-cf-beacon]')) return;
+  const s = document.createElement('script');
+  s.defer = true;
+  s.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+  s.setAttribute('data-cf-beacon', JSON.stringify({token: TOKEN}));
+  document.head.appendChild(s);
+})();
+
+/* Force-clear stale catalog from localStorage on version bump.
+   We keep the cart this time — previous behaviour wiped customer carts on every
+   deploy which is awful UX. If the cart schema actually changes, bump
+   niks_cart_version too. */
 try{
-  if(localStorage.getItem('niks_products_version')!=='v6-cats'){
+  if(localStorage.getItem('niks_products_version')!=='v7-clean'){
     localStorage.removeItem('niks_products');
-    localStorage.removeItem('niks_cart'); // clear old cart — variant structure changed
-    localStorage.setItem('niks_products_version','v6-cats');
+    localStorage.setItem('niks_products_version','v7-clean');
+  }
+  if(localStorage.getItem('niks_cart_version')!=='v2-variants'){
+    localStorage.removeItem('niks_cart');
+    localStorage.setItem('niks_cart_version','v2-variants');
   }
 }catch(e){}
-

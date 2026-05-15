@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Contact Us — Niks Masala</title>
+<title>Contact Niks Masala — Wholesale, Support &amp; Partnerships</title>
+<meta name="description" content="Contact Niks Masala for product support, wholesale enquiries, partnerships and feedback. Mangaluru, Karnataka. Reply within 24 hours.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://niksmasala.com/contact.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Contact Niks Masala">
+<meta property="og:description" content="Wholesale, support and partnership enquiries. Mangaluru, Karnataka.">
+<meta property="og:image" content="https://niksmasala.com/nikslogomain.jpg">
 <link rel="icon" href="nikslogomain.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
@@ -136,19 +143,53 @@ const FAQ=[
 ];
 document.getElementById('faqList').innerHTML=FAQ.map((f,i)=>`
   <details style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px 20px">
-    <summary style="cursor:pointer;font-weight:600;font-size:15px;color:var(--ink);outline:none;list-style:none;display:flex;justify-content:space-between;align-items:center">${f[0]} <span style="color:var(--red);font-size:20px">+</span></summary>
-    <p style="margin-top:12px;color:var(--muted);font-size:14px;line-height:1.7">${f[1]}</p>
+    <summary style="cursor:pointer;font-weight:600;font-size:15px;color:var(--ink);outline:none;list-style:none;display:flex;justify-content:space-between;align-items:center">${esc(f[0])} <span style="color:var(--red);font-size:20px">+</span></summary>
+    <p style="margin-top:12px;color:var(--muted);font-size:14px;line-height:1.7">${esc(f[1])}</p>
   </details>
 `).join('');
 
-function handleContact(e){
+/* Pre-fill subject from URL (e.g. ?subject=Review from product page) */
+(function(){
+  const sub=qs('subject');
+  if(sub){
+    const sel=document.querySelector('select[name="subject"]');
+    if(sel){const opt=Array.from(sel.options).find(o=>o.value===sub||o.textContent===sub);if(opt) sel.value=opt.value||opt.textContent}
+  }
+})();
+
+async function handleContact(e){
   e.preventDefault();
   const f=new FormData(e.target);
-  const msgs=JSON.parse(localStorage.getItem('niks_messages')||'[]');
-  msgs.unshift({...Object.fromEntries(f),date:new Date().toISOString()});
-  localStorage.setItem('niks_messages',JSON.stringify(msgs));
+  const msg={
+    name:(f.get('name')||'').trim(),
+    email:(f.get('email')||'').trim().toLowerCase(),
+    phone:(f.get('phone')||'').trim(),
+    subject:f.get('subject')||'',
+    msg:(f.get('msg')||'').trim()
+  };
+  const btn=e.target.querySelector('button[type="submit"]');
+  if(btn){ btn.disabled=true; btn.textContent='Sending…'; }
+  try{
+    const r=await fetch('/api/contact',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(msg)
+    });
+    if(!r.ok){
+      const j=await r.json().catch(()=>({}));
+      toast(j.error||'Could not send. Please try again.','err');
+      if(btn){ btn.disabled=false; btn.textContent='Send Message →'; }
+      return;
+    }
+  }catch(_){
+    /* Offline fallback so the form still works locally */
+    const msgs=JSON.parse(localStorage.getItem('niks_messages')||'[]');
+    msgs.unshift({...msg,date:new Date().toISOString()});
+    localStorage.setItem('niks_messages',JSON.stringify(msgs));
+  }
   toast('✓ Message sent! We\'ll get back within 24 hours.','ok');
   e.target.reset();
+  if(btn){ btn.disabled=false; btn.textContent='Send Message →'; }
 }
 </script>
 </body>

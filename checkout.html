@@ -76,29 +76,45 @@ if(cart.length===0){
           <div class="form-row"><label>Last Name *</label><input type="text" name="lname" required></div>
         </div>
         <div class="form-grid-2">
-          <div class="form-row"><label>Email *</label><input type="email" name="email" required></div>
-          <div class="form-row"><label>Phone *</label><input type="tel" name="phone" required pattern="[0-9]{10}" title="10 digit phone"></div>
+          <div class="form-row"><label>Email *</label><input type="email" name="email" required autocomplete="email"></div>
+          <div class="form-row"><label>Phone *</label><input type="tel" name="phone" required pattern="^(\+?91[\s\-]?)?[6-9]\d{9}$" title="10-digit Indian mobile, optionally prefixed with +91" placeholder="10-digit mobile" autocomplete="tel"></div>
         </div>
 
         <h3 style="margin-top:20px">Shipping Address</h3>
-        <div class="form-row"><label>Address Line *</label><input type="text" name="address" required placeholder="House no., Street, Area"></div>
+        <div class="form-row"><label>Address Line *</label><input type="text" name="address" required placeholder="House no., Street, Area" autocomplete="street-address"></div>
         <div class="form-row"><label>Landmark (optional)</label><input type="text" name="landmark"></div>
         <div class="form-grid-2">
-          <div class="form-row"><label>City *</label><input type="text" name="city" required></div>
-          <div class="form-row"><label>State *</label>
-            <select name="state" required>
-              <option value="">Select State</option>
-              <option>Andhra Pradesh</option><option>Assam</option><option>Bihar</option>
-              <option>Delhi</option><option>Goa</option><option>Gujarat</option>
-              <option>Haryana</option><option>Karnataka</option><option>Kerala</option>
-              <option>Madhya Pradesh</option><option>Maharashtra</option><option>Odisha</option>
-              <option>Punjab</option><option>Rajasthan</option><option>Tamil Nadu</option>
-              <option>Telangana</option><option>Uttar Pradesh</option><option>West Bengal</option>
+          <div class="form-row"><label>City *</label><input type="text" name="city" required autocomplete="address-level2"></div>
+          <div class="form-row"><label>State / UT *</label>
+            <select name="state" required autocomplete="address-level1">
+              <option value="">Select State / UT</option>
+              <optgroup label="States">
+                <option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option>
+                <option>Bihar</option><option>Chhattisgarh</option><option>Goa</option>
+                <option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option>
+                <option>Jharkhand</option><option>Karnataka</option><option>Kerala</option>
+                <option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option>
+                <option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option>
+                <option>Odisha</option><option>Punjab</option><option>Rajasthan</option>
+                <option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option>
+                <option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option>
+                <option>West Bengal</option>
+              </optgroup>
+              <optgroup label="Union Territories">
+                <option>Andaman &amp; Nicobar Islands</option>
+                <option>Chandigarh</option>
+                <option>Dadra &amp; Nagar Haveli and Daman &amp; Diu</option>
+                <option>Delhi</option>
+                <option>Jammu &amp; Kashmir</option>
+                <option>Ladakh</option>
+                <option>Lakshadweep</option>
+                <option>Puducherry</option>
+              </optgroup>
             </select>
           </div>
         </div>
         <div class="form-grid-2">
-          <div class="form-row"><label>Pincode *</label><input type="text" name="pin" required maxlength="6" pattern="[0-9]{6}"></div>
+          <div class="form-row"><label>Pincode *</label><input type="text" name="pin" required maxlength="6" pattern="^[1-9]\d{5}$" title="6-digit Indian pincode" inputmode="numeric" autocomplete="postal-code"></div>
           <div class="form-row"><label>Country</label><input type="text" value="India" readonly></div>
         </div>
 
@@ -125,10 +141,10 @@ if(cart.length===0){
           ${cart.map(i=>`
             <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);align-items:center">
               <div style="width:56px;height:56px;border-radius:6px;overflow:hidden;background:var(--cream);flex-shrink:0;position:relative">
-                <img src="${i.image}" style="width:100%;height:100%;object-fit:cover">
+                <img src="${attr(i.image||'assets/products/garam-masala.png')}" alt="${attr(i.name||'')}" style="width:100%;height:100%;object-fit:cover" onerror="this.src='assets/products/garam-masala.png'">
                 <span style="position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700">${i.qty}</span>
               </div>
-              <div style="flex:1;min-width:0"><strong style="font-size:13px;display:block">${i.name}</strong><small style="color:var(--muted)">${money(i.price)} × ${i.qty}</small></div>
+              <div style="flex:1;min-width:0"><strong style="font-size:13px;display:block">${esc(i.name)}</strong><small style="color:var(--muted)">${money(i.price)} × ${i.qty}</small></div>
               <strong style="color:var(--red);font-size:14px">${money(i.price*i.qty)}</strong>
             </div>
           `).join('')}
@@ -141,83 +157,144 @@ if(cart.length===0){
     </div>`;
 }
 
-function placeOrder(e){
+/* Server-driven checkout.
+ *
+ *   1. POST /api/order/create → server recomputes the total from the DB-side
+ *      catalog and creates a Razorpay order. Browser never decides the price.
+ *   2. Razorpay collects payment using the server-issued order_id.
+ *   3. POST /api/order/verify → server HMAC-checks the Razorpay signature
+ *      before marking the order paid and firing the confirmation email.
+ *
+ * For COD the same /api/order/create call is used; we just skip the
+ * Razorpay step and mark the order Pending.
+ */
+async function placeOrder(e){
   e.preventDefault();
   const f=new FormData(e.target);
-  const sub=cartSubtotal();
-  const ship=computeShipping();
-  const disc=+localStorage.getItem('niks_discount')||0;
-  const discAmt=Math.round(sub*disc/100);
-  const total=sub+ship-discAmt;
-  const order={
-    id:'NM'+Date.now().toString().slice(-8),
-    date:new Date().toISOString(),
+  const phoneRaw=(f.get('phone')||'').replace(/\D/g,'');
+  const phone10=phoneRaw.length===12&&phoneRaw.startsWith('91')?phoneRaw.slice(2):phoneRaw.slice(-10);
+
+  const payload = {
+    items: cart.map(i=>({id:i.id, pack:i.pack, qty:i.qty})),
+    coupon: (localStorage.getItem('niks_coupon')||'').trim(),
+    payment: f.get('pay'),
+    notes: f.get('notes')||'',
     customer:{
-      name:f.get('fname')+' '+f.get('lname'),
-      email:f.get('email'),
-      phone:f.get('phone'),
-      address:f.get('address')+(f.get('landmark')?', '+f.get('landmark'):''),
-      city:f.get('city'),
-      state:f.get('state'),
-      pincode:f.get('pin')
-    },
-    notes:f.get('notes')||'',
-    items:cart,
-    subtotal:sub, shipping:ship, discount:discAmt, total:total,
-    payment:f.get('pay'), status:'Pending', trackingStatus:'placed'
+      name:((f.get('fname')||'')+' '+(f.get('lname')||'')).trim(),
+      email:(f.get('email')||'').trim().toLowerCase(),
+      phone: phone10,
+      address:(f.get('address')||'')+(f.get('landmark')?', '+f.get('landmark'):''),
+      city:f.get('city')||'',
+      state:f.get('state')||'',
+      pincode:f.get('pin')||''
+    }
   };
 
-  // COD — skip Razorpay
-  if(order.payment==='COD'){
-    finalizeOrder(order);
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  if(submitBtn){ submitBtn.disabled=true; submitBtn.textContent='Processing…'; }
+
+  let created;
+  try{
+    const res = await fetch('/api/order/create',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    created = await res.json();
+    if(!res.ok){
+      toast(created.error||'Could not create order','err');
+      if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='PLACE ORDER'; }
+      return;
+    }
+  }catch(err){
+    toast('Network error — please try again.','err');
+    if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='PLACE ORDER'; }
     return;
   }
 
-  // Razorpay flow for UPI / Card / NetBanking
+  /* Cache a copy of the just-created order locally so /thankyou.html can render
+     without a round-trip. The server is still the source of truth. */
+  const localCopy = {
+    id: created.order_id,
+    date: new Date().toISOString(),
+    customer: payload.customer,
+    items: cart,
+    subtotal: created.breakdown.subtotal,
+    shipping: created.breakdown.shipping,
+    discount: created.breakdown.discount,
+    total:    created.breakdown.total,
+    payment:  payload.payment,
+    notes:    payload.notes,
+    status:   payload.payment==='COD' ? 'Pending' : 'AwaitingPayment',
+    trackingStatus: 'placed'
+  };
+  localStorage.setItem('niks_last_order', JSON.stringify(localCopy));
+
+  /* COD path — no Razorpay round-trip; the server already saved the order. */
+  if(payload.payment==='COD'){
+    setCart([]);
+    localStorage.removeItem('niks_coupon');
+    location.href='thankyou.html?id='+encodeURIComponent(created.order_id);
+    return;
+  }
+
+  /* Razorpay path. We open with the server-issued rzp_order_id; the buyer
+     cannot tamper with the amount because Razorpay will reject any mismatch. */
   if(typeof Razorpay==='undefined'){
     toast('Payment gateway not loaded. Please check your connection.','err');
+    if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='PLACE ORDER'; }
     return;
   }
   const rzp=new Razorpay({
-    key:s.razorpayKey,
-    amount:total*100,
-    currency:'INR',
+    key: created.key_id,
+    order_id: created.rzp_order_id,
+    amount: created.amount,
+    currency: created.currency,
     name:'Niks Masala',
-    description:`Order ${order.id}`,
+    description:`Order ${created.order_id}`,
     image:'nikslogomain.jpg',
     prefill:{
-      name:order.customer.name,
-      email:order.customer.email,
-      contact:order.customer.phone
+      name:    payload.customer.name,
+      email:   payload.customer.email,
+      contact: payload.customer.phone
     },
     theme:{color:'#a82a1a'},
-    method:order.payment==='UPI'?{upi:true,card:false,netbanking:false,wallet:false}:
-           order.payment==='NetBanking'?{netbanking:true,upi:false,card:false,wallet:false}:
-           {card:true,upi:true,netbanking:true,wallet:true},
-    handler:async function(resp){
-      order.payment_id=resp.razorpay_payment_id;
-      order.status='Processing';
-      await finalizeOrder(order);
+    handler: async function(resp){
+      try{
+        const v = await fetch('/api/order/verify',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            order_id: created.order_id,
+            rzp_order_id: resp.razorpay_order_id,
+            rzp_payment_id: resp.razorpay_payment_id,
+            rzp_signature: resp.razorpay_signature
+          })
+        });
+        const vj = await v.json();
+        if(!v.ok || !vj.ok){
+          toast(vj.error||'Payment verification failed. Please contact support.','err');
+          return;
+        }
+        setCart([]);
+        localStorage.removeItem('niks_coupon');
+        location.href='thankyou.html?id='+encodeURIComponent(created.order_id);
+      }catch(_){
+        toast('Payment captured — verifying. If you do not see a confirmation, contact us with order '+created.order_id,'err');
+      }
     },
     modal:{
-      ondismiss:function(){toast('Payment cancelled','err')}
+      ondismiss:function(){
+        toast('Payment cancelled — your order is held for 30 minutes.','err');
+        if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='PLACE ORDER'; }
+      }
     }
   });
-  rzp.on('payment.failed',function(resp){
-    toast('Payment failed: '+resp.error.description,'err');
+  rzp.on('payment.failed', function(resp){
+    toast('Payment failed: '+(resp.error&&resp.error.description||'unknown error'),'err');
+    if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='PLACE ORDER'; }
   });
   rzp.open();
-}
-
-async function finalizeOrder(order){
-  const all=JSON.parse(localStorage.getItem('niks_orders')||'[]');
-  all.unshift(order);
-  localStorage.setItem('niks_orders',JSON.stringify(all));
-  localStorage.setItem('niks_last_order',JSON.stringify(order));
-  localStorage.removeItem('niks_discount');
-  setCart([]);
-  try{ await saveOrderToCloud(order); }catch(_){}  // wait for cloud save BEFORE navigating
-  location.href='thankyou.html?id='+order.id;
 }
 </script>
 </body>

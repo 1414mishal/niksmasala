@@ -1,9 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>My Account — Niks Masala</title>
+<meta name="description" content="Sign in to your Niks Masala account to manage orders and addresses.">
+<meta name="robots" content="noindex,follow">
 <link rel="icon" href="nikslogomain.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
@@ -28,23 +30,40 @@
 <script>
 mountHeaderFooter('');
 
-function getUser(){try{return JSON.parse(localStorage.getItem('niks_user')||'null')}catch(e){return null}}
-function setUser(u){localStorage.setItem('niks_user',JSON.stringify(u))}
-function signOut(){localStorage.removeItem('niks_user');render()}
+/* Supabase Auth — replaces the previous SHA-256 / localStorage band-aid.
+ * Free up to 50k monthly-active users. Sessions persist in localStorage
+ * (handled by the supabase-js SDK), password reset emails go via Supabase
+ * (also free). Orders are linked by user_id in RLS — see supabase-schema.sql. */
 
-/* Fetch this customer's orders — cloud first, localStorage fallback */
-async function getMyOrders(email){
-  try{
-    const all=await getOrdersFromCloud();
-    if(all&&all.length) return all.filter(o=>o.customer&&o.customer.email===email);
-  }catch(e){}
-  return JSON.parse(localStorage.getItem('niks_orders')||'[]').filter(o=>o.customer&&o.customer.email===email);
+let SB = null;
+async function sb(){ if(!SB){ SB = await getSB(); } return SB; }
+
+async function getCurrentUser(){
+  const db = await sb();
+  const { data:{ session } } = await db.auth.getSession();
+  return session ? session.user : null;
+}
+async function signOut(){
+  const db = await sb();
+  await db.auth.signOut();
+  render();
+}
+
+/* Fetch this customer's orders. RLS ensures we only get their own rows.
+   Guests (no account) won't appear here — they look up by order ID on track.html. */
+async function getMyOrders(){
+  const db = await sb();
+  const { data, error } = await db.from('orders')
+    .select('*')
+    .order('created_at',{ascending:false});
+  if(error){ console.warn('orders fetch',error); return []; }
+  return data||[];
 }
 
 /* ---------- RENDER ---------- */
 async function render(){
-  const u=getUser();
-  const box=document.getElementById('accPanel');
+  const u = await getCurrentUser();
+  const box = document.getElementById('accPanel');
   if(!u){
     document.getElementById('accHead').textContent='Sign In / Register';
     box.innerHTML=`
@@ -52,9 +71,9 @@ async function render(){
         <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px">
           <h3 style="font-size:22px;margin-bottom:6px">Sign In</h3>
           <p style="color:var(--muted);font-size:14px;margin-bottom:20px">Welcome back! Please sign in to your account.</p>
-          <form onsubmit="doLogin(event)">
-            <div class="form-row"><label>Email *</label><input type="email" name="email" required></div>
-            <div class="form-row"><label>Password *</label><input type="password" name="pw" required minlength="4"></div>
+          <form onsubmit="doLogin(event)" autocomplete="on">
+            <div class="form-row"><label>Email *</label><input type="email" name="email" required autocomplete="email"></div>
+            <div class="form-row"><label>Password *</label><input type="password" name="pw" required minlength="8" autocomplete="current-password"></div>
             <button type="submit" class="btn btn-primary" style="width:100%">Sign In</button>
             <p style="margin-top:12px;font-size:13px;color:var(--muted);text-align:center"><a href="#" onclick="showForgot();return false" style="color:var(--red);font-weight:600">Forgot password?</a></p>
           </form>
@@ -62,38 +81,30 @@ async function render(){
         <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px">
           <h3 style="font-size:22px;margin-bottom:6px">Create Account</h3>
           <p style="color:var(--muted);font-size:14px;margin-bottom:20px">New to Niks Masala? Create an account for faster checkout.</p>
-          <form onsubmit="doRegister(event)">
-            <div class="form-row"><label>Full Name *</label><input type="text" name="name" required></div>
-            <div class="form-row"><label>Email *</label><input type="email" name="email" required></div>
-            <div class="form-row"><label>Phone</label><input type="tel" name="phone"></div>
-            <div class="form-row"><label>Password *</label><input type="password" name="pw" required minlength="4"></div>
-            <div class="form-row"><label>Security Question *</label>
-              <select name="question" required>
-                <option value="">Select a question</option>
-                <option>What is your mother\'s maiden name?</option>
-                <option>What was the name of your first pet?</option>
-                <option>What city were you born in?</option>
-                <option>What was the name of your first school?</option>
-                <option>What is your favorite dish?</option>
-              </select>
-            </div>
-            <div class="form-row"><label>Answer *</label><input type="text" name="answer" required placeholder="Used if you forget your password"></div>
+          <form onsubmit="doRegister(event)" autocomplete="on">
+            <div class="form-row"><label>Full Name *</label><input type="text" name="name" required autocomplete="name"></div>
+            <div class="form-row"><label>Email *</label><input type="email" name="email" required autocomplete="email"></div>
+            <div class="form-row"><label>Phone</label><input type="tel" name="phone" autocomplete="tel"></div>
+            <div class="form-row"><label>Password *</label><input type="password" name="pw" required minlength="8" autocomplete="new-password"><small style="color:var(--muted);font-size:11px">At least 8 characters.</small></div>
             <button type="submit" class="btn btn-dark" style="width:100%">Create Account</button>
+            <p style="margin-top:10px;font-size:11px;color:var(--muted);text-align:center">By creating an account you agree to our <a href="terms.html" style="color:var(--red)">Terms</a> and <a href="privacy.html" style="color:var(--red)">Privacy Policy</a>.</p>
           </form>
         </div>
       </div>`;
     return;
   }
-  document.getElementById('accHead').textContent=`Hello, ${u.name.split(' ')[0]} 👋`;
+
+  const name = (u.user_metadata && u.user_metadata.name) || u.email.split('@')[0];
+  document.getElementById('accHead').textContent=`Hello, ${esc(name.split(' ')[0])} 👋`;
   document.getElementById('accSub').textContent='Manage your orders, addresses & account details';
-  const orders=await getMyOrders(u.email);
+  const orders = await getMyOrders();
   box.innerHTML=`
     <div style="max-width:1200px;margin:40px auto;padding:0 24px;display:grid;grid-template-columns:260px 1fr;gap:28px">
       <aside style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px;align-self:start">
         <div style="text-align:center;padding-bottom:18px;border-bottom:1px solid var(--line);margin-bottom:14px">
-          <div style="width:72px;height:72px;margin:0 auto 10px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:28px;font-weight:700">${u.name[0].toUpperCase()}</div>
-          <strong>${u.name}</strong><br>
-          <small style="color:var(--muted)">${u.email}</small>
+          <div style="width:72px;height:72px;margin:0 auto 10px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:28px;font-weight:700">${esc(name[0].toUpperCase())}</div>
+          <strong>${esc(name)}</strong><br>
+          <small style="color:var(--muted)">${esc(u.email)}</small>
         </div>
         <nav style="display:flex;flex-direction:column;gap:4px">
           <a href="#" onclick="tab('dash');return false" class="acc-nav active" style="padding:10px 14px;border-radius:6px;font-size:14px">📊 Dashboard</a>
@@ -104,31 +115,31 @@ async function render(){
       </aside>
       <main><div id="accTab"></div></main>
     </div>`;
-  _drawTab('dash',orders,u);
+  _drawTab('dash', orders, u, name);
 }
 
-/* ---------- TAB ---------- */
+/* ---------- TABS ---------- */
 async function tab(t){
   document.querySelectorAll('.acc-nav').forEach(a=>a.classList.remove('active'));
-  const u=getUser(); if(!u) return;
-  const orders=await getMyOrders(u.email);
-  _drawTab(t,orders,u);
+  const u = await getCurrentUser(); if(!u) return;
+  const orders = await getMyOrders();
+  const name = (u.user_metadata && u.user_metadata.name) || u.email.split('@')[0];
+  _drawTab(t, orders, u, name);
 }
 
-function _drawTab(t,orders,u){
-  const box=document.getElementById('accTab'); if(!box) return;
-  const total=orders.reduce((s,o)=>s+(+o.total||0),0);
+function _drawTab(t, orders, u, name){
+  const box = document.getElementById('accTab'); if(!box) return;
+  const total = orders.reduce((s,o)=>s+(+o.total||0),0);
   if(t==='dash'){
     box.innerHTML=`
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px">
         <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px"><div style="font-size:12px;color:var(--muted);letter-spacing:1px">ORDERS</div><div style="font-family:'Roboto Slab',serif;font-size:30px;color:var(--red);margin-top:4px">${orders.length}</div></div>
         <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px"><div style="font-size:12px;color:var(--muted);letter-spacing:1px">TOTAL SPENT</div><div style="font-family:'Roboto Slab',serif;font-size:30px;color:var(--red);margin-top:4px">${money(total)}</div></div>
-        <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px"><div style="font-size:12px;color:var(--muted);letter-spacing:1px">LOYALTY POINTS</div><div style="font-family:'Roboto Slab',serif;font-size:30px;color:var(--gold);margin-top:4px">${Math.floor(total/10)}</div></div>
       </div>
       <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:24px">
         <h3 style="font-size:18px;margin-bottom:14px">Recent Orders</h3>
         ${orders.length===0?'<p style="color:var(--muted);padding:20px 0">No orders yet. <a href="shop.html" style="color:var(--red)">Shop now →</a></p>':
-        orders.slice(0,3).map(o=>`<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)"><div><strong>${o.id}</strong><br><small style="color:var(--muted)">${new Date(o.date||o.created_at).toLocaleDateString('en-IN')}</small></div><div style="text-align:right"><strong style="color:var(--red)">${money(o.total)}</strong><br><small>${o.status}</small></div></div>`).join('')}
+        orders.slice(0,5).map(o=>`<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)"><div><strong>${esc(o.id)}</strong><br><small style="color:var(--muted)">${esc(new Date(o.date||o.created_at).toLocaleDateString('en-IN'))}</small></div><div style="text-align:right"><strong style="color:var(--red)">${money(o.total)}</strong><br><small>${esc(o.status||'')}</small></div></div>`).join('')}
       </div>`;
   }
   if(t==='orders'){
@@ -139,29 +150,38 @@ function _drawTab(t,orders,u){
         orders.map(o=>`
           <div style="border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:14px">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-              <div><strong>${o.id}</strong> · <small style="color:var(--muted)">${new Date(o.date||o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</small></div>
-              <span style="background:var(--cream);color:var(--red);padding:4px 12px;border-radius:50px;font-size:12px;font-weight:600">${o.status}</span>
+              <div><strong>${esc(o.id)}</strong> · <small style="color:var(--muted)">${esc(new Date(o.date||o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}))}</small></div>
+              <span style="background:var(--cream);color:var(--red);padding:4px 12px;border-radius:50px;font-size:12px;font-weight:600">${esc(o.status||'Pending')}</span>
             </div>
-            <div style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap">${(o.items||[]).map(i=>`<div style="width:48px;height:48px;border-radius:6px;overflow:hidden"><img src="${i.image}" style="width:100%;height:100%;object-fit:cover" title="${i.name}"></div>`).join('')}</div>
+            <div style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap">${(o.items||[]).map(i=>`<div style="width:48px;height:48px;border-radius:6px;overflow:hidden"><img alt="${attr(i.name||'')}" style="width:100%;height:100%;object-fit:cover" title="${attr(i.name||'')}" onerror="this.src='assets/products/garam-masala.png'"></div>`).join('')}</div>
             <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--line);font-size:14px">
-              <span style="color:var(--muted)">${(o.items||[]).reduce((s,i)=>s+i.qty,0)} items · ${o.payment}</span>
+              <span style="color:var(--muted)">${(o.items||[]).reduce((s,i)=>s+i.qty,0)} items · ${esc(o.payment||'')}</span>
               <strong style="color:var(--red);font-size:16px">${money(o.total)}</strong>
+            </div>
+            <div style="margin-top:10px;text-align:right">
+              <a href="track.html?id=${attr(encodeURIComponent(o.id))}" style="color:var(--red);font-size:13px;font-weight:600">Track →</a>
             </div>
           </div>`).join('')}
       </div>`;
   }
   if(t==='profile'){
+    const md = u.user_metadata||{};
     box.innerHTML=`
       <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:24px">
         <h3 style="font-size:18px;margin-bottom:18px">Profile Details</h3>
         <form onsubmit="saveProfile(event)">
           <div class="form-grid-2">
-            <div class="form-row"><label>Full Name</label><input type="text" name="name" value="${u.name}" required></div>
-            <div class="form-row"><label>Phone</label><input type="tel" name="phone" value="${u.phone||''}"></div>
+            <div class="form-row"><label>Full Name</label><input type="text" name="name" value="${attr(md.name||name||'')}" required></div>
+            <div class="form-row"><label>Phone</label><input type="tel" name="phone" value="${attr(md.phone||'')}"></div>
           </div>
-          <div class="form-row"><label>Email</label><input type="email" name="email" value="${u.email}" required></div>
+          <div class="form-row"><label>Email</label><input type="email" value="${attr(u.email)}" readonly title="Email cannot be changed"></div>
           <button class="btn btn-primary">Save Changes</button>
         </form>
+        <div style="margin-top:24px;padding-top:18px;border-top:1px solid var(--line)">
+          <h4 style="font-size:15px;margin-bottom:8px">Change Password</h4>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:8px">We'll email you a secure link to set a new password.</p>
+          <button class="btn btn-ghost" onclick="sendResetLink('${attr(u.email)}')">Send password reset link</button>
+        </div>
       </div>`;
   }
 }
@@ -170,132 +190,121 @@ function _drawTab(t,orders,u){
 async function doLogin(e){
   e.preventDefault();
   const f=new FormData(e.target);
-  const email=f.get('email').trim().toLowerCase();
-  const pw=f.get('pw');
-  // Cloud first
-  const cu=await getUserFromCloud(email);
-  if(cu){
-    if(cu.pw!==pw){toast('Invalid email or password','err');return}
-    setUser({name:cu.name,email:cu.email,phone:cu.phone||''});
-    toast('Welcome back!','ok');render();return;
-  }
-  // localStorage fallback
-  const users=JSON.parse(localStorage.getItem('niks_users')||'[]');
-  const u=users.find(x=>x.email===email&&x.pw===pw);
-  if(!u){toast('Invalid email or password','err');return}
-  setUser({name:u.name,email:u.email,phone:u.phone||''});
-  toast('Welcome back!','ok');render();
+  const db=await sb();
+  const {error}=await db.auth.signInWithPassword({
+    email:(f.get('email')||'').trim().toLowerCase(),
+    password:f.get('pw')||''
+  });
+  if(error){toast(error.message||'Invalid email or password','err');return}
+  toast('Welcome back!','ok'); render();
 }
 
 async function doRegister(e){
   e.preventDefault();
   const f=new FormData(e.target);
-  const email=f.get('email').trim().toLowerCase();
-  const existing=await getUserFromCloud(email);
-  if(existing){toast('Email already registered','err');return}
-  const users=JSON.parse(localStorage.getItem('niks_users')||'[]');
-  if(users.find(x=>x.email===email)){toast('Email already registered','err');return}
-  const nu={name:f.get('name'),email,phone:f.get('phone')||'',pw:f.get('pw'),
-    question:f.get('question'),answer:(f.get('answer')||'').trim().toLowerCase()};
-  users.push(nu);
-  localStorage.setItem('niks_users',JSON.stringify(users));
-  saveUserToCloud(nu);
-  setUser({name:nu.name,email:nu.email,phone:nu.phone});
-  toast('Account created! 🎉','ok');render();
+  const pw=f.get('pw')||'';
+  if(pw.length<8){toast('Password must be at least 8 characters','err');return}
+  const db=await sb();
+  const {error,data}=await db.auth.signUp({
+    email:(f.get('email')||'').trim().toLowerCase(),
+    password:pw,
+    options:{
+      data:{
+        name:(f.get('name')||'').trim(),
+        phone:(f.get('phone')||'').trim()
+      },
+      emailRedirectTo: location.origin+'/account.html'
+    }
+  });
+  if(error){toast(error.message||'Sign-up failed','err');return}
+  if(data && data.user && !data.session){
+    /* Email-confirmation enabled — tell user to check inbox. */
+    toast('Account created — check your email to confirm.','ok');
+    return;
+  }
+  toast('Account created! 🎉','ok'); render();
 }
 
 async function saveProfile(e){
   e.preventDefault();
   const f=new FormData(e.target);
-  const u={name:f.get('name'),email:f.get('email'),phone:f.get('phone')||''};
-  setUser(u);
-  const users=JSON.parse(localStorage.getItem('niks_users')||'[]');
-  const i=users.findIndex(x=>x.email===u.email);
-  if(i>=0){users[i]={...users[i],...u};localStorage.setItem('niks_users',JSON.stringify(users))}
-  try{const db=await getSB();await db.from('users').update({name:u.name,phone:u.phone}).eq('email',u.email)}catch(_){}
-  toast('Profile updated','ok');render();
+  const db=await sb();
+  const {error}=await db.auth.updateUser({
+    data:{
+      name:(f.get('name')||'').trim(),
+      phone:(f.get('phone')||'').trim()
+    }
+  });
+  if(error){toast(error.message,'err');return}
+  toast('Profile updated','ok'); render();
 }
 
-/* ---------- FORGOT PASSWORD ---------- */
+/* ---------- FORGOT PASSWORD ----------
+   Real password reset via Supabase Auth's email-link flow. Replaces the
+   previous security-question implementation which leaked answers. */
 function showForgot(){
   document.getElementById('authGrid').innerHTML=`
     <div style="grid-column:1/-1;max-width:480px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px">
       <h3 style="font-size:22px;margin-bottom:6px">Forgot Password</h3>
-      <p style="color:var(--muted);font-size:14px;margin-bottom:20px">Enter your registered email to continue.</p>
-      <form onsubmit="forgotStep1(event)">
+      <p style="color:var(--muted);font-size:14px;margin-bottom:20px">Enter your registered email. We'll send you a secure link to set a new password.</p>
+      <form onsubmit="sendResetForm(event)">
         <div class="form-row"><label>Email *</label><input type="email" name="email" required autofocus></div>
-        <button type="submit" class="btn btn-primary" style="width:100%">Continue →</button>
+        <button type="submit" class="btn btn-primary" style="width:100%">Send Reset Link →</button>
         <p style="margin-top:12px;font-size:13px;text-align:center"><a href="#" onclick="render();return false" style="color:var(--muted)">← Back to sign in</a></p>
       </form>
     </div>`;
 }
-
-async function forgotStep1(e){
+async function sendResetForm(e){
   e.preventDefault();
-  const email=e.target.elements.email.value.trim().toLowerCase();
-  let u=await getUserFromCloud(email);
-  if(!u){
-    const users=JSON.parse(localStorage.getItem('niks_users')||'[]');
-    u=users.find(x=>x.email.toLowerCase()===email)||null;
-  }
-  if(!u){toast('No account found with that email','err');return}
-  if(!u.question){
-    if(confirm('This account has no security question. Reset via phone number?')){
-      const phone=prompt('Enter the phone on your account:');
-      if(!phone||phone.trim()!==(u.phone||'').trim()){toast('Phone number doesn\'t match','err');return}
-      forgotStep3(u);
+  const email=(e.target.elements.email.value||'').trim().toLowerCase();
+  await sendResetLink(email);
+}
+async function sendResetLink(email){
+  if(!email){toast('Email required','err');return}
+  const db=await sb();
+  /* Important: we always show the same success message regardless of
+     whether the email exists — prevents user enumeration. */
+  await db.auth.resetPasswordForEmail(email,{
+    redirectTo: location.origin+'/account.html?reset=1'
+  });
+  toast('If an account exists for that email, a reset link is on its way.','ok');
+  setTimeout(render, 1200);
+}
+
+/* Handle the recovery callback. Supabase fires PASSWORD_RECOVERY on auth
+   state change after the user clicks the email link. Show a "set new password" form. */
+(async()=>{
+  const db=await sb();
+  db.auth.onAuthStateChange(async (event)=>{
+    if(event==='PASSWORD_RECOVERY'){
+      document.getElementById('accPanel').innerHTML=`
+        <div style="max-width:480px;margin:50px auto;padding:0 24px">
+          <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px">
+            <h3 style="font-size:22px;margin-bottom:6px">Set a new password</h3>
+            <p style="color:var(--muted);font-size:14px;margin-bottom:20px">Choose a strong, unique password.</p>
+            <form onsubmit="completeReset(event)">
+              <div class="form-row"><label>New Password *</label><input type="password" name="pw1" required minlength="8" autofocus autocomplete="new-password"></div>
+              <div class="form-row"><label>Confirm Password *</label><input type="password" name="pw2" required minlength="8" autocomplete="new-password"></div>
+              <button type="submit" class="btn btn-primary" style="width:100%">Update Password</button>
+            </form>
+          </div>
+        </div>`;
     }
-    return;
-  }
-  document.getElementById('authGrid').innerHTML=`
-    <div style="grid-column:1/-1;max-width:480px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px">
-      <h3 style="font-size:22px;margin-bottom:6px">Security Check</h3>
-      <p style="color:var(--muted);font-size:14px;margin-bottom:6px">Answer your security question to continue.</p>
-      <p style="font-size:14px;margin-bottom:20px;background:var(--cream);padding:12px 14px;border-radius:6px;border-left:3px solid var(--red)"><strong>${u.question}</strong></p>
-      <form onsubmit="forgotStep2(event,'${u.email}')">
-        <div class="form-row"><label>Your Answer *</label><input type="text" name="answer" required autofocus></div>
-        <button type="submit" class="btn btn-primary" style="width:100%">Verify →</button>
-        <p style="margin-top:12px;font-size:13px;text-align:center"><a href="#" onclick="render();return false" style="color:var(--muted)">← Cancel</a></p>
-      </form>
-    </div>`;
-}
+  });
+  render();
+})();
 
-async function forgotStep2(e,email){
+async function completeReset(e){
   e.preventDefault();
-  const answer=e.target.elements.answer.value.trim().toLowerCase();
-  let u=await getUserFromCloud(email);
-  if(!u){const users=JSON.parse(localStorage.getItem('niks_users')||'[]');u=users.find(x=>x.email===email)||null}
-  if(!u){toast('Account not found','err');render();return}
-  if(answer!==(u.answer||'').trim().toLowerCase()){toast('Incorrect answer. Try again.','err');return}
-  forgotStep3(u);
-}
-
-function forgotStep3(u){
-  document.getElementById('authGrid').innerHTML=`
-    <div style="grid-column:1/-1;max-width:480px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px">
-      <h3 style="font-size:22px;margin-bottom:6px">Set a New Password</h3>
-      <p style="color:var(--muted);font-size:14px;margin-bottom:20px">✓ Verified. New password for <strong>${u.email}</strong>.</p>
-      <form onsubmit="forgotStep4(event,'${u.email}')">
-        <div class="form-row"><label>New Password *</label><input type="password" name="pw1" required minlength="4" autofocus></div>
-        <div class="form-row"><label>Confirm Password *</label><input type="password" name="pw2" required minlength="4"></div>
-        <button type="submit" class="btn btn-primary" style="width:100%">Reset Password</button>
-      </form>
-    </div>`;
-}
-
-async function forgotStep4(e,email){
-  e.preventDefault();
-  const p1=e.target.elements.pw1.value,p2=e.target.elements.pw2.value;
-  if(p1!==p2){toast('Passwords don\'t match','err');return}
-  const users=JSON.parse(localStorage.getItem('niks_users')||'[]');
-  const i=users.findIndex(x=>x.email===email);
-  if(i>=0){users[i].pw=p1;localStorage.setItem('niks_users',JSON.stringify(users))}
-  try{const db=await getSB();await db.from('users').update({pw:p1}).eq('email',email)}catch(_){}
-  toast('✓ Password reset! Please sign in.','ok');
+  const p1=e.target.elements.pw1.value, p2=e.target.elements.pw2.value;
+  if(p1!==p2){toast("Passwords don't match",'err');return}
+  if(p1.length<8){toast('Use at least 8 characters','err');return}
+  const db=await sb();
+  const {error}=await db.auth.updateUser({password:p1});
+  if(error){toast(error.message,'err');return}
+  toast('✓ Password updated. Welcome back!','ok');
   setTimeout(render,800);
 }
-
-render();
 </script>
 <style>
 .acc-nav{color:var(--ink);text-decoration:none;transition:all .2s;display:block}
@@ -304,4 +313,3 @@ render();
 </style>
 </body>
 </html>
-

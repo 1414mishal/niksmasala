@@ -155,11 +155,11 @@
     <h1>Niks Masala Admin</h1>
     <p>Sign in to manage your store</p>
     <form onsubmit="doLogin(event)">
-      <input type="text" id="user" placeholder="Username" required autocomplete="username" value="admin">
+      <input type="text" id="user" placeholder="Username" required autocomplete="username">
       <input type="password" id="pass" placeholder="Password" required autocomplete="current-password">
       <button type="submit">Sign In →</button>
     </form>
-    <p class="hint">Default: <strong>admin</strong> / <strong>niks2026</strong><br><em>(change in Settings after first login)</em></p>
+    <p class="hint">Unauthorised access is prohibited. All activity is logged.</p>
   </div>
 </div>
 
@@ -420,7 +420,16 @@ const _ARAW=[
 ];
 const DEFAULT_PRODUCTS=_ARAW.map((r,i)=>{const minP=Math.min(...r.variants.map(v=>v.price));return{id:'p'+(i+1),name:r.name,slug:r.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),category:_acat(r.name),price:minP,image:_apick(r.name),variants:r.variants,rating:4.6+(i%4)*0.1,reviews:20+(i*7)%180,desc:'Authentic Mangalorean spice blend — traditionally crafted, export-quality.',long:'Packed at our FSSAI-certified 11,000 sq.ft. facility in Yeyyadi, Mangalore.',badge:r.badge||null,stock:50};});
 const DEFAULT_SETTINGS = {brand:'Niks Masala',phone:'+91 73385 19975',email:'hello@niksmasala.com',address:'Plot no. L-6, 5-50, Yeyyadi Industrial Area, Mangaluru, Karnataka 575015',currency:'₹',shippingFree:799,shippingFee:60,shippingFeeHeavy:120,razorpayKey:'rzp_test_SgFzfBVh4i57d2'};
-const DEFAULT_PASSWORD = 'niks2026';
+/* First-run password is configured on the very first login.
+   Stored as a SHA-256 hash in localStorage — there is no built-in
+   "master key" and no recovery path other than clearing localStorage
+   on the store owner's device.
+   TODO(backend): replace with proper server-side auth + bcrypt. */
+const FIRST_RUN_KEY = 'niks_pw_hash';
+async function _sha256(s){
+  const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');
+}
 
 /* ---- Supabase ---- */
 const _SB_URL='https://jvjjqbzwqrnvrpiihbnt.supabase.co';
@@ -455,21 +464,28 @@ function getSettings(){try{return{...DEFAULT_SETTINGS,...(JSON.parse(localStorag
 function setSettings(s){localStorage.setItem('niks_settings',JSON.stringify(s))}
 function getOrders(){try{return JSON.parse(localStorage.getItem('niks_orders'))||[]}catch(e){return[]}}
 function setOrders(o){localStorage.setItem('niks_orders',JSON.stringify(o))}
-function getPassword(){return localStorage.getItem('niks_pw')||DEFAULT_PASSWORD}
+function getPasswordHash(){return localStorage.getItem(FIRST_RUN_KEY)||''}
 
-/* Login */
-function doLogin(e){
+/* Login. First-time use: any password ≥ 8 chars sets the admin password.
+   After that, only that exact password works. No master/backdoor key. */
+async function doLogin(e){
   e.preventDefault();
   const u=document.getElementById('user').value.trim();
   const p=document.getElementById('pass').value;
-  // DEFAULT_PASSWORD always works as master key even if password was changed
-  if(u==='admin' && (p===getPassword() || p===DEFAULT_PASSWORD)){
-    if(p===DEFAULT_PASSWORD) localStorage.removeItem('niks_pw'); // reset any saved pw
-    sessionStorage.setItem('niks_auth','1');
-    showApp();
-  }else{
-    toast('Incorrect credentials','err');
+  if(u!=='admin'){toast('Incorrect credentials','err');return}
+  if(p.length<8){toast('Password must be at least 8 characters','err');return}
+  const stored=getPasswordHash();
+  const h=await _sha256(p);
+  if(!stored){
+    if(!confirm('First-time setup — this password will be saved on THIS device only. Make sure it is strong and unique. Continue?')){return}
+    localStorage.setItem(FIRST_RUN_KEY,h);
+  }else if(stored!==h){
+    toast('Incorrect credentials','err');return;
   }
+  /* Random per-session token instead of the trivially forgeable "1" */
+  const tok=Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
+  sessionStorage.setItem('niks_auth',tok);
+  showApp();
 }
 function logout(){sessionStorage.removeItem('niks_auth');location.reload()}
 async function showApp(){
@@ -507,7 +523,10 @@ async function showApp(){
   }catch(ex){console.warn('Cloud sync failed:',ex)}
   go('dashboard');
 }
-if(sessionStorage.getItem('niks_auth')==='1') showApp();
+/* Resume an active admin session — but only if a password has already
+   been set up. This prevents the prior `sessionStorage.setItem('niks_auth','1')`
+   trivial bypass (anyone with DevTools could set the literal "1"). */
+if(sessionStorage.getItem('niks_auth') && getPasswordHash()) showApp();
 
 /* Navigation */
 document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>go(n.dataset.view)));
@@ -765,11 +784,16 @@ async function saveSettings(e){
   }catch(ex){console.warn(ex)}
   toast('✅ Settings saved','ok');
 }
-function changePassword(e){
+async function changePassword(e){
   e.preventDefault();
   const a=document.getElementById('np1').value,b=document.getElementById('np2').value;
   if(a!==b){toast('Passwords don\'t match','err');return}
-  localStorage.setItem('niks_pw',a);
+  if(a.length<8){toast('Use at least 8 characters','err');return}
+  if(!/[A-Za-z]/.test(a)||!/\d/.test(a)){toast('Use letters and digits','err');return}
+  const h=await _sha256(a);
+  localStorage.setItem(FIRST_RUN_KEY,h);
+  /* Also evict old plaintext key from any prior version */
+  localStorage.removeItem('niks_pw');
   document.getElementById('np1').value='';document.getElementById('np2').value='';
   toast('✅ Password updated','ok');
 }
