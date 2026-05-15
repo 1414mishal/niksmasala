@@ -654,8 +654,8 @@ window.addEventListener('storage',e=>{
  * designed. Security lives in Row Level Security (see supabase-schema.sql).
  * Until RLS is correctly configured, treat *everything* in Supabase as
  * publicly readable. Do NOT put production PII in this database. */
-const _SB_URL='https://jvjjqbzwqrnvrpiihbnt.supabase.co';
-const _SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2ampxYnp3cXJudnJwaWloYm50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3ODU0NTksImV4cCI6MjA5MjM2MTQ1OX0.35q6KQU0yAV0IQn__1t2sVkRpgxiswG_ne50C87sFps';
+const _SB_URL='https://cmyiggiakgimygznlkuo.supabase.co';
+const _SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNteWlnZ2lha2dpbXlnem5sa3VvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4NzE0OTMsImV4cCI6MjA5NDQ0NzQ5M30.f9E_TXN5p_sN9kRo4JEpDrSz3KeWnRiqtSmbs61iIIQ';
 let _sbClient=null;
 
 async function getSB(){
