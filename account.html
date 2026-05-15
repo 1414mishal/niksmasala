@@ -213,7 +213,9 @@ async function doRegister(e){
         name:(f.get('name')||'').trim(),
         phone:(f.get('phone')||'').trim()
       },
-      emailRedirectTo: location.origin+'/account.html'
+      /* Use the current page's URL as the base so the /niksmasala/ subpath
+         on GitHub Pages is preserved. location.origin only gives the host. */
+      emailRedirectTo: new URL('account.html', location.href).href
     }
   });
   if(error){toast(error.message||'Sign-up failed','err');return}
@@ -265,7 +267,7 @@ async function sendResetLink(email){
   /* Important: we always show the same success message regardless of
      whether the email exists — prevents user enumeration. */
   await db.auth.resetPasswordForEmail(email,{
-    redirectTo: location.origin+'/account.html?reset=1'
+    redirectTo: new URL('account.html?reset=1', location.href).href
   });
   toast('If an account exists for that email, a reset link is on its way.','ok');
   setTimeout(render, 1200);
