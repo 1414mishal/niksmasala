@@ -702,7 +702,10 @@ function renderOrders(){
   document.getElementById('ordersTable').innerHTML=orders.length===0
     ? `<tr><td colspan="9"><div class="empty"><span>📦</span>No orders ${f?'with status '+f:'yet'}</div></td></tr>`
     : orders.map(o=>{
-      const ts=o.trackingStatus||'placed';
+      /* Read tracking_status (DB column) — but accept legacy trackingStatus
+         for any orders that were placed before the column rename. */
+      const ts = o.tracking_status || o.trackingStatus || 'placed';
+      const notes = o.tracking_notes || o.trackingNotes || '';
       return `
     <tr>
       <td><strong>${o.id}</strong><br><a href="track.html?id=${o.id}" target="_blank" style="font-size:11px;color:var(--red)">🔍 Track</a></td>
@@ -714,9 +717,10 @@ function renderOrders(){
         ${['Pending','Processing','Shipped','Delivered','Cancelled'].map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}
       </select></td>
       <td>
-        <select onchange="changeTracking('${o.id}',this.value)" style="border:1px solid var(--line);padding:3px 8px;border-radius:6px;font-size:12px;background:#fff;width:100%">
+        <select onchange="changeTracking('${o.id}',this.value)" style="border:1px solid var(--line);padding:3px 8px;border-radius:6px;font-size:12px;background:#fff;width:100%;margin-bottom:4px">
           ${TRACK_STEPS.map(s=>`<option value="${s}" ${s===ts?'selected':''}>${TRACK_LABELS[s]}</option>`).join('')}
         </select>
+        <input type="text" placeholder="AWB / courier note" value="${(notes+'').replace(/"/g,'&quot;')}" onblur="saveTrackingNotes('${o.id}',this.value)" style="width:100%;border:1px solid var(--line);padding:3px 6px;border-radius:6px;font-size:11px">
       </td>
       <td><small>${new Date(o.date).toLocaleDateString('en-IN')}<br>${new Date(o.date).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</small></td>
       <td><button class="btn btn-secondary btn-sm" onclick="viewOrder('${o.id}')">View</button></td>
@@ -737,12 +741,29 @@ async function changeStatus(id,status){
   try{const db=await getDB();await db.from('orders').update({status}).eq('id',id)}catch(ex){console.warn(ex)}
   toast('Status updated','ok');
 }
-async function changeTracking(id,trackingStatus){
+async function changeTracking(id, tracking_status){
   const all=getOrders();
   const o=all.find(x=>x.id===id); if(!o) return;
-  o.trackingStatus=trackingStatus; setOrders(all);
-  try{const db=await getDB();await db.from('orders').update({trackingStatus}).eq('id',id)}catch(ex){console.warn(ex)}
+  o.tracking_status = tracking_status;
+  o.trackingStatus  = tracking_status; // keep camelCase too for any legacy code path
+  setOrders(all);
+  try{
+    const db=await getDB();
+    await db.from('orders').update({tracking_status}).eq('id',id);
+  }catch(ex){console.warn(ex)}
   toast('Tracking updated — customer can see this live ✅','ok');
+}
+
+async function saveTrackingNotes(id, tracking_notes){
+  const all=getOrders();
+  const o=all.find(x=>x.id===id); if(!o) return;
+  if((o.tracking_notes||'')===tracking_notes) return; // no change
+  o.tracking_notes = tracking_notes; setOrders(all);
+  try{
+    const db=await getDB();
+    await db.from('orders').update({tracking_notes}).eq('id',id);
+  }catch(ex){console.warn(ex)}
+  toast('Tracking note saved','ok');
 }
 function viewOrder(id){
   const o=getOrders().find(x=>x.id===id); if(!o) return;
