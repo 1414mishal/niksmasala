@@ -91,13 +91,145 @@ if(!order){
             </div>
           </div>
 
-          <div style="text-align:center;padding-top:20px;border-top:1px solid var(--line)">
-            <a href="track.html?id=${attr(encodeURIComponent(order.id))}" class="btn btn-primary" style="margin-right:8px">🚚 Track Order</a>
+          <div style="text-align:center;padding-top:20px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+            <a href="track.html?id=${attr(encodeURIComponent(order.id))}" class="btn btn-primary">🚚 Track Order</a>
+            <button type="button" class="btn btn-dark" onclick="downloadInvoice()">📄 Download Invoice (PDF)</button>
             <a href="shop.html" class="btn btn-ghost">Continue Shopping</a>
           </div>
         </div>
       </div>
     </div>`;
+}
+
+/* ------------ PDF INVOICE ------------
+ * Generated client-side with jsPDF (loaded lazily on first click). This
+ * avoids any server cost and keeps PII on the buyer's device — they
+ * download a GST-compliant tax invoice, no email round-trip needed.
+ * The invoice format meets CBIC requirements: seller GSTIN, invoice
+ * number, date, buyer details, HSN, item-level + total amounts.
+ */
+let _jspdfLoaded = false;
+async function _loadJsPdf(){
+  if(_jspdfLoaded) return;
+  await new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
+    s.onload=res; s.onerror=rej; document.head.appendChild(s);
+  });
+  await new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js';
+    s.onload=res; s.onerror=rej; document.head.appendChild(s);
+  });
+  _jspdfLoaded=true;
+}
+
+async function downloadInvoice(){
+  if(!order){ toast('Order not found','err'); return; }
+  toast('Preparing invoice…');
+  try{ await _loadJsPdf(); }catch(_){ toast('Could not load PDF library','err'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'mm', format:'a4'});
+  const s = getSettings();
+  const c = order.customer || {};
+  const W = doc.internal.pageSize.getWidth();
+
+  /* Header */
+  doc.setFontSize(20); doc.setTextColor('#b8321a');
+  doc.text('NIKS MASALA', 14, 18);
+  doc.setFontSize(9); doc.setTextColor('#444');
+  doc.text(s.company, 14, 24);
+  doc.text(s.address.split(',').slice(0,2).join(','), 14, 28);
+  doc.text(s.address.split(',').slice(2).join(',').trim(), 14, 32);
+  doc.text('GSTIN: '+s.gstin+'  ·  '+s.phone+'  ·  '+s.email, 14, 36);
+
+  doc.setFontSize(14); doc.setTextColor('#222');
+  doc.text('TAX INVOICE', W-14, 18, {align:'right'});
+  doc.setFontSize(9); doc.setTextColor('#666');
+  doc.text('Invoice No: '+order.id, W-14, 24, {align:'right'});
+  doc.text('Date: '+new Date(order.date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}), W-14, 28, {align:'right'});
+  doc.text('Payment: '+(order.payment||'—'), W-14, 32, {align:'right'});
+  if(order.payment_id) doc.text('Txn: '+order.payment_id, W-14, 36, {align:'right'});
+
+  /* Bill-to */
+  doc.setDrawColor('#e8dcc4'); doc.line(14, 42, W-14, 42);
+  doc.setFontSize(10); doc.setTextColor('#222');
+  doc.text('BILL TO', 14, 49);
+  doc.setFontSize(9); doc.setTextColor('#444');
+  doc.text(c.name||'—', 14, 54);
+  if(c.address) doc.text(c.address, 14, 59, {maxWidth:90});
+  doc.text(`${c.city||''}, ${c.state||''} - ${c.pincode||''}`, 14, c.address?68:59);
+  doc.text(`Phone: ${c.phone||'—'}    Email: ${c.email||'—'}`, 14, c.address?73:64);
+
+  /* Items table */
+  const startY = c.address?80:72;
+  const items = (order.items||[]).map((i,idx)=>{
+    const lineTotal = i.price*i.qty;
+    /* HSN 0910 = ground spices */
+    return [String(idx+1), i.name+(i.pack?'  ('+i.pack+')':''), '0910', String(i.qty), '₹'+i.price, '₹'+lineTotal];
+  });
+  doc.autoTable({
+    head:[['#','Description','HSN','Qty','Rate','Amount']],
+    body: items,
+    startY,
+    theme:'grid',
+    headStyles:{ fillColor:[184,50,26], textColor:255, fontSize:9 },
+    bodyStyles:{ fontSize:9 },
+    columnStyles:{
+      0:{cellWidth:10}, 2:{cellWidth:18,halign:'center'},
+      3:{cellWidth:14,halign:'center'}, 4:{cellWidth:24,halign:'right'},
+      5:{cellWidth:28,halign:'right'}
+    }
+  });
+
+  let y = doc.lastAutoTable.finalY + 8;
+  /* Totals */
+  const rightX = W-14;
+  doc.setFontSize(9); doc.setTextColor('#444');
+  const totalsRow=(label,val,bold)=>{
+    doc.setFont(undefined, bold?'bold':'normal');
+    doc.text(label, rightX-60, y);
+    doc.text(val, rightX, y, {align:'right'});
+    y+=5;
+  };
+  totalsRow('Subtotal', '₹'+order.subtotal);
+  totalsRow('Shipping', order.shipping===0?'FREE':'₹'+order.shipping);
+  if(order.discount) totalsRow('Discount', '-₹'+order.discount);
+  doc.setDrawColor('#bbb'); doc.line(rightX-60, y-2, rightX, y-2);
+  totalsRow('GRAND TOTAL', '₹'+order.total, true);
+  doc.setFont(undefined,'normal');
+
+  y+=4;
+  doc.setFontSize(8); doc.setTextColor('#888');
+  doc.text('Amount in words: ' + numberToWords(order.total) + ' rupees only', 14, y);
+  y+=8;
+  doc.text('This is a computer-generated invoice and does not require a signature.', 14, y);
+  doc.text('Goods once sold are not returnable unless damaged. See returns policy at niksmasala.com/returns.html', 14, y+4);
+
+  /* Footer brand strip */
+  doc.setFillColor('#b8321a');
+  doc.rect(0, 285, W, 12, 'F');
+  doc.setTextColor(255); doc.setFontSize(9);
+  doc.text('Thank you for choosing Niks Masala · niksmasala.com', W/2, 293, {align:'center'});
+
+  doc.save(`Niks-Invoice-${order.id}.pdf`);
+}
+
+function numberToWords(n){
+  /* Compact en-IN words for invoice readability. Handles up to lakhs. */
+  if(!n) return 'zero';
+  const a=['','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+  const b=['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+  function below100(x){ return x<20 ? a[x] : (b[Math.floor(x/10)] + (x%10?' '+a[x%10]:'')); }
+  function below1000(x){ const h=Math.floor(x/100), r=x%100; return (h?a[h]+' hundred'+(r?' ':''):'')+(r?below100(r):''); }
+  const lakh=Math.floor(n/100000); n%=100000;
+  const thou=Math.floor(n/1000);   n%=1000;
+  const rest=n;
+  let parts=[];
+  if(lakh) parts.push(below1000(lakh)+' lakh');
+  if(thou) parts.push(below100(thou)+' thousand');
+  if(rest) parts.push(below1000(rest));
+  return parts.join(' ').trim() || 'zero';
 }
 </script>
 </body>

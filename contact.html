@@ -165,23 +165,31 @@ async function handleContact(e){
     email:(f.get('email')||'').trim().toLowerCase(),
     phone:(f.get('phone')||'').trim(),
     subject:f.get('subject')||'',
-    msg:(f.get('msg')||'').trim(),
-    date:new Date().toISOString()
+    msg:(f.get('msg')||'').trim()
   };
-  /* Persist to Supabase so the team actually sees it; localStorage is a
-     fallback so the demo still works offline. */
+  const btn=e.target.querySelector('button[type="submit"]');
+  if(btn){ btn.disabled=true; btn.textContent='Sending…'; }
   try{
-    const db=await getSB();
-    await db.from('messages').insert(msg);
+    const r=await fetch('/api/contact',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(msg)
+    });
+    if(!r.ok){
+      const j=await r.json().catch(()=>({}));
+      toast(j.error||'Could not send. Please try again.','err');
+      if(btn){ btn.disabled=false; btn.textContent='Send Message →'; }
+      return;
+    }
   }catch(_){
+    /* Offline fallback so the form still works locally */
     const msgs=JSON.parse(localStorage.getItem('niks_messages')||'[]');
-    msgs.unshift(msg);
+    msgs.unshift({...msg,date:new Date().toISOString()});
     localStorage.setItem('niks_messages',JSON.stringify(msgs));
   }
-  /* TODO(backend): trigger a "new contact form" email to hello@niksmasala.com
-     via a server function. Otherwise the team has to manually check the table. */
   toast('✓ Message sent! We\'ll get back within 24 hours.','ok');
   e.target.reset();
+  if(btn){ btn.disabled=false; btn.textContent='Send Message →'; }
 }
 </script>
 </body>

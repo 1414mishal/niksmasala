@@ -101,15 +101,22 @@ function render(){
 }
 function applyCoupon(){
   const c=document.getElementById('coupon').value.trim().toUpperCase();
-  if(c==='NIKS10'){localStorage.setItem('niks_discount','10');toast('✓ 10% discount applied!','ok');render();updateDiscount()}
-  else toast('Invalid coupon code','err');
+  if(!c){toast('Enter a coupon code','err');return}
+  /* The server validates the coupon authoritatively when the order is
+     created (`/api/order/create`). Here we just stash the code so the
+     buyer doesn't have to retype it; the optimistic 10% preview below
+     is a UI hint, not a binding discount. */
+  localStorage.setItem('niks_coupon', c);
+  toast('✓ Coupon saved — applied at checkout','ok');
+  render(); updateDiscount();
 }
 function updateDiscount(){
-  const d=+localStorage.getItem('niks_discount')||0;
-  if(d&&document.getElementById('discountRow')){
-    const sub=cartSubtotal();const off=Math.round(sub*d/100);
-    document.getElementById('discountRow').innerHTML=`<div class="row" style="color:var(--ok)"><span>Discount (${d}%)</span><span>-${money(off)}</span></div>`;
-  }
+  const code=localStorage.getItem('niks_coupon')||'';
+  const row=document.getElementById('discountRow'); if(!row) return;
+  if(code){
+    row.innerHTML=`<div class="row" style="color:var(--ok)"><span>Coupon</span><span><strong>${esc(code)}</strong></span></div>
+      <div style="font-size:11px;color:var(--muted);text-align:right">Discount applied at checkout</div>`;
+  } else { row.innerHTML=''; }
 }
 render();
 // hide floating cart btn on cart page itself

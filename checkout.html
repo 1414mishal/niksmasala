@@ -157,101 +157,144 @@ if(cart.length===0){
     </div>`;
 }
 
-function placeOrder(e){
+/* Server-driven checkout.
+ *
+ *   1. POST /api/order/create → server recomputes the total from the DB-side
+ *      catalog and creates a Razorpay order. Browser never decides the price.
+ *   2. Razorpay collects payment using the server-issued order_id.
+ *   3. POST /api/order/verify → server HMAC-checks the Razorpay signature
+ *      before marking the order paid and firing the confirmation email.
+ *
+ * For COD the same /api/order/create call is used; we just skip the
+ * Razorpay step and mark the order Pending.
+ */
+async function placeOrder(e){
   e.preventDefault();
   const f=new FormData(e.target);
-  /* ============================================================
-   * TODO(backend) — CRITICAL BEFORE GOING LIVE:
-   * The line below recomputes `total` in the browser. A buyer can
-   * tamper with this via DevTools and pay any amount. Before launch:
-   *   1. Send {cart, coupon} to a server endpoint.
-   *   2. Server recomputes subtotal, shipping, discount, total using
-   *      the canonical product catalog (DB-side prices) and coupon rules.
-   *   3. Server calls Razorpay `orders.create` and returns `order_id`.
-   *   4. Pass that `order_id` (not the amount!) to `new Razorpay({...})`.
-   *   5. On payment success, server verifies `razorpay_signature` using
-   *      HMAC-SHA256(key_secret, order_id + "|" + payment_id).
-   *   6. Only mark the order paid AFTER server-side signature passes.
-   * Until that pipeline exists, DO NOT switch from `rzp_test_...` to
-   * `rzp_live_...`. Treat this build as a checkout mock.
-   * ============================================================ */
-  const sub=cartSubtotal();
-  const ship=computeShipping();
-  const disc=+localStorage.getItem('niks_discount')||0;
-  const discAmt=Math.round(sub*disc/100);
-  const total=sub+ship-discAmt;
-  /* Normalise phone — strip everything but digits, drop leading 91 */
   const phoneRaw=(f.get('phone')||'').replace(/\D/g,'');
   const phone10=phoneRaw.length===12&&phoneRaw.startsWith('91')?phoneRaw.slice(2):phoneRaw.slice(-10);
-  const order={
-    id:newOrderId(),
-    date:new Date().toISOString(),
+
+  const payload = {
+    items: cart.map(i=>({id:i.id, pack:i.pack, qty:i.qty})),
+    coupon: (localStorage.getItem('niks_coupon')||'').trim(),
+    payment: f.get('pay'),
+    notes: f.get('notes')||'',
     customer:{
       name:((f.get('fname')||'')+' '+(f.get('lname')||'')).trim(),
       email:(f.get('email')||'').trim().toLowerCase(),
-      phone:phone10,
+      phone: phone10,
       address:(f.get('address')||'')+(f.get('landmark')?', '+f.get('landmark'):''),
       city:f.get('city')||'',
       state:f.get('state')||'',
       pincode:f.get('pin')||''
-    },
-    notes:f.get('notes')||'',
-    items:cart,
-    subtotal:sub, shipping:ship, discount:discAmt, total:total,
-    payment:f.get('pay'), status:'Pending', trackingStatus:'placed'
+    }
   };
 
-  // COD — skip Razorpay
-  if(order.payment==='COD'){
-    finalizeOrder(order);
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  if(submitBtn){ submitBtn.disabled=true; submitBtn.textContent='Processing…'; }
+
+  let created;
+  try{
+    const res = await fetch('/api/order/create',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(payload)
+    });
+    created = await res.json();
+    if(!res.ok){
+      toast(created.error||'Could not create order','err');
+      if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='PLACE ORDER'; }
+      return;
+    }
+  }catch(err){
+    toast('Network error — please try again.','err');
+    if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='PLACE ORDER'; }
     return;
   }
 
-  // Razorpay flow for UPI / Card / NetBanking
+  /* Cache a copy of the just-created order locally so /thankyou.html can render
+     without a round-trip. The server is still the source of truth. */
+  const localCopy = {
+    id: created.order_id,
+    date: new Date().toISOString(),
+    customer: payload.customer,
+    items: cart,
+    subtotal: created.breakdown.subtotal,
+    shipping: created.breakdown.shipping,
+    discount: created.breakdown.discount,
+    total:    created.breakdown.total,
+    payment:  payload.payment,
+    notes:    payload.notes,
+    status:   payload.payment==='COD' ? 'Pending' : 'AwaitingPayment',
+    trackingStatus: 'placed'
+  };
+  localStorage.setItem('niks_last_order', JSON.stringify(localCopy));
+
+  /* COD path — no Razorpay round-trip; the server already saved the order. */
+  if(payload.payment==='COD'){
+    setCart([]);
+    localStorage.removeItem('niks_coupon');
+    location.href='thankyou.html?id='+encodeURIComponent(created.order_id);
+    return;
+  }
+
+  /* Razorpay path. We open with the server-issued rzp_order_id; the buyer
+     cannot tamper with the amount because Razorpay will reject any mismatch. */
   if(typeof Razorpay==='undefined'){
     toast('Payment gateway not loaded. Please check your connection.','err');
+    if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='PLACE ORDER'; }
     return;
   }
   const rzp=new Razorpay({
-    key:s.razorpayKey,
-    amount:total*100,
-    currency:'INR',
+    key: created.key_id,
+    order_id: created.rzp_order_id,
+    amount: created.amount,
+    currency: created.currency,
     name:'Niks Masala',
-    description:`Order ${order.id}`,
+    description:`Order ${created.order_id}`,
     image:'nikslogomain.jpg',
     prefill:{
-      name:order.customer.name,
-      email:order.customer.email,
-      contact:order.customer.phone
+      name:    payload.customer.name,
+      email:   payload.customer.email,
+      contact: payload.customer.phone
     },
     theme:{color:'#a82a1a'},
-    method:order.payment==='UPI'?{upi:true,card:false,netbanking:false,wallet:false}:
-           order.payment==='NetBanking'?{netbanking:true,upi:false,card:false,wallet:false}:
-           {card:true,upi:true,netbanking:true,wallet:true},
-    handler:async function(resp){
-      order.payment_id=resp.razorpay_payment_id;
-      order.status='Processing';
-      await finalizeOrder(order);
+    handler: async function(resp){
+      try{
+        const v = await fetch('/api/order/verify',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            order_id: created.order_id,
+            rzp_order_id: resp.razorpay_order_id,
+            rzp_payment_id: resp.razorpay_payment_id,
+            rzp_signature: resp.razorpay_signature
+          })
+        });
+        const vj = await v.json();
+        if(!v.ok || !vj.ok){
+          toast(vj.error||'Payment verification failed. Please contact support.','err');
+          return;
+        }
+        setCart([]);
+        localStorage.removeItem('niks_coupon');
+        location.href='thankyou.html?id='+encodeURIComponent(created.order_id);
+      }catch(_){
+        toast('Payment captured — verifying. If you do not see a confirmation, contact us with order '+created.order_id,'err');
+      }
     },
     modal:{
-      ondismiss:function(){toast('Payment cancelled','err')}
+      ondismiss:function(){
+        toast('Payment cancelled — your order is held for 30 minutes.','err');
+        if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='PLACE ORDER'; }
+      }
     }
   });
-  rzp.on('payment.failed',function(resp){
-    toast('Payment failed: '+resp.error.description,'err');
+  rzp.on('payment.failed', function(resp){
+    toast('Payment failed: '+(resp.error&&resp.error.description||'unknown error'),'err');
+    if(submitBtn){ submitBtn.disabled=false; submitBtn.textContent='PLACE ORDER'; }
   });
   rzp.open();
-}
-
-async function finalizeOrder(order){
-  const all=JSON.parse(localStorage.getItem('niks_orders')||'[]');
-  all.unshift(order);
-  localStorage.setItem('niks_orders',JSON.stringify(all));
-  localStorage.setItem('niks_last_order',JSON.stringify(order));
-  localStorage.removeItem('niks_discount');
-  setCart([]);
-  try{ await saveOrderToCloud(order); }catch(_){}  // wait for cloud save BEFORE navigating
-  location.href='thankyou.html?id='+order.id;
 }
 </script>
 </body>
