@@ -202,26 +202,47 @@ async function doLogin(e){
 async function doRegister(e){
   e.preventDefault();
   const f=new FormData(e.target);
+  const email=(f.get('email')||'').trim().toLowerCase();
   const pw=f.get('pw')||'';
   if(pw.length<8){toast('Password must be at least 8 characters','err');return}
   const db=await sb();
   const {error,data}=await db.auth.signUp({
-    email:(f.get('email')||'').trim().toLowerCase(),
+    email,
     password:pw,
     options:{
       data:{
         name:(f.get('name')||'').trim(),
         phone:(f.get('phone')||'').trim()
       },
-      /* Use the current page's URL as the base so the /niksmasala/ subpath
-         on GitHub Pages is preserved. location.origin only gives the host. */
       emailRedirectTo: new URL('account.html', location.href).href
     }
   });
   if(error){toast(error.message||'Sign-up failed','err');return}
+
+  /* Supabase quirk: when "Confirm email" is ON, signing up with an
+     already-registered email returns a fake user object (to prevent
+     attackers from probing which emails are registered). The give-away
+     is `data.user.identities` being an empty array. */
+  const isDuplicate = data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0;
+  if(isDuplicate){
+    /* Pre-fill the Sign-In form with the duplicate email and highlight it. */
+    const loginEmail = document.querySelector('form[onsubmit^="doLogin"] input[name="email"]');
+    const loginPw    = document.querySelector('form[onsubmit^="doLogin"] input[name="pw"]');
+    if(loginEmail){
+      loginEmail.value = email;
+      loginEmail.style.borderColor = 'var(--red)';
+      loginEmail.scrollIntoView({behavior:'smooth', block:'center'});
+      if(loginPw) loginPw.focus();
+    }
+    toast('This email is already registered — please sign in instead.','err');
+    return;
+  }
+
   if(data && data.user && !data.session){
     /* Email-confirmation enabled — tell user to check inbox. */
     toast('Account created — check your email to confirm.','ok');
+    /* Clear the form so they don't accidentally re-submit. */
+    e.target.reset();
     return;
   }
   toast('Account created! 🎉','ok'); render();
