@@ -76,29 +76,45 @@ if(cart.length===0){
           <div class="form-row"><label>Last Name *</label><input type="text" name="lname" required></div>
         </div>
         <div class="form-grid-2">
-          <div class="form-row"><label>Email *</label><input type="email" name="email" required></div>
-          <div class="form-row"><label>Phone *</label><input type="tel" name="phone" required pattern="[0-9]{10}" title="10 digit phone"></div>
+          <div class="form-row"><label>Email *</label><input type="email" name="email" required autocomplete="email"></div>
+          <div class="form-row"><label>Phone *</label><input type="tel" name="phone" required pattern="^(\+?91[\s\-]?)?[6-9]\d{9}$" title="10-digit Indian mobile, optionally prefixed with +91" placeholder="10-digit mobile" autocomplete="tel"></div>
         </div>
 
         <h3 style="margin-top:20px">Shipping Address</h3>
-        <div class="form-row"><label>Address Line *</label><input type="text" name="address" required placeholder="House no., Street, Area"></div>
+        <div class="form-row"><label>Address Line *</label><input type="text" name="address" required placeholder="House no., Street, Area" autocomplete="street-address"></div>
         <div class="form-row"><label>Landmark (optional)</label><input type="text" name="landmark"></div>
         <div class="form-grid-2">
-          <div class="form-row"><label>City *</label><input type="text" name="city" required></div>
-          <div class="form-row"><label>State *</label>
-            <select name="state" required>
-              <option value="">Select State</option>
-              <option>Andhra Pradesh</option><option>Assam</option><option>Bihar</option>
-              <option>Delhi</option><option>Goa</option><option>Gujarat</option>
-              <option>Haryana</option><option>Karnataka</option><option>Kerala</option>
-              <option>Madhya Pradesh</option><option>Maharashtra</option><option>Odisha</option>
-              <option>Punjab</option><option>Rajasthan</option><option>Tamil Nadu</option>
-              <option>Telangana</option><option>Uttar Pradesh</option><option>West Bengal</option>
+          <div class="form-row"><label>City *</label><input type="text" name="city" required autocomplete="address-level2"></div>
+          <div class="form-row"><label>State / UT *</label>
+            <select name="state" required autocomplete="address-level1">
+              <option value="">Select State / UT</option>
+              <optgroup label="States">
+                <option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option>
+                <option>Bihar</option><option>Chhattisgarh</option><option>Goa</option>
+                <option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option>
+                <option>Jharkhand</option><option>Karnataka</option><option>Kerala</option>
+                <option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option>
+                <option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option>
+                <option>Odisha</option><option>Punjab</option><option>Rajasthan</option>
+                <option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option>
+                <option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option>
+                <option>West Bengal</option>
+              </optgroup>
+              <optgroup label="Union Territories">
+                <option>Andaman &amp; Nicobar Islands</option>
+                <option>Chandigarh</option>
+                <option>Dadra &amp; Nagar Haveli and Daman &amp; Diu</option>
+                <option>Delhi</option>
+                <option>Jammu &amp; Kashmir</option>
+                <option>Ladakh</option>
+                <option>Lakshadweep</option>
+                <option>Puducherry</option>
+              </optgroup>
             </select>
           </div>
         </div>
         <div class="form-grid-2">
-          <div class="form-row"><label>Pincode *</label><input type="text" name="pin" required maxlength="6" pattern="[0-9]{6}"></div>
+          <div class="form-row"><label>Pincode *</label><input type="text" name="pin" required maxlength="6" pattern="^[1-9]\d{5}$" title="6-digit Indian pincode" inputmode="numeric" autocomplete="postal-code"></div>
           <div class="form-row"><label>Country</label><input type="text" value="India" readonly></div>
         </div>
 
@@ -125,10 +141,10 @@ if(cart.length===0){
           ${cart.map(i=>`
             <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);align-items:center">
               <div style="width:56px;height:56px;border-radius:6px;overflow:hidden;background:var(--cream);flex-shrink:0;position:relative">
-                <img src="${i.image}" style="width:100%;height:100%;object-fit:cover">
+                <img src="${attr(i.image||'assets/products/garam-masala.png')}" alt="${attr(i.name||'')}" style="width:100%;height:100%;object-fit:cover" onerror="this.src='assets/products/garam-masala.png'">
                 <span style="position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700">${i.qty}</span>
               </div>
-              <div style="flex:1;min-width:0"><strong style="font-size:13px;display:block">${i.name}</strong><small style="color:var(--muted)">${money(i.price)} × ${i.qty}</small></div>
+              <div style="flex:1;min-width:0"><strong style="font-size:13px;display:block">${esc(i.name)}</strong><small style="color:var(--muted)">${money(i.price)} × ${i.qty}</small></div>
               <strong style="color:var(--red);font-size:14px">${money(i.price*i.qty)}</strong>
             </div>
           `).join('')}
@@ -144,22 +160,40 @@ if(cart.length===0){
 function placeOrder(e){
   e.preventDefault();
   const f=new FormData(e.target);
+  /* ============================================================
+   * TODO(backend) — CRITICAL BEFORE GOING LIVE:
+   * The line below recomputes `total` in the browser. A buyer can
+   * tamper with this via DevTools and pay any amount. Before launch:
+   *   1. Send {cart, coupon} to a server endpoint.
+   *   2. Server recomputes subtotal, shipping, discount, total using
+   *      the canonical product catalog (DB-side prices) and coupon rules.
+   *   3. Server calls Razorpay `orders.create` and returns `order_id`.
+   *   4. Pass that `order_id` (not the amount!) to `new Razorpay({...})`.
+   *   5. On payment success, server verifies `razorpay_signature` using
+   *      HMAC-SHA256(key_secret, order_id + "|" + payment_id).
+   *   6. Only mark the order paid AFTER server-side signature passes.
+   * Until that pipeline exists, DO NOT switch from `rzp_test_...` to
+   * `rzp_live_...`. Treat this build as a checkout mock.
+   * ============================================================ */
   const sub=cartSubtotal();
   const ship=computeShipping();
   const disc=+localStorage.getItem('niks_discount')||0;
   const discAmt=Math.round(sub*disc/100);
   const total=sub+ship-discAmt;
+  /* Normalise phone — strip everything but digits, drop leading 91 */
+  const phoneRaw=(f.get('phone')||'').replace(/\D/g,'');
+  const phone10=phoneRaw.length===12&&phoneRaw.startsWith('91')?phoneRaw.slice(2):phoneRaw.slice(-10);
   const order={
-    id:'NM'+Date.now().toString().slice(-8),
+    id:newOrderId(),
     date:new Date().toISOString(),
     customer:{
-      name:f.get('fname')+' '+f.get('lname'),
-      email:f.get('email'),
-      phone:f.get('phone'),
-      address:f.get('address')+(f.get('landmark')?', '+f.get('landmark'):''),
-      city:f.get('city'),
-      state:f.get('state'),
-      pincode:f.get('pin')
+      name:((f.get('fname')||'')+' '+(f.get('lname')||'')).trim(),
+      email:(f.get('email')||'').trim().toLowerCase(),
+      phone:phone10,
+      address:(f.get('address')||'')+(f.get('landmark')?', '+f.get('landmark'):''),
+      city:f.get('city')||'',
+      state:f.get('state')||'',
+      pincode:f.get('pin')||''
     },
     notes:f.get('notes')||'',
     items:cart,

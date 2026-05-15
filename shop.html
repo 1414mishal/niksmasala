@@ -3,7 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Shop All Spices — Niks Masala</title>
+<title>Shop All Spices &amp; Masalas — Niks Masala</title>
+<meta name="description" content="Shop authentic Mangalorean masalas, ground spices and ready-mixes online. Free shipping above ₹799 across India. Cash on Delivery available.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://niksmasala.com/shop.html">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Shop All Spices &amp; Masalas — Niks Masala">
+<meta property="og:description" content="Authentic Mangalorean masalas, ground spices and ready-mixes. Free shipping above ₹799.">
+<meta property="og:image" content="https://niksmasala.com/nikslogomain.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="nikslogomain.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
@@ -80,7 +88,8 @@ function buildCatList(){
   document.getElementById('catList').innerHTML=cats.map(c=>{
     const active=(c==='All'&&!FILTER.cat)||c===FILTER.cat;
     const n=c==='All'?getProducts().length:counts[c]||0;
-    return `<li class="${active?'active':''}" onclick="setCat('${c==='All'?'':c}')">${c} <span>(${n})</span></li>`;
+    const arg=c==='All'?'':c;
+    return `<li class="${active?'active':''}" onclick="setCat(${JSON.stringify(arg).replace(/"/g,'&quot;')})">${esc(c)} <span>(${n})</span></li>`;
   }).join('');
 }
 
@@ -97,7 +106,7 @@ function updateURL(){
   if(FILTER.cat) u.searchParams.set('cat',FILTER.cat); else u.searchParams.delete('cat');
   history.replaceState({},'',u);
   document.getElementById('pageTitle').textContent=FILTER.cat||'Shop All Spices';
-  document.getElementById('crumbCat').innerHTML=FILTER.cat?`<span class="breadcrumb-sep">›</span>${FILTER.cat}`:'';
+  document.getElementById('crumbCat').innerHTML=FILTER.cat?`<span class="breadcrumb-sep">›</span>${esc(FILTER.cat)}`:'';
 }
 
 function renderShop(){
@@ -115,6 +124,8 @@ function renderShop(){
   if(sort==='price-high') list.sort((a,b)=>b.price-a.price);
   if(sort==='name') list.sort((a,b)=>a.name.localeCompare(b.name));
   if(sort==='rating') list.sort((a,b)=>(b.rating||0)-(a.rating||0));
+  /* Using textContent (not innerHTML) makes this XSS-safe even if the
+     query string contains tags. */
   document.getElementById('count').textContent=`Showing ${list.length} product${list.length===1?'':'s'}${FILTER.q?' matching "'+FILTER.q+'"':''}`;
   document.getElementById('shopGrid').innerHTML=list.length?list.map(productCardHTML).join(''):
     `<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)">No products found. <a href="shop.html" style="color:var(--red)">Clear filters</a></div>`;

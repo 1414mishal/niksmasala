@@ -58,20 +58,20 @@ function render(){
             ${cart.map(i=>`
               <tr>
                 <td><div class="cart-prod-cell">
-                  <div class="thumb"><img src="${i.image}" alt="${i.name}" onerror="this.src='assets/products/garam-masala.png'"></div>
+                  <div class="thumb"><img src="${attr(i.image||'assets/products/garam-masala.png')}" alt="${attr(i.name||'')}" onerror="this.src='assets/products/garam-masala.png'"></div>
                   <div>
-                    <strong><a href="product.html?id=${i.id}">${i.name}</a></strong>
-                    <small style="display:block;color:var(--muted);margin-top:2px">${i.pack||''}</small>
+                    <strong><a href="product.html?id=${attr(i.id)}">${esc(i.name)}</a></strong>
+                    <small style="display:block;color:var(--muted);margin-top:2px">${esc(i.pack||'')}</small>
                   </div>
                 </div></td>
                 <td>${money(i.price)}</td>
                 <td><div class="qty-box" style="height:40px">
-                  <button onclick="updateCartItem('${i.cartKey}',${i.qty-1});render()" style="height:38px">−</button>
-                  <input type="number" value="${i.qty}" min="1" onchange="updateCartItem('${i.cartKey}',+this.value);render()" style="height:38px;width:46px">
-                  <button onclick="updateCartItem('${i.cartKey}',${i.qty+1});render()" style="height:38px">+</button>
+                  <button onclick="updateCartItem('${attr(i.cartKey)}',${i.qty-1});render()" style="height:38px" aria-label="Decrease quantity">−</button>
+                  <input type="number" value="${i.qty}" min="1" onchange="updateCartItem('${attr(i.cartKey)}',+this.value);render()" style="height:38px;width:46px" aria-label="Quantity">
+                  <button onclick="updateCartItem('${attr(i.cartKey)}',${i.qty+1});render()" style="height:38px" aria-label="Increase quantity">+</button>
                 </div></td>
                 <td><strong style="color:var(--red)">${money(i.price*i.qty)}</strong></td>
-                <td><button onclick="removeFromCart('${i.cartKey}');render()" style="color:var(--muted);font-size:20px;padding:4px 8px" title="Remove">×</button></td>
+                <td><button onclick="removeFromCart('${attr(i.cartKey)}');render()" style="color:var(--muted);font-size:20px;padding:4px 8px" title="Remove" aria-label="Remove ${attr(i.name||'')}">×</button></td>
               </tr>
             `).join('')}
           </tbody>

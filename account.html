@@ -54,7 +54,7 @@ async function render(){
           <p style="color:var(--muted);font-size:14px;margin-bottom:20px">Welcome back! Please sign in to your account.</p>
           <form onsubmit="doLogin(event)">
             <div class="form-row"><label>Email *</label><input type="email" name="email" required></div>
-            <div class="form-row"><label>Password *</label><input type="password" name="pw" required minlength="4"></div>
+            <div class="form-row"><label>Password *</label><input type="password" name="pw" required minlength="8"></div>
             <button type="submit" class="btn btn-primary" style="width:100%">Sign In</button>
             <p style="margin-top:12px;font-size:13px;color:var(--muted);text-align:center"><a href="#" onclick="showForgot();return false" style="color:var(--red);font-weight:600">Forgot password?</a></p>
           </form>
@@ -66,7 +66,7 @@ async function render(){
             <div class="form-row"><label>Full Name *</label><input type="text" name="name" required></div>
             <div class="form-row"><label>Email *</label><input type="email" name="email" required></div>
             <div class="form-row"><label>Phone</label><input type="tel" name="phone"></div>
-            <div class="form-row"><label>Password *</label><input type="password" name="pw" required minlength="4"></div>
+            <div class="form-row"><label>Password *</label><input type="password" name="pw" required minlength="8"></div>
             <div class="form-row"><label>Security Question *</label>
               <select name="question" required>
                 <option value="">Select a question</option>
@@ -91,9 +91,9 @@ async function render(){
     <div style="max-width:1200px;margin:40px auto;padding:0 24px;display:grid;grid-template-columns:260px 1fr;gap:28px">
       <aside style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px;align-self:start">
         <div style="text-align:center;padding-bottom:18px;border-bottom:1px solid var(--line);margin-bottom:14px">
-          <div style="width:72px;height:72px;margin:0 auto 10px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:28px;font-weight:700">${u.name[0].toUpperCase()}</div>
-          <strong>${u.name}</strong><br>
-          <small style="color:var(--muted)">${u.email}</small>
+          <div style="width:72px;height:72px;margin:0 auto 10px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:28px;font-weight:700">${esc((u.name||'?')[0].toUpperCase())}</div>
+          <strong>${esc(u.name)}</strong><br>
+          <small style="color:var(--muted)">${esc(u.email)}</small>
         </div>
         <nav style="display:flex;flex-direction:column;gap:4px">
           <a href="#" onclick="tab('dash');return false" class="acc-nav active" style="padding:10px 14px;border-radius:6px;font-size:14px">📊 Dashboard</a>
@@ -120,15 +120,14 @@ function _drawTab(t,orders,u){
   const total=orders.reduce((s,o)=>s+(+o.total||0),0);
   if(t==='dash'){
     box.innerHTML=`
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px">
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px">
         <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px"><div style="font-size:12px;color:var(--muted);letter-spacing:1px">ORDERS</div><div style="font-family:'Roboto Slab',serif;font-size:30px;color:var(--red);margin-top:4px">${orders.length}</div></div>
         <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px"><div style="font-size:12px;color:var(--muted);letter-spacing:1px">TOTAL SPENT</div><div style="font-family:'Roboto Slab',serif;font-size:30px;color:var(--red);margin-top:4px">${money(total)}</div></div>
-        <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px"><div style="font-size:12px;color:var(--muted);letter-spacing:1px">LOYALTY POINTS</div><div style="font-family:'Roboto Slab',serif;font-size:30px;color:var(--gold);margin-top:4px">${Math.floor(total/10)}</div></div>
       </div>
       <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:24px">
         <h3 style="font-size:18px;margin-bottom:14px">Recent Orders</h3>
         ${orders.length===0?'<p style="color:var(--muted);padding:20px 0">No orders yet. <a href="shop.html" style="color:var(--red)">Shop now →</a></p>':
-        orders.slice(0,3).map(o=>`<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)"><div><strong>${o.id}</strong><br><small style="color:var(--muted)">${new Date(o.date||o.created_at).toLocaleDateString('en-IN')}</small></div><div style="text-align:right"><strong style="color:var(--red)">${money(o.total)}</strong><br><small>${o.status}</small></div></div>`).join('')}
+        orders.slice(0,3).map(o=>`<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)"><div><strong>${esc(o.id)}</strong><br><small style="color:var(--muted)">${esc(new Date(o.date||o.created_at).toLocaleDateString('en-IN'))}</small></div><div style="text-align:right"><strong style="color:var(--red)">${money(o.total)}</strong><br><small>${esc(o.status||'')}</small></div></div>`).join('')}
       </div>`;
   }
   if(t==='orders'){
@@ -139,12 +138,12 @@ function _drawTab(t,orders,u){
         orders.map(o=>`
           <div style="border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:14px">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-              <div><strong>${o.id}</strong> · <small style="color:var(--muted)">${new Date(o.date||o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</small></div>
-              <span style="background:var(--cream);color:var(--red);padding:4px 12px;border-radius:50px;font-size:12px;font-weight:600">${o.status}</span>
+              <div><strong>${esc(o.id)}</strong> · <small style="color:var(--muted)">${esc(new Date(o.date||o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}))}</small></div>
+              <span style="background:var(--cream);color:var(--red);padding:4px 12px;border-radius:50px;font-size:12px;font-weight:600">${esc(o.status||'Pending')}</span>
             </div>
-            <div style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap">${(o.items||[]).map(i=>`<div style="width:48px;height:48px;border-radius:6px;overflow:hidden"><img src="${i.image}" style="width:100%;height:100%;object-fit:cover" title="${i.name}"></div>`).join('')}</div>
+            <div style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap">${(o.items||[]).map(i=>`<div style="width:48px;height:48px;border-radius:6px;overflow:hidden"><img src="${attr(i.image||'')}" style="width:100%;height:100%;object-fit:cover" title="${attr(i.name||'')}" alt="${attr(i.name||'')}" onerror="this.src='assets/products/garam-masala.png'"></div>`).join('')}</div>
             <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--line);font-size:14px">
-              <span style="color:var(--muted)">${(o.items||[]).reduce((s,i)=>s+i.qty,0)} items · ${o.payment}</span>
+              <span style="color:var(--muted)">${(o.items||[]).reduce((s,i)=>s+i.qty,0)} items · ${esc(o.payment||'')}</span>
               <strong style="color:var(--red);font-size:16px">${money(o.total)}</strong>
             </div>
           </div>`).join('')}
@@ -156,32 +155,34 @@ function _drawTab(t,orders,u){
         <h3 style="font-size:18px;margin-bottom:18px">Profile Details</h3>
         <form onsubmit="saveProfile(event)">
           <div class="form-grid-2">
-            <div class="form-row"><label>Full Name</label><input type="text" name="name" value="${u.name}" required></div>
-            <div class="form-row"><label>Phone</label><input type="tel" name="phone" value="${u.phone||''}"></div>
+            <div class="form-row"><label>Full Name</label><input type="text" name="name" value="${attr(u.name)}" required></div>
+            <div class="form-row"><label>Phone</label><input type="tel" name="phone" value="${attr(u.phone||'')}"></div>
           </div>
-          <div class="form-row"><label>Email</label><input type="email" name="email" value="${u.email}" required></div>
+          <div class="form-row"><label>Email</label><input type="email" name="email" value="${attr(u.email)}" readonly title="Email cannot be changed"></div>
           <button class="btn btn-primary">Save Changes</button>
         </form>
       </div>`;
   }
 }
 
-/* ---------- AUTH ---------- */
+/* ---------- AUTH ----------
+   Passwords and security answers are stored as SHA-256 hashes (salted with email).
+   This is still a band-aid — a real backend with bcrypt + per-user salt is required
+   before production. See SECURITY.md. */
 async function doLogin(e){
   e.preventDefault();
   const f=new FormData(e.target);
   const email=f.get('email').trim().toLowerCase();
   const pw=f.get('pw');
-  // Cloud first
+  const pwHash=await hashPw(pw,email);
   const cu=await getUserFromCloud(email);
   if(cu){
-    if(cu.pw!==pw){toast('Invalid email or password','err');return}
+    if(cu.pw!==pwHash){toast('Invalid email or password','err');return}
     setUser({name:cu.name,email:cu.email,phone:cu.phone||''});
     toast('Welcome back!','ok');render();return;
   }
-  // localStorage fallback
   const users=JSON.parse(localStorage.getItem('niks_users')||'[]');
-  const u=users.find(x=>x.email===email&&x.pw===pw);
+  const u=users.find(x=>x.email===email&&x.pw===pwHash);
   if(!u){toast('Invalid email or password','err');return}
   setUser({name:u.name,email:u.email,phone:u.phone||''});
   toast('Welcome back!','ok');render();
@@ -191,12 +192,17 @@ async function doRegister(e){
   e.preventDefault();
   const f=new FormData(e.target);
   const email=f.get('email').trim().toLowerCase();
+  const pw=f.get('pw');
+  if(pw.length<8){toast('Password must be at least 8 characters','err');return}
   const existing=await getUserFromCloud(email);
   if(existing){toast('Email already registered','err');return}
   const users=JSON.parse(localStorage.getItem('niks_users')||'[]');
   if(users.find(x=>x.email===email)){toast('Email already registered','err');return}
-  const nu={name:f.get('name'),email,phone:f.get('phone')||'',pw:f.get('pw'),
-    question:f.get('question'),answer:(f.get('answer')||'').trim().toLowerCase()};
+  const pwHash=await hashPw(pw,email);
+  const ansRaw=(f.get('answer')||'').trim().toLowerCase();
+  const ansHash=await hashPw(ansRaw,email+':a');
+  const nu={name:f.get('name'),email,phone:f.get('phone')||'',pw:pwHash,
+    question:f.get('question'),answer:ansHash};
   users.push(nu);
   localStorage.setItem('niks_users',JSON.stringify(users));
   saveUserToCloud(nu);
@@ -251,8 +257,8 @@ async function forgotStep1(e){
     <div style="grid-column:1/-1;max-width:480px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px">
       <h3 style="font-size:22px;margin-bottom:6px">Security Check</h3>
       <p style="color:var(--muted);font-size:14px;margin-bottom:6px">Answer your security question to continue.</p>
-      <p style="font-size:14px;margin-bottom:20px;background:var(--cream);padding:12px 14px;border-radius:6px;border-left:3px solid var(--red)"><strong>${u.question}</strong></p>
-      <form onsubmit="forgotStep2(event,'${u.email}')">
+      <p style="font-size:14px;margin-bottom:20px;background:var(--cream);padding:12px 14px;border-radius:6px;border-left:3px solid var(--red)"><strong>${esc(u.question)}</strong></p>
+      <form onsubmit="forgotStep2(event,'${attr(u.email)}')">
         <div class="form-row"><label>Your Answer *</label><input type="text" name="answer" required autofocus></div>
         <button type="submit" class="btn btn-primary" style="width:100%">Verify →</button>
         <p style="margin-top:12px;font-size:13px;text-align:center"><a href="#" onclick="render();return false" style="color:var(--muted)">← Cancel</a></p>
@@ -266,7 +272,12 @@ async function forgotStep2(e,email){
   let u=await getUserFromCloud(email);
   if(!u){const users=JSON.parse(localStorage.getItem('niks_users')||'[]');u=users.find(x=>x.email===email)||null}
   if(!u){toast('Account not found','err');render();return}
-  if(answer!==(u.answer||'').trim().toLowerCase()){toast('Incorrect answer. Try again.','err');return}
+  /* Compare hash → hash. Older accounts that still hold plaintext answers
+     are upgraded transparently on first match. */
+  const ansHash=await hashPw(answer,email+':a');
+  const stored=(u.answer||'').trim();
+  const ok = stored===ansHash || stored.toLowerCase()===answer;
+  if(!ok){toast('Incorrect answer. Try again.','err');return}
   forgotStep3(u);
 }
 
@@ -274,10 +285,10 @@ function forgotStep3(u){
   document.getElementById('authGrid').innerHTML=`
     <div style="grid-column:1/-1;max-width:480px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px">
       <h3 style="font-size:22px;margin-bottom:6px">Set a New Password</h3>
-      <p style="color:var(--muted);font-size:14px;margin-bottom:20px">✓ Verified. New password for <strong>${u.email}</strong>.</p>
-      <form onsubmit="forgotStep4(event,'${u.email}')">
-        <div class="form-row"><label>New Password *</label><input type="password" name="pw1" required minlength="4" autofocus></div>
-        <div class="form-row"><label>Confirm Password *</label><input type="password" name="pw2" required minlength="4"></div>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:20px">✓ Verified. New password for <strong>${esc(u.email)}</strong>.</p>
+      <form onsubmit="forgotStep4(event,'${attr(u.email)}')">
+        <div class="form-row"><label>New Password *</label><input type="password" name="pw1" required minlength="8" autofocus></div>
+        <div class="form-row"><label>Confirm Password *</label><input type="password" name="pw2" required minlength="8"></div>
         <button type="submit" class="btn btn-primary" style="width:100%">Reset Password</button>
       </form>
     </div>`;
@@ -287,10 +298,12 @@ async function forgotStep4(e,email){
   e.preventDefault();
   const p1=e.target.elements.pw1.value,p2=e.target.elements.pw2.value;
   if(p1!==p2){toast('Passwords don\'t match','err');return}
+  if(p1.length<8){toast('Use at least 8 characters','err');return}
+  const pwHash=await hashPw(p1,email);
   const users=JSON.parse(localStorage.getItem('niks_users')||'[]');
   const i=users.findIndex(x=>x.email===email);
-  if(i>=0){users[i].pw=p1;localStorage.setItem('niks_users',JSON.stringify(users))}
-  try{const db=await getSB();await db.from('users').update({pw:p1}).eq('email',email)}catch(_){}
+  if(i>=0){users[i].pw=pwHash;localStorage.setItem('niks_users',JSON.stringify(users))}
+  try{const db=await getSB();await db.from('users').update({pw:pwHash}).eq('email',email)}catch(_){}
   toast('✓ Password reset! Please sign in.','ok');
   setTimeout(render,800);
 }
