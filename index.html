@@ -318,8 +318,15 @@ function toggleMute(btn){
   </div>
 </section>
 
-<!-- INSTAGRAM -->
-<section class="ig-section">
+<!-- INSTAGRAM
+     Two modes:
+       (a) If IG_POSTS array below is empty → clean CTA card only.
+       (b) If you paste 3–8 Instagram post URLs into IG_POSTS, this
+           section renders REAL Instagram embeds (with video playback,
+           likes, comments — exactly as they appear on Instagram).
+     The previous version used product photos with fabricated
+     "@niks.masala" captions, which was misleading. -->
+<section class="ig-section" id="igSection">
   <div class="ig-header">
     <div>
       <div class="ig-profile-row">
@@ -327,81 +334,85 @@ function toggleMute(btn){
           <img src="nikslogomain.jpg" alt="Niks Masala">
         </div>
         <div>
-          <div class="eyebrow" style="margin-bottom:2px">Follow on Instagram</div>
+          <div class="eyebrow" style="margin-bottom:2px">On Instagram</div>
           <h2 style="margin:0">@niks.masala</h2>
           <div class="ig-handle">Authentic Mangalorean Masalas · Mangalore, India</div>
         </div>
       </div>
-      <p style="margin-top:10px">Recipes, behind-the-scenes & coastal food stories from our kitchen.</p>
+      <p style="margin-top:10px">Recipes, behind-the-scenes &amp; coastal food stories from our kitchen.</p>
     </div>
     <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener" class="ig-follow-btn">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
-      Follow Us
+      Follow @niks.masala
     </a>
   </div>
 
-  <div class="ig-grid">
-    <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener" class="ig-post">
-      <img src="assets/products/chicken-masala.png" alt="Chicken Masala" loading="lazy">
-      <div class="ig-overlay">
-        <div class="ig-overlay-caption">Chicken Masala — rich, aromatic, bold 🌶️</div>
-        <div class="ig-overlay-handle">@niks.masala</div>
-      </div>
-    </a>
-    <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener" class="ig-post">
-      <img src="assets/products/ghee-roast.png" alt="Ghee Roast" loading="lazy">
-      <div class="ig-overlay">
-        <div class="ig-overlay-caption">Chicken Ghee Roast ✨</div>
-        <div class="ig-overlay-handle">@niks.masala</div>
-      </div>
-    </a>
-    <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener" class="ig-post">
-      <img src="assets/products/fish-masala.png" alt="Fish Masala" loading="lazy">
-      <div class="ig-overlay">
-        <div class="ig-overlay-caption">Coastal Fish Fry Masala 🐟</div>
-        <div class="ig-overlay-handle">@niks.masala</div>
-      </div>
-    </a>
-    <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener" class="ig-post">
-      <img src="assets/products/kundapura.png" alt="Kundapura Masala" loading="lazy">
-      <div class="ig-overlay">
-        <div class="ig-overlay-caption">Kundapura Koli Saaru 🍛</div>
-        <div class="ig-overlay-handle">@niks.masala</div>
-      </div>
-    </a>
-    <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener" class="ig-post">
-      <img src="assets/products/turmeric.png" alt="Turmeric" loading="lazy">
-      <div class="ig-overlay">
-        <div class="ig-overlay-caption">Pure stone-ground turmeric 💛</div>
-        <div class="ig-overlay-handle">@niks.masala</div>
-      </div>
-    </a>
-    <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener" class="ig-post">
-      <img src="assets/products/garam-masala.png" alt="Garam Masala" loading="lazy">
-      <div class="ig-overlay">
-        <div class="ig-overlay-caption">Garam Masala — a pinch of magic ✨</div>
-        <div class="ig-overlay-handle">@niks.masala</div>
-      </div>
-    </a>
-    <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener" class="ig-post">
-      <img src="assets/products/tandoori.png" alt="Tandoori" loading="lazy">
-      <div class="ig-overlay">
-        <div class="ig-overlay-caption">Tandoori Masala 🔥</div>
-        <div class="ig-overlay-handle">@niks.masala</div>
-      </div>
-    </a>
-  </div>
-
-  <div class="ig-cta-strip">
-    <div>
-      <h3>We post every week 📸</h3>
-      <p>New recipes, spice tips & behind-the-scenes from our Mangalore facility.</p>
-    </div>
-    <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener">
-      Open Instagram →
-    </a>
-  </div>
+  <div id="igEmbeds"></div>
 </section>
+
+<script>
+/* ============================================================
+ *  HOW TO ADD REAL INSTAGRAM POSTS (free, no API key needed):
+ *    1. Open a public post on instagram.com (in a browser).
+ *    2. Click "..." (top right of the post) → "Embed".
+ *    3. Click "Copy embed code" then look at the iframe inside —
+ *       just copy the POST URL (the part that looks like
+ *       https://www.instagram.com/p/ABC123/ or .../reel/ABC123/).
+ *    4. Paste those URLs into the IG_POSTS array below.
+ *    5. Save + push. Instagram's embed.js renders them in-place,
+ *       videos auto-play in muted mode (Instagram's behaviour).
+ * ============================================================ */
+const IG_POSTS = [
+  // 'https://www.instagram.com/p/POST_ID/',
+  // 'https://www.instagram.com/reel/REEL_ID/',
+  // 'https://www.instagram.com/p/ANOTHER_ID/',
+];
+
+(function renderIG(){
+  const wrap = document.getElementById('igEmbeds');
+  if(!wrap) return;
+  if(IG_POSTS.length === 0){
+    /* No posts configured yet — render an honest CTA card. */
+    wrap.innerHTML = `
+      <div class="ig-cta-strip" style="margin-top:24px">
+        <div>
+          <h3>We post recipes &amp; behind-the-scenes every week 📸</h3>
+          <p>Tap below to see our latest cooking videos, product reveals and spice tips on Instagram.</p>
+        </div>
+        <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener">
+          Open Instagram →
+        </a>
+      </div>`;
+    return;
+  }
+  /* Real Instagram embeds. Free, no API key, no auth — Instagram's
+     embed.js script picks up every <blockquote class="instagram-media">
+     and renders the live post inside it (video plays, captions show). */
+  wrap.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;margin-top:18px">
+      ${IG_POSTS.map(url=>`
+        <blockquote class="instagram-media" data-instgrm-permalink="${url}" data-instgrm-version="14"
+          style="background:#FFF;border:0;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.08);margin:0;min-width:280px;width:100%"></blockquote>
+      `).join('')}
+    </div>
+    <div class="ig-cta-strip" style="margin-top:24px">
+      <div>
+        <h3>More on Instagram</h3>
+        <p>Recipes, reveals &amp; coastal food stories.</p>
+      </div>
+      <a href="https://www.instagram.com/niks.masala/" target="_blank" rel="noopener">Open Instagram →</a>
+    </div>`;
+  /* Load Instagram's embed script once. It scans for .instagram-media
+     blockquotes and replaces them with live iframes. */
+  if(!document.querySelector('script[src*="instagram.com/embed.js"]')){
+    const s=document.createElement('script'); s.async=true;
+    s.src='https://www.instagram.com/embed.js';
+    document.body.appendChild(s);
+  } else if(window.instgrm){
+    window.instgrm.Embeds.process();
+  }
+})();
+</script>
 
 <!-- CRAFTSMANSHIP / BRAND PROMISE
      (Replaces an earlier testimonials section. Once verified customer
