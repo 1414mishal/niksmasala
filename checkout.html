@@ -114,7 +114,10 @@ if(cart.length===0){
           </div>
         </div>
         <div class="form-grid-2">
-          <div class="form-row"><label>Pincode *</label><input type="text" name="pin" required maxlength="6" pattern="^[1-9]\d{5}$" title="6-digit Indian pincode" inputmode="numeric" autocomplete="postal-code"></div>
+          <div class="form-row">
+            <label>Pincode *</label>
+            <input type="text" name="pin" required maxlength="6" minlength="6" pattern="\d{6}" title="6-digit Indian pincode" inputmode="numeric" autocomplete="postal-code" oninput="this.value=this.value.replace(/\D/g,'').slice(0,6)">
+          </div>
           <div class="form-row"><label>Country</label><input type="text" value="India" readonly></div>
         </div>
 
