@@ -507,19 +507,47 @@
 <!-- ============================================================
      RECIPES — same six dishes as the original
      ============================================================ -->
-<section id="recipes" style="background:#fff;padding:96px 24px;border-top:1px solid #e5dbc4">
-  <div style="max-width:1280px;margin:0 auto">
-    <div style="text-align:center;max-width:640px;margin:0 auto 56px">
-      <p data-reveal="up" style="font:600 12px/1 'Manrope';letter-spacing:.2em;text-transform:uppercase;color:#b8451a;margin:0 0 14px">Cook with Niks</p>
-      <h2 data-reveal="up" data-delay="100" class="font-serif" style="font-size:clamp(32px,4.5vw,48px);font-weight:600;line-height:1.1;letter-spacing:-0.02em;color:#3d1f0e;margin:14px 0 14px">
-        Recipes you'll love.
+<section id="recipes" class="rv-section" style="background:#fff;padding:110px 0 130px;border-top:1px solid #e5dbc4">
+  <div class="rv-section__head" style="max-width:1320px;margin:0 auto 56px;padding:0 28px;display:flex;align-items:flex-end;justify-content:space-between;gap:32px;flex-wrap:wrap">
+    <div style="max-width:560px">
+      <p data-reveal="up" style="display:inline-flex;align-items:center;gap:12px;font:600 11px/1 'Manrope';letter-spacing:.28em;text-transform:uppercase;color:#b8451a;margin:0 0 18px">
+        <span style="width:24px;height:1px;background:#b8451a"></span>Watch &amp; Cook
+      </p>
+      <h2 data-reveal="up" data-delay="100" class="font-serif" style="font:600 clamp(32px,4.4vw,48px)/1.05 'Source Serif 4',serif;letter-spacing:-0.025em;color:#3d1f0e;margin:0 0 14px">
+        Recipes, on video.
       </h2>
-      <p data-reveal="up" data-delay="200" style="font:400 17px/1.7 'Manrope';color:#4a3a2e;margin:0">
-        Bring the taste of Mangalore to your table with classic recipes using our signature masalas.
+      <p data-reveal="up" data-delay="200" style="font:400 16px/1.65 'Manrope';color:#4a3a2e;margin:0;max-width:480px">
+        Real Mangalorean dishes cooked with Niks Masala — tap any video to follow along.
       </p>
     </div>
+    <div data-reveal="up" data-delay="280" style="display:flex;align-items:center;gap:18px">
+      <a href="https://www.youtube.com/@niks.masala" target="_blank" rel="noopener"
+         style="font:600 12px/1 'Manrope';letter-spacing:.16em;text-transform:uppercase;color:#3d1f0e;text-decoration:underline;text-underline-offset:6px;text-decoration-color:#fed7aa">
+        View all on YouTube →
+      </a>
+      <div class="rv-carousel__nav" id="rvNav" style="display:flex;gap:8px">
+        <button type="button" id="rvPrev" aria-label="Previous videos"
+                style="width:44px;height:44px;border-radius:50%;border:1px solid rgba(46,26,22,.18);background:#fff;cursor:pointer;display:grid;place-items:center;transition:all .3s cubic-bezier(.25,1,.5,1)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 6l-6 6 6 6"/></svg>
+        </button>
+        <button type="button" id="rvNext" aria-label="Next videos"
+                style="width:44px;height:44px;border-radius:50%;border:1px solid rgba(46,26,22,.18);background:#fff;cursor:pointer;display:grid;place-items:center;transition:all .3s cubic-bezier(.25,1,.5,1)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
 
-    <div data-stagger="80" class="recipe-vid-grid" id="recipeVidGrid"></div>
+  <!-- Horizontal scroll-snap track. Cards live inside #recipeVidGrid as before;
+       theme.css `.rv-carousel` rules turn the grid into a sideways rail. -->
+  <div class="rv-carousel" data-rv-carousel>
+    <div data-stagger="80" class="recipe-vid-grid rv-carousel__track" id="recipeVidGrid"></div>
+  </div>
+
+  <div class="rv-progress" style="max-width:1320px;margin:32px auto 0;padding:0 28px">
+    <div class="rv-progress__bar" id="rvProgressBar" style="height:3px;background:rgba(46,26,22,.08);border-radius:2px;overflow:hidden;position:relative">
+      <div id="rvProgressFill" style="position:absolute;top:0;left:0;height:100%;width:30%;background:#c86a36;border-radius:2px;transition:width .35s cubic-bezier(.25,1,.5,1),left .35s cubic-bezier(.25,1,.5,1)"></div>
+    </div>
   </div>
 </section>
 
@@ -895,6 +923,45 @@ const RECIPE_VIDEOS = [
     });
     head.appendChild(tag);
   });
+})();
+
+/* ===== Recipe carousel — prev/next arrows + scroll progress ===== */
+(function rvCarousel(){
+  const track = document.getElementById('recipeVidGrid');
+  const prev  = document.getElementById('rvPrev');
+  const next  = document.getElementById('rvNext');
+  const fill  = document.getElementById('rvProgressFill');
+  if (!track || !prev || !next) return;
+
+  function step(){
+    const card = track.querySelector('.recipe-vid-card');
+    if (!card) return 320;
+    const gap = parseFloat(getComputedStyle(track).columnGap || getComputedStyle(track).gap || '22');
+    return card.getBoundingClientRect().width + (isNaN(gap) ? 22 : gap);
+  }
+  function maxScroll(){ return track.scrollWidth - track.clientWidth; }
+
+  function sync(){
+    const max = maxScroll();
+    const left = track.scrollLeft;
+    prev.disabled = left <= 2;
+    next.disabled = left >= max - 2;
+    if (fill){
+      const ratio = max > 0 ? left / max : 0;
+      const visibleRatio = track.clientWidth / track.scrollWidth;
+      fill.style.width = (Math.max(visibleRatio, 0.08) * 100) + '%';
+      fill.style.left  = (ratio * (100 - Math.max(visibleRatio, 0.08) * 100)) + '%';
+    }
+  }
+
+  prev.addEventListener('click', () => track.scrollBy({ left: -step() * 2, behavior:'smooth' }));
+  next.addEventListener('click', () => track.scrollBy({ left:  step() * 2, behavior:'smooth' }));
+  track.addEventListener('scroll', sync, { passive: true });
+  window.addEventListener('resize', sync);
+
+  /* Initial sync once cards have laid out */
+  requestAnimationFrame(() => requestAnimationFrame(sync));
+  setTimeout(sync, 300);
 })();
 
 /* ===== YouTube Lightbox ===== */

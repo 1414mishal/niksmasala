@@ -1167,6 +1167,68 @@ header[data-sticky-nav].is-scrolled img[alt="Niks Masala"] { height: 48px; }
 }
 
 /* ==========================================================
+   RECIPE VIDEO CAROUSEL — horizontal scroll-snap rail.
+   Overrides .recipe-vid-grid (which was a 4-col CSS grid)
+   when wrapped in .rv-carousel. Shows ~3 cards at a time
+   with the 4th peeking from the right edge to signal "more".
+   ========================================================== */
+.rv-carousel {
+  position: relative;
+  margin: 0;
+  /* full-bleed style: cards extend past the standard 1280 container */
+  padding-left: max(28px, calc(50vw - 640px));
+}
+.rv-carousel .recipe-vid-grid.rv-carousel__track {
+  display: grid;
+  grid-template-columns: none;          /* defeat the 4-col grid */
+  grid-auto-flow: column;
+  grid-auto-columns: clamp(280px, 30vw, 380px);
+  gap: 22px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 18vw 12px 0;             /* right padding = peek the next card */
+}
+.rv-carousel .recipe-vid-grid.rv-carousel__track::-webkit-scrollbar { display: none; }
+.rv-carousel .recipe-vid-card {
+  scroll-snap-align: start;
+  min-width: 0;                         /* prevent overflow inside grid item */
+}
+
+/* Nav buttons — hover and disabled state */
+.rv-carousel__nav button {
+  color: #3d1f0e;
+}
+.rv-carousel__nav button:hover {
+  background: #3d1f0e !important;
+  color: #fed7aa !important;
+  border-color: #3d1f0e !important;
+  transform: translateY(-1px);
+}
+.rv-carousel__nav button:disabled {
+  opacity: .28;
+  cursor: not-allowed;
+  transform: none;
+}
+.rv-carousel__nav button:disabled:hover {
+  background: #fff !important;
+  color: #3d1f0e !important;
+  border-color: rgba(46,26,22,.18) !important;
+  transform: none;
+}
+
+@media (max-width: 720px) {
+  .rv-carousel { padding-left: 20px; }
+  .rv-carousel .recipe-vid-grid.rv-carousel__track {
+    grid-auto-columns: 78vw;
+    padding-right: 20vw;
+  }
+}
+
+/* ==========================================================
    RECIPE VIDEO CARDS — YouTube grid + lightbox
    ========================================================== */
 .recipe-vid-grid {
