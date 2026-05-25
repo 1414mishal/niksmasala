@@ -1,10 +1,35 @@
 User-agent: *
 Allow: /
+
+# Private / transactional pages — should never be indexed
 Disallow: /admin.html
 Disallow: /account.html
 Disallow: /checkout.html
 Disallow: /thankyou.html
 Disallow: /cart.html
 Disallow: /track.html
+
+# Experiment / scratch folders — should never ship publicly
+Disallow: /experiment-design-premium/
+Disallow: /experiment-design-apple/
+Disallow: /experiment-design-revamp/
+Disallow: /stitch_niks_masala_modern_redesign/
+
+# Block aggressive AI scrapers from training on the catalogue without permission.
+# Comment these out if you want broad AI search visibility.
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
 
 Sitemap: https://niksmasala.com/sitemap.xml

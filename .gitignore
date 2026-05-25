@@ -34,3 +34,10 @@ desktop.ini
 *.key
 *.pem
 secrets.json
+
+# Experimental / scratch redesigns — never ship
+experiment-design-apple/
+experiment-design-premium/
+experiment-design-revamp/
+stitch_niks_masala_modern_redesign/
+*.production-backup

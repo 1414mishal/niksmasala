@@ -588,17 +588,61 @@ function mountHeaderFooter(activeKey){
   updateCartBadge();
 }
 
-/* ====== CART DRAWER (XSS-safe) ====== */
+/* ====== CART DRAWER (XSS-safe, a11y-friendly) ======
+ * Open/close now manages focus: remembers what was focused before opening,
+ * traps Tab inside the drawer, returns focus on close, ESC closes.
+ */
+let _cartLastFocus = null;
+let _cartKeyHandler = null;
+
+function _trapFocus(e){
+  const drawer = document.getElementById('cartDrawer');
+  if(!drawer || !drawer.classList.contains('open')) return;
+  if(e.key === 'Escape'){ e.preventDefault(); closeCartDrawer(); return; }
+  if(e.key !== 'Tab') return;
+  const focusables = drawer.querySelectorAll(
+    'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+  );
+  if(!focusables.length) return;
+  const first = focusables[0];
+  const last  = focusables[focusables.length-1];
+  if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+}
+
 function openCartDrawer(){
   renderCartDrawer();
-  document.getElementById('cartDrawer').classList.add('open');
-  document.getElementById('cartDrawerOverlay').classList.add('open');
+  const dr = document.getElementById('cartDrawer');
+  const ov = document.getElementById('cartDrawerOverlay');
+  if(!dr || !ov) return;
+  dr.classList.add('open');
+  ov.classList.add('open');
   document.body.classList.add('drawer-open');
+
+  /* Remember what was focused and trap focus inside the drawer */
+  _cartLastFocus = document.activeElement;
+  _cartKeyHandler = _trapFocus;
+  document.addEventListener('keydown', _cartKeyHandler);
+  setTimeout(function(){
+    const closeBtn = dr.querySelector('.cd-close');
+    if(closeBtn) closeBtn.focus();
+  }, 50);
 }
 function closeCartDrawer(){
-  document.getElementById('cartDrawer').classList.remove('open');
-  document.getElementById('cartDrawerOverlay').classList.remove('open');
+  const dr = document.getElementById('cartDrawer');
+  const ov = document.getElementById('cartDrawerOverlay');
+  if(dr) dr.classList.remove('open');
+  if(ov) ov.classList.remove('open');
   document.body.classList.remove('drawer-open');
+  if(_cartKeyHandler){
+    document.removeEventListener('keydown', _cartKeyHandler);
+    _cartKeyHandler = null;
+  }
+  /* Return focus to whatever opened the drawer (the cart icon usually) */
+  if(_cartLastFocus && typeof _cartLastFocus.focus === 'function'){
+    try{ _cartLastFocus.focus(); }catch(e){}
+  }
+  _cartLastFocus = null;
 }
 function renderCartDrawer(){
   const cart=getCart();
@@ -742,3 +786,74 @@ try{
     localStorage.setItem('niks_cart_version','v2-variants');
   }
 }catch(e){}
+
+/* ====== DPDP / cookie consent banner ======
+ * India's Digital Personal Data Protection Act 2023 requires a clear notice
+ * before storing PII. We do store: cart contents, last order, optional
+ * account session. This banner shows once, remembers the choice in
+ * localStorage, and never blocks the page.
+ *
+ * Suppressed on the admin panel (operator already authenticated) and on
+ * legal pages (avoid covering the user's own privacy text). */
+(function cookieConsent(){
+  try{
+    if(localStorage.getItem('niks_consent_v1')) return;       // already decided
+    var path = (location.pathname||'').toLowerCase();
+    if(/admin\.html|privacy\.html|terms\.html/.test(path)) return;
+
+    function build(){
+      var banner = document.createElement('div');
+      banner.className = 'cookie-banner';
+      banner.setAttribute('role','region');
+      banner.setAttribute('aria-label','Privacy & cookies notice');
+
+      var h = document.createElement('h4');
+      h.textContent = 'We use cookies to keep your cart and orders working.';
+      banner.appendChild(h);
+
+      var p = document.createElement('p');
+      p.appendChild(document.createTextNode(
+        'Niks Masala stores a small amount of data on your device (cart contents, last order, login session) so the site works. We don’t sell or share your data. Read the '
+      ));
+      var a = document.createElement('a');
+      a.href = 'privacy.html'; a.textContent = 'Privacy Policy';
+      p.appendChild(a);
+      p.appendChild(document.createTextNode('.'));
+      banner.appendChild(p);
+
+      var actions = document.createElement('div');
+      actions.className = 'cookie-actions';
+      var accept = document.createElement('button');
+      accept.type = 'button'; accept.className = 'cookie-accept';
+      accept.textContent = 'Accept';
+      accept.addEventListener('click', function(){
+        try{ localStorage.setItem('niks_consent_v1','accepted'); }catch(e){}
+        banner.classList.remove('open');
+        setTimeout(function(){ banner.remove(); }, 400);
+      });
+      var decline = document.createElement('button');
+      decline.type = 'button'; decline.className = 'cookie-decline';
+      decline.textContent = 'Essential only';
+      decline.addEventListener('click', function(){
+        try{ localStorage.setItem('niks_consent_v1','essential'); }catch(e){}
+        banner.classList.remove('open');
+        setTimeout(function(){ banner.remove(); }, 400);
+      });
+      actions.appendChild(accept);
+      actions.appendChild(decline);
+      banner.appendChild(actions);
+
+      document.body.appendChild(banner);
+      /* Trigger the slide-in transition on the next frame */
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){ banner.classList.add('open'); });
+      });
+    }
+
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', build);
+    } else {
+      build();
+    }
+  }catch(e){ /* never let consent break the site */ }
+})();

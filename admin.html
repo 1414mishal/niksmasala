@@ -421,15 +421,66 @@ const _ARAW=[
 const DEFAULT_PRODUCTS=_ARAW.map((r,i)=>{const minP=Math.min(...r.variants.map(v=>v.price));return{id:'p'+(i+1),name:r.name,slug:r.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),category:_acat(r.name),price:minP,image:_apick(r.name),variants:r.variants,rating:4.6+(i%4)*0.1,reviews:20+(i*7)%180,desc:'Authentic Mangalorean spice blend — traditionally crafted, export-quality.',long:'Packed at our FSSAI-certified 11,000 sq.ft. facility in Yeyyadi, Mangalore.',badge:r.badge||null,stock:50};});
 const DEFAULT_SETTINGS = {brand:'Niks Masala',phone:'+91 73385 19975',email:'hello@niksmasala.com',address:'Plot no. L-6, 5-50, Yeyyadi Industrial Area, Mangaluru, Karnataka 575015',currency:'₹',shippingFree:799,shippingFee:60,shippingFeeHeavy:120,razorpayKey:'rzp_test_SgFzfBVh4i57d2'};
 /* First-run password is configured on the very first login.
-   Stored as a SHA-256 hash in localStorage — there is no built-in
-   "master key" and no recovery path other than clearing localStorage
-   on the store owner's device.
-   TODO(backend): replace with proper server-side auth + bcrypt. */
-const FIRST_RUN_KEY = 'niks_pw_hash';
-async function _sha256(s){
-  const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
-  return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');
+   Stored as a PBKDF2 hash (100k SHA-256 rounds + random per-install salt)
+   in localStorage. Format: pbkdf2$100000$<base64-salt>$<base64-hash>.
+   Old plain-SHA-256 hashes are auto-migrated on the next successful login.
+   TODO(backend): replace with proper server-side auth + bcrypt + email recovery. */
+const FIRST_RUN_KEY    = 'niks_pw_hash';
+const LOGIN_FAILS_KEY  = 'niks_pw_fails';     // {count:n, lockedUntil:ms}
+const LOGIN_FAIL_LIMIT = 5;                   // after 5 wrong attempts...
+const LOGIN_LOCK_MS    = 15 * 60 * 1000;      // ...lock for 15 min
+
+const PBKDF2_ITERS = 100_000;
+function _bufToB64(buf){
+  return btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
 }
+function _b64ToBuf(s){
+  const raw = atob(s); const buf = new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++) buf[i] = raw.charCodeAt(i);
+  return buf.buffer;
+}
+async function _pbkdf2(password, saltBuf, iters){
+  const enc = new TextEncoder();
+  const baseKey = await crypto.subtle.importKey(
+    'raw', enc.encode(password), {name:'PBKDF2'}, false, ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits(
+    {name:'PBKDF2', salt:saltBuf, iterations:iters, hash:'SHA-256'},
+    baseKey, 256
+  );
+  return _bufToB64(bits);
+}
+async function _hashPassword(password){
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const hash = await _pbkdf2(password, salt.buffer, PBKDF2_ITERS);
+  return 'pbkdf2$' + PBKDF2_ITERS + '$' + _bufToB64(salt.buffer) + '$' + hash;
+}
+async function _verifyPassword(password, stored){
+  if(!stored) return false;
+  if(stored.startsWith('pbkdf2$')){
+    const parts = stored.split('$');           // ['pbkdf2', iters, salt, hash]
+    if(parts.length !== 4) return false;
+    const iters = parseInt(parts[1], 10);
+    const salt  = _b64ToBuf(parts[2]);
+    const hash  = await _pbkdf2(password, salt, iters);
+    /* constant-time compare — same length and char-by-char XOR */
+    if(hash.length !== parts[3].length) return false;
+    let diff = 0;
+    for(let i=0;i<hash.length;i++) diff |= hash.charCodeAt(i) ^ parts[3].charCodeAt(i);
+    return diff === 0;
+  }
+  /* Legacy plain SHA-256 hash — verify, then caller should upgrade to PBKDF2 */
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
+  const hex = Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');
+  return hex === stored;
+}
+
+function _getLoginFails(){
+  try{ return JSON.parse(localStorage.getItem(LOGIN_FAILS_KEY)) || {count:0, lockedUntil:0}; }
+  catch(e){ return {count:0, lockedUntil:0}; }
+}
+function _setLoginFails(v){ localStorage.setItem(LOGIN_FAILS_KEY, JSON.stringify(v)); }
+function _clearLoginFails(){ localStorage.removeItem(LOGIN_FAILS_KEY); }
 
 /* ---- Supabase ---- */
 const _SB_URL='https://cmyiggiakgimygznlkuo.supabase.co';
@@ -466,26 +517,66 @@ function getOrders(){try{return JSON.parse(localStorage.getItem('niks_orders'))|
 function setOrders(o){localStorage.setItem('niks_orders',JSON.stringify(o))}
 function getPasswordHash(){return localStorage.getItem(FIRST_RUN_KEY)||''}
 
-/* Login. First-time use: any password ≥ 8 chars sets the admin password.
-   After that, only that exact password works. No master/backdoor key. */
+/* Login. First-time use: any password ≥ 8 chars sets the admin password
+   (stored as PBKDF2 hash). After that, only that exact password works.
+   No master/backdoor key. 5 wrong attempts → 15 minute lockout. */
 async function doLogin(e){
   e.preventDefault();
   const u=document.getElementById('user').value.trim();
   const p=document.getElementById('pass').value;
-  if(u!=='admin'){toast('Incorrect credentials','err');return}
-  if(p.length<8){toast('Password must be at least 8 characters','err');return}
+
+  /* Lockout check first — before we burn CPU on PBKDF2 */
+  const fails = _getLoginFails();
+  const now = Date.now();
+  if(fails.lockedUntil && fails.lockedUntil > now){
+    const mins = Math.ceil((fails.lockedUntil - now)/60000);
+    toast('Too many failed attempts. Try again in '+mins+' min.','err');
+    return;
+  }
+
+  if(u!=='admin' || p.length<8){
+    if(p.length<8 && !getPasswordHash()){
+      toast('Password must be at least 8 characters','err'); return;
+    }
+    _registerFail(fails);
+    toast('Incorrect credentials','err');
+    return;
+  }
+
   const stored=getPasswordHash();
-  const h=await _sha256(p);
   if(!stored){
     if(!confirm('First-time setup — this password will be saved on THIS device only. Make sure it is strong and unique. Continue?')){return}
-    localStorage.setItem(FIRST_RUN_KEY,h);
-  }else if(stored!==h){
-    toast('Incorrect credentials','err');return;
+    const fresh = await _hashPassword(p);
+    localStorage.setItem(FIRST_RUN_KEY, fresh);
+  } else {
+    const ok = await _verifyPassword(p, stored);
+    if(!ok){
+      _registerFail(fails);
+      toast('Incorrect credentials','err');
+      return;
+    }
+    /* Auto-upgrade legacy plain-SHA-256 hashes to PBKDF2 on next successful login */
+    if(!stored.startsWith('pbkdf2$')){
+      try{
+        const upgraded = await _hashPassword(p);
+        localStorage.setItem(FIRST_RUN_KEY, upgraded);
+      }catch(err){ /* upgrade is best-effort; legacy hash still works */ }
+    }
   }
+  _clearLoginFails();
   /* Random per-session token instead of the trivially forgeable "1" */
   const tok=Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
   sessionStorage.setItem('niks_auth',tok);
   showApp();
+}
+
+function _registerFail(prev){
+  const next = {count: (prev.count||0) + 1, lockedUntil: 0};
+  if(next.count >= LOGIN_FAIL_LIMIT){
+    next.lockedUntil = Date.now() + LOGIN_LOCK_MS;
+    next.count = 0;
+  }
+  _setLoginFails(next);
 }
 function logout(){sessionStorage.removeItem('niks_auth');location.reload()}
 async function showApp(){
