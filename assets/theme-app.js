@@ -187,14 +187,7 @@ productCardHTML = function (p) {
   };
 })();
 
-/* Experiment banner */
+/* Re-scan reveal targets once the header/footer markup has been injected */
 window.addEventListener('DOMContentLoaded', () => {
-  if (document.getElementById('expBanner')) return;
-  const b = document.createElement('div');
-  b.id = 'expBanner';
-  b.className = 'exp-banner';
-  b.textContent = 'Premium prototype';
-  document.body.appendChild(b);
-  /* Re-scan for newly-injected reveal targets (e.g. header/footer) */
   if (window.__bindReveal) window.__bindReveal();
 });
