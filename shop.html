@@ -135,6 +135,12 @@ function renderShop(){
 }
 
 updateURL();buildCatList();renderShop();
+
+/* Re-render when /api/products returns fresh catalog (admin added a new product etc.) */
+window.addEventListener('niks:products-updated', () => {
+  buildCatList();
+  renderShop();
+});
 </script>
 <script src="assets/theme-anim.js"></script>
 </body>

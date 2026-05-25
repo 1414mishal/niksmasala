@@ -134,8 +134,25 @@ domain free, automatic SSL.
    | `FREE_SHIPPING_THRESHOLD` | `799` | business rule |
    | `SHIPPING_FEE_LIGHT` | `60` | business rule |
    | `SHIPPING_FEE_HEAVY` | `120` | business rule |
+   | `ADMIN_TOKEN` | a long random string — generate with `openssl rand -hex 32` or any password manager | gates admin write APIs (`/api/admin/products`). Save it somewhere safe — the admin panel asks for it once after login. |
 
    Click each one as **Encrypted** so it's never exposed in build logs.
+
+   **How `ADMIN_TOKEN` works:**
+   The admin panel sends `Authorization: Bearer <ADMIN_TOKEN>` on every
+   product save / delete. The Cloudflare Function compares it to this env
+   var with a timing-safe equality check. Anyone without the token gets
+   `401 Unauthorized`. So when your client edits products in
+   `/admin.html`, the changes are immediately persisted to the Supabase
+   `products` table — no SQL editor needed, no redeploy needed. The
+   public homepage and shop fetch from `/api/products` and re-render
+   live, so new products appear within seconds.
+
+   **To rotate the token** (e.g., a previous admin should lose access):
+   regenerate `openssl rand -hex 32`, update the env var, redeploy, and
+   give the new value to whoever should still have access. Sessions
+   storing the old token will silently start failing — they'll be
+   re-prompted on next save.
 
 7. **Settings → Functions → Compatibility flags**:
    * Production compatibility date: any date in 2024 or later is fine.

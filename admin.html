@@ -746,6 +746,51 @@ function closeProduct(){
   document.getElementById('productModal').classList.remove('open');
   clearImage();
 }
+/* ====== Admin API token ======
+   Server-side write endpoints (/api/admin/products) require:
+     Authorization: Bearer <ADMIN_TOKEN>
+   The token lives ONLY in Cloudflare env vars and the admin's
+   sessionStorage. Never in code, never in localStorage. */
+const ADMIN_TOKEN_KEY = 'niks_admin_token';
+function getAdminToken(){
+  let t = sessionStorage.getItem(ADMIN_TOKEN_KEY);
+  if(t) return t;
+  t = prompt(
+    'Enter your ADMIN_TOKEN (the long random string from Cloudflare Pages → Settings → Environment variables).\n\n' +
+    'This authorises product / order writes to Supabase. Saved for this session only.'
+  );
+  if(t){
+    sessionStorage.setItem(ADMIN_TOKEN_KEY, t.trim());
+    return t.trim();
+  }
+  return null;
+}
+function clearAdminToken(){ sessionStorage.removeItem(ADMIN_TOKEN_KEY); }
+async function adminApi(method, body){
+  const token = getAdminToken();
+  if(!token) return {ok:false, error:'No admin token provided'};
+  const init = {
+    method,
+    headers: {
+      'Content-Type':'application/json',
+      'Authorization':'Bearer ' + token
+    }
+  };
+  if(body !== undefined) init.body = JSON.stringify(body);
+  let res;
+  try{ res = await fetch('/api/admin/products', init); }
+  catch(ex){ return {ok:false, error:'Network error: '+ex.message}; }
+  if(res.status === 401){
+    clearAdminToken();
+    return {ok:false, error:'Token rejected — please try again'};
+  }
+  if(!res.ok){
+    const detail = await res.text();
+    return {ok:false, error:'API ' + res.status + ': ' + detail.slice(0,200)};
+  }
+  return {ok:true, data: await res.json().catch(()=>({}))};
+}
+
 async function saveProduct(e){
   e.preventDefault();
   const id=document.getElementById('pm-id').value || 'p'+Date.now().toString().slice(-8);
@@ -756,31 +801,43 @@ async function saveProduct(e){
     badge:val('pm-badge')||undefined, emoji:val('pm-emoji')||'🌶️',
     image:val('pm-image')||undefined, desc:val('pm-desc')
   };
+  /* Cloud first — single source of truth */
+  const result = await adminApi('POST', p);
+  if(!result.ok){
+    toast('❌ ' + result.error, 'err');
+    return;
+  }
+  /* Mirror to local cache so the table re-renders immediately */
   const list=getProducts();
   const idx=list.findIndex(x=>x.id===id);
   if(idx>=0) list[idx]=p; else list.push(p);
   setProducts(list);
-  try{const db=await getDB();await db.from('products').upsert(_toCloud(p))}catch(ex){console.warn(ex)}
   closeProduct(); renderProductsTable();
-  toast('✅ Product saved','ok');
+  toast('✅ Product saved to Supabase','ok');
 }
 function val(id){return document.getElementById(id).value.trim()}
 async function deleteProduct(id){
-  if(!confirm('Delete this product permanently?')) return;
+  if(!confirm('Delete this product permanently from Supabase?')) return;
+  const result = await adminApi('DELETE', {id});
+  if(!result.ok){
+    toast('❌ ' + result.error, 'err');
+    return;
+  }
   setProducts(getProducts().filter(p=>p.id!==id));
   renderProductsTable();
-  try{const db=await getDB();await db.from('products').delete().eq('id',id)}catch(ex){console.warn(ex)}
-  toast('Product deleted','ok');
+  toast('Product deleted from Supabase','ok');
 }
 async function resetProducts(){
-  if(!confirm('Reset all products to defaults? Your custom products will be lost.')) return;
-  setProducts(DEFAULT_PRODUCTS);renderProductsTable();
-  try{
-    const db=await getDB();
-    await db.from('products').delete().neq('id','__x__');
-    await db.from('products').upsert(DEFAULT_PRODUCTS.map(_toCloud));
-  }catch(ex){console.warn(ex)}
-  toast('Defaults restored','ok');
+  if(!confirm('Reset all products to defaults?\n\nThis will OVERWRITE the Supabase catalog with the 40 default Niks Masala products. Custom additions you made will be lost.')) return;
+  /* Bulk upsert in one request */
+  const result = await adminApi('POST', DEFAULT_PRODUCTS);
+  if(!result.ok){
+    toast('❌ ' + result.error, 'err');
+    return;
+  }
+  setProducts(DEFAULT_PRODUCTS);
+  renderProductsTable();
+  toast('Defaults restored (' + (result.data.count||40) + ' products)','ok');
 }
 
 /* Orders */

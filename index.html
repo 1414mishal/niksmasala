@@ -836,11 +836,16 @@
 mountHeaderFooter('home');
 
 (function () {
-  const all = getProducts();
-  const bestsellers = all.filter(p => p.badge === 'BESTSELLER');
-  const featured = bestsellers.concat(all.filter(p => !bestsellers.includes(p))).slice(0, 8);
-  document.getElementById('featuredGrid').innerHTML = featured.map(productCardHTML).join('');
-  if (window.__bindReveal) window.__bindReveal();
+  function renderFeatured(){
+    const all = getProducts();
+    const bestsellers = all.filter(p => p.badge === 'BESTSELLER');
+    const featured = bestsellers.concat(all.filter(p => !bestsellers.includes(p))).slice(0, 8);
+    document.getElementById('featuredGrid').innerHTML = featured.map(productCardHTML).join('');
+    if (window.__bindReveal) window.__bindReveal();
+  }
+  renderFeatured();                                  // first paint from cache
+  /* When the API delivers fresh data (new admin-added products etc.) re-render */
+  window.addEventListener('niks:products-updated', renderFeatured);
   if (window.__bindVideoCarousel) window.__bindVideoCarousel();
 })();
 

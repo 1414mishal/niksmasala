@@ -275,6 +275,35 @@ const DEFAULT_SETTINGS = {
 };
 
 function getProducts(){try{const s=localStorage.getItem('niks_products');const p=s?JSON.parse(s):null;return (p&&p.length)?p:DEFAULT_PRODUCTS}catch(e){return DEFAULT_PRODUCTS}}
+
+/* Async fetch of canonical catalog from /api/products. Cloudflare Pages
+   Functions read from Supabase, so admin edits show up live. Pages that
+   care about real-time data should listen for the `niks:products-updated`
+   event and re-render. */
+async function loadProductsFromCloud(){
+  try{
+    const res = await fetch('/api/products', {headers:{'Accept':'application/json'}});
+    if(!res.ok) return null;                            // 404 (no functions) / 500 → keep cache
+    const fresh = await res.json();
+    if(!Array.isArray(fresh) || fresh.length === 0) return null;  // empty table → keep DEFAULT_PRODUCTS seed
+    localStorage.setItem('niks_products', JSON.stringify(fresh));
+    localStorage.setItem('niks_products_fetched_at', Date.now().toString());
+    window.dispatchEvent(new CustomEvent('niks:products-updated', {detail:{count:fresh.length}}));
+    return fresh;
+  }catch(e){
+    /* Offline / blocked / dev-server without functions — fail silently, cache stays. */
+    return null;
+  }
+}
+/* Kick off the fetch on page load. Deferred via rAF so it doesn't compete
+   with the first paint. Re-render hooks listen to the event below. */
+if(typeof window !== 'undefined'){
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(loadProductsFromCloud));
+  } else {
+    requestAnimationFrame(loadProductsFromCloud);
+  }
+}
 function getSettings(){try{return{...DEFAULT_SETTINGS,...(JSON.parse(localStorage.getItem('niks_settings'))||{})}}catch(e){return DEFAULT_SETTINGS}}
 function getCart(){try{return JSON.parse(localStorage.getItem('niks_cart'))||[]}catch(e){return[]}}
 function setCart(c){localStorage.setItem('niks_cart',JSON.stringify(c));updateCartBadge()}
