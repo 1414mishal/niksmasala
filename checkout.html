@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Checkout — Niks Masala</title>
-<link rel="icon" href="nikslogomain.jpg">
+<link rel="icon" href="nikslogomain.webp">
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/theme.css">
@@ -144,7 +144,7 @@ if(cart.length===0){
           ${cart.map(i=>`
             <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);align-items:center">
               <div style="width:56px;height:56px;border-radius:6px;overflow:hidden;background:var(--cream);flex-shrink:0;position:relative">
-                <img src="${attr(i.image||'assets/products/garam-masala.png')}" alt="${attr(i.name||'')}" style="width:100%;height:100%;object-fit:cover" onerror="this.src='assets/products/garam-masala.png'">
+                <img src="${attr(i.image||'assets/products/garam-masala.webp')}" alt="${attr(i.name||'')}" style="width:100%;height:100%;object-fit:cover" onerror="this.src='assets/products/garam-masala.webp'">
                 <span style="position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700">${i.qty}</span>
               </div>
               <div style="flex:1;min-width:0"><strong style="font-size:13px;display:block">${esc(i.name)}</strong><small style="color:var(--muted)">${money(i.price)} × ${i.qty}</small></div>
@@ -251,7 +251,7 @@ async function placeOrder(e){
     currency: created.currency,
     name:'Niks Masala',
     description:`Order ${created.order_id}`,
-    image:'nikslogomain.jpg',
+    image:'nikslogomain.webp',
     prefill:{
       name:    payload.customer.name,
       email:   payload.customer.email,

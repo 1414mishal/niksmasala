@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Shopping Cart — Niks Masala</title>
-<link rel="icon" href="nikslogomain.jpg">
+<link rel="icon" href="nikslogomain.webp">
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/theme.css">
@@ -62,7 +62,7 @@ function render(){
             ${cart.map(i=>`
               <tr>
                 <td><div class="cart-prod-cell">
-                  <div class="thumb"><img src="${attr(i.image||'assets/products/garam-masala.png')}" alt="${attr(i.name||'')}" onerror="this.src='assets/products/garam-masala.png'"></div>
+                  <div class="thumb"><img src="${attr(i.image||'assets/products/garam-masala.webp')}" alt="${attr(i.name||'')}" onerror="this.src='assets/products/garam-masala.webp'"></div>
                   <div>
                     <strong><a href="product.html?id=${attr(i.id)}">${esc(i.name)}</a></strong>
                     <small style="display:block;color:var(--muted);margin-top:2px">${esc(i.pack||'')}</small>

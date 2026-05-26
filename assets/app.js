@@ -6,7 +6,7 @@
  * those TODOs are closed.
  */
 
-const LOGO = 'nikslogomain.jpg';
+const LOGO = 'nikslogomain.webp';
 
 /* ---------- Safety helpers ---------- */
 /* HTML-escape any string before it goes into innerHTML. Prevents stored XSS
@@ -40,33 +40,33 @@ function newOrderId(){
 
 /* ---------- Product image lookup ---------- */
 const IMG = {
-  turmeric:   'assets/products/turmeric.png',
-  redchilli:  'assets/products/red-chilli.png',
-  coriander:  'assets/products/coriander.png',
-  jeera:      'assets/products/jeera.png',
-  pepper:     'assets/products/pepper.png',
-  kashmiri:   'assets/products/kashmiri.png',
-  kitchenking:'assets/products/kitchen-king.png',
-  sambar:     'assets/products/sambar.png',
-  rasam:      'assets/products/rasam.png',
-  puliyogare: 'assets/products/puliyogare.png',
-  pulav:      'assets/products/pulav.png',
-  chhole:     'assets/products/chhole.png',
-  pavbhaji:   'assets/products/pav-bhaji.png',
-  jaljeera:   'assets/products/jaljeera.jpg',
-  kundapura:  'assets/products/kundapura.png',
-  chicken:    'assets/products/chicken-masala.png',
-  tandoori:   'assets/products/tandoori.png',
-  tikka:      'assets/products/tikka.png',
-  gheeRoast:  'assets/products/ghee-roast.png',
-  mutton:     'assets/products/mutton.png',
-  fish:       'assets/products/fish-masala.png',
-  garam:      'assets/products/garam-masala.png',
-  soya:       'assets/products/soya.png',
-  methi:      'assets/products/kasuri-methi.jpg',
-  sabji:      'assets/products/sabji-masala.jpg'
+  turmeric:   'assets/products/turmeric.webp',
+  redchilli:  'assets/products/red-chilli.webp',
+  coriander:  'assets/products/coriander.webp',
+  jeera:      'assets/products/jeera.webp',
+  pepper:     'assets/products/pepper.webp',
+  kashmiri:   'assets/products/kashmiri.webp',
+  kitchenking:'assets/products/kitchen-king.webp',
+  sambar:     'assets/products/sambar.webp',
+  rasam:      'assets/products/rasam.webp',
+  puliyogare: 'assets/products/puliyogare.webp',
+  pulav:      'assets/products/pulav.webp',
+  chhole:     'assets/products/chhole.webp',
+  pavbhaji:   'assets/products/pav-bhaji.webp',
+  jaljeera:   'assets/products/jaljeera.webp',
+  kundapura:  'assets/products/kundapura.webp',
+  chicken:    'assets/products/chicken-masala.webp',
+  tandoori:   'assets/products/tandoori.webp',
+  tikka:      'assets/products/tikka.webp',
+  gheeRoast:  'assets/products/ghee-roast.webp',
+  mutton:     'assets/products/mutton.webp',
+  fish:       'assets/products/fish-masala.webp',
+  garam:      'assets/products/garam-masala.webp',
+  soya:       'assets/products/soya.webp',
+  methi:      'assets/products/kasuri-methi.webp',
+  sabji:      'assets/products/sabji-masala.webp'
 };
-const FALLBACK_IMG = 'assets/products/garam-masala.png';
+const FALLBACK_IMG = 'assets/products/garam-masala.webp';
 
 function _pick(name){
   const n=(name||'').toLowerCase();
