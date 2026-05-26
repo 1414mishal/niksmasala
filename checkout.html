@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/theme.css">
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="scroll-progress" id="scrollProgress"></div>
@@ -131,15 +132,9 @@ if(cart.length===0){
           <label class="pay-option"><input type="radio" name="pay" value="UPI" checked><div><strong>💳 UPI Payment</strong><small>Google Pay · PhonePe · Paytm · BHIM</small></div></label>
           <label class="pay-option"><input type="radio" name="pay" value="Card"><div><strong>💳 Credit / Debit Card</strong><small>Visa · Mastercard · RuPay</small></div></label>
           <label class="pay-option"><input type="radio" name="pay" value="NetBanking"><div><strong>🏦 Net Banking</strong><small>All major banks</small></div></label>
-          <label class="pay-option"><input type="radio" name="pay" value="COD"><div><strong>💰 Cash on Delivery</strong><small>Pay when you receive</small></div></label>
         </div>
 
-        <div class="form-row" style="margin-top:14px">
-          <label>Order Notes (optional)</label>
-          <textarea name="notes" rows="2" placeholder="Any special instructions..."></textarea>
-        </div>
-
-        <button type="submit" class="btn btn-primary" style="width:100%;padding:18px;font-size:15px;margin-top:10px">PLACE ORDER · ${money(total)}</button>
+        <button type="submit" class="btn btn-primary" style="width:100%;padding:18px;font-size:15px;margin-top:18px">PLACE ORDER · ${money(total)}</button>
         <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:12px">🔒 Your information is secure and encrypted</p>
       </form>
 
@@ -173,8 +168,8 @@ if(cart.length===0){
  *   3. POST /api/order/verify → server HMAC-checks the Razorpay signature
  *      before marking the order paid and firing the confirmation email.
  *
- * For COD the same /api/order/create call is used; we just skip the
- * Razorpay step and mark the order Pending.
+ * Cash on Delivery was intentionally removed — courier returns on fake
+ * COD orders cost more than the lost online conversion is worth.
  */
 async function placeOrder(e){
   e.preventDefault();
@@ -186,7 +181,6 @@ async function placeOrder(e){
     items: cart.map(i=>({id:i.id, pack:i.pack, qty:i.qty})),
     coupon: (localStorage.getItem('niks_coupon')||'').trim(),
     payment: f.get('pay'),
-    notes: f.get('notes')||'',
     customer:{
       name:((f.get('fname')||'')+' '+(f.get('lname')||'')).trim(),
       email:(f.get('email')||'').trim().toLowerCase(),
@@ -197,6 +191,12 @@ async function placeOrder(e){
       pincode:f.get('pin')||''
     }
   };
+  /* Defensive: client UI no longer offers COD; reject if someone forces it
+     via DevTools so we don't end up with un-paid courier-burning orders. */
+  if(payload.payment==='COD'){
+    toast('Cash on Delivery is no longer available. Please use UPI / Card / Net Banking.','err');
+    return;
+  }
 
   const submitBtn = e.target.querySelector('button[type="submit"]');
   if(submitBtn){ submitBtn.disabled=true; submitBtn.textContent='Processing…'; }
@@ -232,19 +232,10 @@ async function placeOrder(e){
     discount: created.breakdown.discount,
     total:    created.breakdown.total,
     payment:  payload.payment,
-    notes:    payload.notes,
-    status:   payload.payment==='COD' ? 'Pending' : 'AwaitingPayment',
+    status:   'AwaitingPayment',
     trackingStatus: 'placed'
   };
   localStorage.setItem('niks_last_order', JSON.stringify(localCopy));
-
-  /* COD path — no Razorpay round-trip; the server already saved the order. */
-  if(payload.payment==='COD'){
-    setCart([]);
-    localStorage.removeItem('niks_coupon');
-    location.href='thankyou.html?id='+encodeURIComponent(created.order_id);
-    return;
-  }
 
   /* Razorpay path. We open with the server-issued rzp_order_id; the buyer
      cannot tamper with the amount because Razorpay will reject any mismatch. */

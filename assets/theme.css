@@ -1777,3 +1777,134 @@ body.yt-open { overflow: hidden; }
   .bulk-black__grid { grid-template-columns: 1fr; }
   .bulk-black__copy { border-right: 0; border-bottom: 1px solid rgba(253,251,247,0.08); }
 }
+
+/* ==========================================================
+   MOBILE / TABLET RESPONSIVE HARDENING
+   The base CSS was desktop-first. These overrides stop the
+   "site is unusable on phone" issues:
+     1. iOS auto-zooms inputs with font-size < 16px — force 16px.
+     2. Long URLs / words breaking layout — add overflow guards.
+     3. Tables and forms scaling badly under 480px.
+   ========================================================== */
+
+/* (1) Stop iOS Safari from zooming when an input is focused.
+   Apple zooms if computed font-size < 16px. So we force 16px on
+   every interactive control. We do it everywhere, not just mobile,
+   so behaviour is consistent. Inputs that visually want smaller
+   text can override via a more specific selector. */
+input, textarea, select, button {
+  font-size: 16px;
+  font-family: inherit;
+}
+/* But don't make the SUBMIT-style buttons look like 16px walls of text;
+   only enforce on actual form controls, not stylised pills. */
+.btn, .btn-primary, .btn-gold, .btn-outline, .btn-ghost,
+.btn-fancy, .submit-pill, .product-card-v2__add, .rv-card,
+.hero-cta-primary, .hero-cta-secondary, .cta-pill {
+  font-size: inherit;
+}
+
+/* (2) Prevent long product names / URLs from blowing out cards */
+body { overflow-wrap: break-word; -webkit-text-size-adjust: 100%; }
+.product-card-v2, .recipe-vid-card, .rv-card,
+.cd-item, .cart-row, .order-card {
+  min-width: 0;
+  word-break: break-word;
+}
+
+/* (3) Below 760px tighten general padding / hero / containers */
+@media (max-width: 760px){
+  /* Hero — keep dramatic but get the content above the fold */
+  section[style*="min-height:88vh"] {
+    min-height: auto !important;
+    padding-top: 30px;
+    padding-bottom: 50px;
+  }
+  section[style*="min-height:88vh"] h1 {
+    font-size: clamp(34px, 8vw, 52px) !important;
+    line-height: 1.05 !important;
+  }
+  section[style*="min-height:88vh"] p {
+    font-size: 15px !important;
+    line-height: 1.6 !important;
+  }
+  /* Big serif section titles shrink on phone so they fit */
+  h2.font-serif,
+  .font-serif[style*="clamp(32px"],
+  .font-serif[style*="clamp(34px"],
+  .font-serif[style*="clamp(36px"] {
+    font-size: clamp(26px, 6vw, 36px) !important;
+    line-height: 1.1 !important;
+  }
+  /* Section padding: chop the 96px / 110px verticals in half */
+  section[style*="padding:96px"],
+  section[style*="padding:110px"],
+  section[style*="padding:120px"] {
+    padding-top: 56px !important;
+    padding-bottom: 56px !important;
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+  /* Shop / bestsellers grids — 1 col on phone */
+  .products-grid,
+  .related-grid,
+  .recipes-grid,
+  .featured-grid,
+  #featuredGrid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+  /* Category tiles — 2 col */
+  .categories-grid, .cat-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+  /* Checkout columns stack */
+  .form-grid-2,
+  form.checkout-form {
+    grid-template-columns: 1fr !important;
+  }
+  /* Cart drawer goes full-width minus tiny gutter */
+  .cart-drawer { width: 100vw !important; }
+  /* Tables become scrollable horizontally instead of overflowing */
+  table, .shipping-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* (4) Sub-480 (smallest phones) — even tighter */
+@media (max-width: 480px){
+  body { font-size: 15px; }
+  .products-grid,
+  #featuredGrid {
+    grid-template-columns: 1fr !important;
+  }
+  /* Mobile nav text — buildHeader currently shows the desktop nav.
+     Hide it below 640px in the buildHeader-injected header so the
+     logo + cart icon don't fight for space with menu links. */
+  header[data-sticky-nav] nav { display: none !important; }
+  header[data-sticky-nav] > div { padding: 12px 14px !important; }
+  header[data-sticky-nav] img[alt="Niks Masala"] { height: 44px !important; }
+  /* "Bulk Order" button shrinks */
+  header[data-sticky-nav] a[href="contact.html"][class*="hidden"] {
+    padding: 9px 14px !important;
+    font-size: 10px !important;
+    letter-spacing: .12em !important;
+  }
+}
+
+/* (5) Force consistent header font everywhere.
+   User noticed it looked different on /checkout vs /. The cause is
+   that pages without the Manrope import (legacy pages using Inter
+   only) render the header in Inter. Force Manrope on every page
+   for the injected header so the brand feels coherent. */
+header[data-sticky-nav],
+header[data-sticky-nav] *,
+header[data-sticky-nav] .nav-link,
+header[data-sticky-nav] a {
+  font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI',
+               Roboto, sans-serif !important;
+}
