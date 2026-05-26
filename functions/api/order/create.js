@@ -90,7 +90,28 @@ export const onRequestPost = async ({request, env}) => {
     if(!customer[f] || String(customer[f]).trim().length<2) return json({error:`Missing customer.${f}`},400);
   }
   if(!/^[1-9]\d{5}$/.test(customer.pincode)) return json({error:'Invalid pincode'},400);
-  if(!/^[6-9]\d{9}$/.test(String(customer.phone).replace(/\D/g,'').slice(-10))) return json({error:'Invalid phone'},400);
+  const cleanPhone = String(customer.phone).replace(/\D/g,'').slice(-10);
+  if(!/^[6-9]\d{9}$/.test(cleanPhone)) return json({error:'Invalid phone'},400);
+
+  /* 4a. COD abuse guard — courier returns are expensive.
+   *     Cap each phone at 3 active (not yet Delivered/Cancelled) COD orders.
+   *     UPI / Cards already prove the customer can pay, so this only
+   *     applies to COD. Tweak via env.COD_MAX_OPEN if you want. */
+  if(payment === 'COD'){
+    const maxOpen = +env.COD_MAX_OPEN || 3;
+    const codCheck = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/orders?select=id&payment=eq.COD&status=not.in.(Delivered,Cancelled,Refunded)&customer->>phone=ilike.%25${encodeURIComponent(cleanPhone)}`,
+      { headers: sb }
+    );
+    if(codCheck.ok){
+      const openCod = await codCheck.json();
+      if(Array.isArray(openCod) && openCod.length >= maxOpen){
+        return json({
+          error: `You have ${openCod.length} pending COD orders. Please complete one before placing another, or pay online to continue.`
+        }, 429);
+      }
+    }
+  }
 
   /* 5. Create internal order ID + Razorpay order */
   const orderId = makeOrderId();

@@ -144,7 +144,8 @@ end;
 $$;
 revoke all on function public.decrement_stock(text,integer) from public, anon, authenticated;
 
--- Coupon redemption counter
+-- Coupon redemption counter (legacy — kept for backwards compatibility).
+-- Prefer try_consume_coupon() below which is race-safe.
 create or replace function public.increment_coupon(p_code text)
 returns integer language plpgsql security definer as $$
 declare new_count integer;
@@ -156,6 +157,26 @@ begin
 end;
 $$;
 revoke all on function public.increment_coupon(text) from public, anon, authenticated;
+
+-- Atomic coupon redemption — single-statement increment that respects the
+-- max_redemptions cap and expiry. Returns 1 if the coupon was consumed,
+-- 0 if denied (expired / over limit / unknown code). Used by
+-- /api/order/verify to prevent two parallel checkouts both pushing
+-- times_redeemed past max_redemptions.
+create or replace function public.try_consume_coupon(p_code text)
+returns integer language plpgsql security definer as $$
+declare affected integer;
+begin
+  update coupons
+     set times_redeemed = coalesce(times_redeemed,0) + 1
+   where code = p_code
+     and (expires_at      is null or expires_at      > now())
+     and (max_redemptions is null or coalesce(times_redeemed,0) < max_redemptions);
+  get diagnostics affected = row_count;
+  return affected;            -- 1 if consumed, 0 if denied
+end;
+$$;
+revoke all on function public.try_consume_coupon(text) from public, anon, authenticated;
 
 -- Public-safe order tracking view: only id/status/date — no PII.
 create or replace view orders_public as

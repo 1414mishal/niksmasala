@@ -84,13 +84,18 @@ export const onRequest = async (ctx) => {
 
   const ip = request.headers.get('CF-Connecting-IP')||'0.0.0.0';
 
-  /* Route-specific rate limits (per IP, sliding window) */
+  /* Route-specific rate limits (per IP, sliding window).
+   * Admin write endpoints are tightly limited — if someone is brute-forcing
+   * ADMIN_TOKEN, 30/min/IP is plenty for a real admin but useless to an
+   * attacker (HMAC tokens have ~10^77 possibilities). */
   const limits = {
-    '/api/order/create':   {limit:10, windowMs:60_000},   // 10/min
-    '/api/order/verify':   {limit:20, windowMs:60_000},
-    '/api/order/track':    {limit:60, windowMs:60_000},
-    '/api/contact':        {limit:5,  windowMs:600_000},  // 5 per 10 min
-    '/api/newsletter':     {limit:3,  windowMs:600_000}
+    '/api/order/create':       {limit:10,  windowMs:60_000},   // 10/min
+    '/api/order/verify':       {limit:20,  windowMs:60_000},
+    '/api/order/track':        {limit:60,  windowMs:60_000},
+    '/api/contact':            {limit:5,   windowMs:600_000},  // 5 per 10 min
+    '/api/newsletter':         {limit:3,   windowMs:600_000},
+    '/api/products':           {limit:120, windowMs:60_000},   // GET — read-heavy
+    '/api/admin/products':     {limit:30,  windowMs:60_000}    // tighter
   };
   const rule = limits[url.pathname];
   if(rule && !rateLimit(ip, url.pathname, rule.limit, rule.windowMs)){

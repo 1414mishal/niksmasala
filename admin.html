@@ -645,11 +645,11 @@ function renderDashboard(){
   document.getElementById('recentOrders').innerHTML=recent.length===0
     ? `<div class="empty"><span>📦</span>No orders yet — share your store!</div>`
     : `<table><thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead><tbody>${
-      recent.map(o=>`<tr><td><strong>${o.id}</strong></td><td>${o.customer.name}</td><td>₹${o.total}</td><td><span class="status ${o.status}">${o.status}</span></td></tr>`).join('')
+      recent.map(o=>`<tr><td><strong>${esc(o.id)}</strong></td><td>${esc((o.customer||{}).name||'')}</td><td>₹${Number(o.total)||0}</td><td><span class="status ${attr(o.status||'')}">${esc(o.status||'')}</span></td></tr>`).join('')
     }</tbody></table>`;
   document.getElementById('lowStock').innerHTML=low.length===0
     ? `<div class="empty" style="padding:30px"><span>✅</span>All products well-stocked</div>`
-    : low.map(p=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)"><span>${p.emoji||'🌶️'} <strong>${p.name}</strong></span><span style="color:var(--red);font-weight:600">${p.stock||0} left</span></div>`).join('');
+    : low.map(p=>`<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)"><span>${esc(p.emoji||'🌶️')} <strong>${esc(p.name||'')}</strong></span><span style="color:var(--red);font-weight:600">${Number(p.stock)||0} left</span></div>`).join('');
 }
 
 /* Products table */
@@ -660,16 +660,16 @@ function renderProductsTable(){
     : products.map(p=>`
     <tr>
       <td><div class="prod-cell">
-        <div class="prod-img">${p.image?`<img src="${p.image}">`:(p.emoji||'🌶️')}</div>
-        <div><strong>${p.name}</strong>${p.badge?` <span class="tag">${p.badge}</span>`:''}<br><small style="color:var(--muted)">${(p.desc||'').slice(0,50)}${p.desc&&p.desc.length>50?'…':''}</small></div>
+        <div class="prod-img">${p.image?`<img src="${attr(p.image)}" alt="${attr(p.name||'')}">`:esc(p.emoji||'🌶️')}</div>
+        <div><strong>${esc(p.name||'')}</strong>${p.badge?` <span class="tag">${esc(p.badge)}</span>`:''}<br><small style="color:var(--muted)">${esc((p.desc||'').slice(0,50))}${p.desc&&p.desc.length>50?'…':''}</small></div>
       </div></td>
-      <td>${p.category}</td>
-      <td><strong>₹${p.price}</strong>${p.oldPrice?`<br><small style="color:var(--muted);text-decoration:line-through">₹${p.oldPrice}</small>`:''}</td>
-      <td>${p.weight||'—'}</td>
-      <td style="color:${(p.stock||0)<15?'var(--red)':'var(--ink)'};font-weight:600">${p.stock||0}</td>
+      <td>${esc(p.category||'')}</td>
+      <td><strong>₹${Number(p.price)||0}</strong>${p.oldPrice?`<br><small style="color:var(--muted);text-decoration:line-through">₹${Number(p.oldPrice)||0}</small>`:''}</td>
+      <td>${esc(p.weight||'—')}</td>
+      <td style="color:${(Number(p.stock)||0)<15?'var(--red)':'var(--ink)'};font-weight:600">${Number(p.stock)||0}</td>
       <td><div class="row-actions">
-        <button class="btn btn-secondary btn-sm" onclick="openProduct('${p.id}')">Edit</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">Delete</button>
+        <button class="btn btn-secondary btn-sm" onclick="openProduct('${attr(p.id)}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteProduct('${attr(p.id)}')">Delete</button>
       </div></td>
     </tr>`).join('');
 }
@@ -854,24 +854,25 @@ function renderOrders(){
          for any orders that were placed before the column rename. */
       const ts = o.tracking_status || o.trackingStatus || 'placed';
       const notes = o.tracking_notes || o.trackingNotes || '';
+      const cust = o.customer || {};
       return `
     <tr>
-      <td><strong>${o.id}</strong><br><a href="track.html?id=${o.id}" target="_blank" style="font-size:11px;color:var(--red)">🔍 Track</a></td>
-      <td>${o.customer.name}<br><small style="color:var(--muted)">${o.customer.phone}</small></td>
-      <td>${o.items.reduce((s,i)=>s+i.qty,0)} items</td>
-      <td><strong>₹${o.total}</strong></td>
-      <td>${o.payment}</td>
-      <td><select onchange="changeStatus('${o.id}',this.value)" class="status ${o.status}" style="border:none;padding:3px 10px">
-        ${['Pending','Processing','Shipped','Delivered','Cancelled'].map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}
+      <td><strong>${esc(o.id)}</strong><br><a href="track.html?id=${attr(o.id)}" target="_blank" style="font-size:11px;color:var(--red)">🔍 Track</a></td>
+      <td>${esc(cust.name||'')}<br><small style="color:var(--muted)">${esc(cust.phone||'')}</small></td>
+      <td>${(o.items||[]).reduce((s,i)=>s+(Number(i.qty)||0),0)} items</td>
+      <td><strong>₹${Number(o.total)||0}</strong></td>
+      <td>${esc(o.payment||'')}</td>
+      <td><select onchange="changeStatus('${attr(o.id)}',this.value)" class="status ${attr(o.status||'')}" style="border:none;padding:3px 10px">
+        ${['Pending','Processing','Shipped','Delivered','Cancelled'].map(s=>`<option ${s===o.status?'selected':''}>${esc(s)}</option>`).join('')}
       </select></td>
       <td>
-        <select onchange="changeTracking('${o.id}',this.value)" style="border:1px solid var(--line);padding:3px 8px;border-radius:6px;font-size:12px;background:#fff;width:100%;margin-bottom:4px">
-          ${TRACK_STEPS.map(s=>`<option value="${s}" ${s===ts?'selected':''}>${TRACK_LABELS[s]}</option>`).join('')}
+        <select onchange="changeTracking('${attr(o.id)}',this.value)" style="border:1px solid var(--line);padding:3px 8px;border-radius:6px;font-size:12px;background:#fff;width:100%;margin-bottom:4px">
+          ${TRACK_STEPS.map(s=>`<option value="${attr(s)}" ${s===ts?'selected':''}>${esc(TRACK_LABELS[s]||s)}</option>`).join('')}
         </select>
-        <input type="text" placeholder="AWB / courier note" value="${(notes+'').replace(/"/g,'&quot;')}" onblur="saveTrackingNotes('${o.id}',this.value)" style="width:100%;border:1px solid var(--line);padding:3px 6px;border-radius:6px;font-size:11px">
+        <input type="text" placeholder="AWB / courier note" value="${attr(notes)}" onblur="saveTrackingNotes('${attr(o.id)}',this.value)" style="width:100%;border:1px solid var(--line);padding:3px 6px;border-radius:6px;font-size:11px">
       </td>
-      <td><small>${new Date(o.date).toLocaleDateString('en-IN')}<br>${new Date(o.date).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</small></td>
-      <td><button class="btn btn-secondary btn-sm" onclick="viewOrder('${o.id}')">View</button></td>
+      <td><small>${esc(new Date(o.date).toLocaleDateString('en-IN'))}<br>${esc(new Date(o.date).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}))}</small></td>
+      <td><button class="btn btn-secondary btn-sm" onclick="viewOrder('${attr(o.id)}')">View</button></td>
     </tr>`;}).join('');
 }
 async function refreshOrders(){

@@ -44,22 +44,34 @@ export const onRequestPost = async ({request, env}) => {
     return json({ok:true, already:true});
   }
 
-  /* 3. Mark paid + decrement stock + increment coupon */
-  const updRes = await fetch(`${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(order_id)}`,{
-    method:'PATCH',
-    headers:{...sb,'Content-Type':'application/json','Prefer':'return=minimal'},
-    body: JSON.stringify({
-      status:'Processing',
-      payment_id: rzp_payment_id,
-      paid_at: new Date().toISOString()
-    })
-  });
+  /* 3. Mark paid — gated on status=AwaitingPayment so parallel requests can't
+   *    both succeed and both run the side-effects below. Postgres treats this
+   *    UPDATE as atomic; only ONE concurrent caller sees the row matched. */
+  const updRes = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(order_id)}&status=eq.AwaitingPayment`,
+    {
+      method:'PATCH',
+      headers:{...sb,'Content-Type':'application/json','Prefer':'return=representation'},
+      body: JSON.stringify({
+        status:'Processing',
+        payment_id: rzp_payment_id,
+        paid_at: new Date().toISOString()
+      })
+    }
+  );
   if(!updRes.ok){
     const txt=await updRes.text();
     return json({error:'Failed to update order', detail:txt},500);
   }
+  const updatedRows = await updRes.json();
+  if(!Array.isArray(updatedRows) || updatedRows.length===0){
+    /* Another concurrent verify already flipped the status. Treat as success
+     * but DO NOT run the side-effects again. */
+    return json({ok:true, already:true});
+  }
 
-  /* Decrement stock — best-effort per-item; non-fatal if it fails. */
+  /* 4. Side-effects — only the winner of the atomic flip gets here.
+   *    Decrement stock per-item (best-effort; non-fatal if it fails). */
   for(const it of (order.items||[])){
     await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/decrement_stock`, {
       method:'POST',
@@ -68,7 +80,10 @@ export const onRequestPost = async ({request, env}) => {
     }).catch(()=>{});
   }
   if(order.coupon){
-    await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/increment_coupon`,{
+    /* try_consume_coupon respects max_redemptions and expiry in a single
+     * atomic UPDATE — even if two checkouts race through the limit-check
+     * in create.js, only one will consume here. */
+    await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/try_consume_coupon`,{
       method:'POST',
       headers:{...sb,'Content-Type':'application/json'},
       body: JSON.stringify({p_code: order.coupon})

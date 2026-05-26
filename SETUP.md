@@ -134,6 +134,8 @@ domain free, automatic SSL.
    | `FREE_SHIPPING_THRESHOLD` | `799` | business rule |
    | `SHIPPING_FEE_LIGHT` | `60` | business rule |
    | `SHIPPING_FEE_HEAVY` | `120` | business rule |
+   | `COD_MAX_OPEN` | `3` (default if unset) | Max Cash-on-Delivery orders one phone number can have open (not yet Delivered / Cancelled) before COD is blocked. Stops fake-order spam that costs courier returns. Set to a higher number if your real customers regularly batch orders. |
+   | `ALLOWED_ORIGINS` | `https://niksmasala.com,https://www.niksmasala.com` | CORS allow-list — only these origins can hit `/api/*`. Defaults handle both with and without `www`. |
    | `ADMIN_TOKEN` | a long random string — generate with `openssl rand -hex 32` or any password manager | gates admin write APIs (`/api/admin/products`). Save it somewhere safe — the admin panel asks for it once after login. |
 
    Click each one as **Encrypted** so it's never exposed in build logs.
