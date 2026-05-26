@@ -353,6 +353,136 @@
 </section>
 
 <!-- ============================================================
+     VIDEO SHOWCASE — 2x2 landscape grid (MP4 with MOV fallback)
+     ============================================================ -->
+<style>
+  .video-showcase{ padding:96px 24px; background:linear-gradient(135deg,#130603 0%,#2e0d05 60%,#1a0904 100%); }
+  .vs-inner{ max-width:1280px;margin:0 auto; display:grid;grid-template-columns:320px 1fr;gap:56px;align-items:center; }
+  .vs-text .vs-eyebrow{ display:inline-block;background:rgba(255,215,170,.18);color:#e8c896;padding:6px 14px;border-radius:999px;font:600 11px/1 'Manrope';letter-spacing:.18em;text-transform:uppercase;margin-bottom:18px; }
+  .vs-text h2{ color:#fff;font-family:'Source Serif 4',serif;font-weight:600;font-size:clamp(32px,4vw,48px);line-height:1.1;letter-spacing:-0.02em;margin:0 0 14px; }
+  .vs-text p{ color:rgba(255,255,255,.7);font:400 16px/1.7 'Manrope';margin:0 0 24px;max-width:380px; }
+  .vs-text .vs-cta{ display:inline-flex;align-items:center;gap:8px;background:#dc6b1f;color:#fff;padding:14px 28px;border-radius:999px;font:700 13px/1 'Manrope';letter-spacing:.08em;text-transform:uppercase;text-decoration:none;box-shadow:0 8px 24px -8px rgba(220,107,31,.55);transition:transform .25s,box-shadow .25s,background .25s; }
+  .vs-text .vs-cta:hover{ background:#b8451a;transform:translateY(-2px);box-shadow:0 12px 32px -8px rgba(220,107,31,.6); }
+  .vs-reel{ display:grid;grid-template-columns:repeat(2,1fr);gap:16px; }
+  .reel-card{
+    position:relative;border-radius:14px;overflow:hidden;
+    aspect-ratio:16/9;background:#000;cursor:pointer;
+    box-shadow:0 10px 32px rgba(0,0,0,.55);
+    transition:transform .3s,box-shadow .3s;
+  }
+  .reel-card:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.7)}
+  .reel-card video{
+    width:100%;height:100%;object-fit:cover;display:block;
+    background:#000;pointer-events:none;
+  }
+  .reel-card.playing video{object-fit:contain}
+  .reel-play{
+    position:absolute;inset:0;display:grid;place-items:center;
+    color:#fff;font-size:0;transition:opacity .2s;
+    background:rgba(0,0,0,.25);
+  }
+  .reel-play::after{
+    content:'▶';font-size:36px;
+    width:66px;height:66px;background:rgba(255,255,255,.15);
+    border-radius:50%;display:grid;place-items:center;
+    border:2px solid rgba(255,255,255,.5);
+    backdrop-filter:blur(4px);
+  }
+  .reel-card.playing .reel-play{opacity:0}
+  .reel-card.playing:hover .reel-play{opacity:1}
+  .reel-card.playing:hover .reel-play::after{content:'⏸';font-size:28px}
+  .reel-sound-badge{
+    position:absolute;top:10px;right:12px;
+    background:rgba(0,0,0,.6);color:#fff;
+    font-size:11px;padding:3px 9px;border-radius:20px;
+    display:flex;align-items:center;gap:5px;letter-spacing:.3px;
+    backdrop-filter:blur(4px);
+  }
+  .reel-mute-btn{
+    position:absolute;bottom:44px;right:12px;
+    background:rgba(0,0,0,.65);color:#fff;
+    border:none;border-radius:50%;
+    width:34px;height:34px;font-size:16px;
+    display:none;place-items:center;cursor:pointer;
+    backdrop-filter:blur(4px);z-index:2;
+    transition:background .2s;
+  }
+  .reel-mute-btn:hover{background:rgba(184,69,26,.85)}
+  .reel-card.playing .reel-mute-btn{display:grid}
+  .reel-label{
+    position:absolute;bottom:0;left:0;right:0;
+    padding:28px 14px 14px;
+    background:linear-gradient(transparent,rgba(0,0,0,.8));
+    color:#fff;font-size:13px;font-weight:700;letter-spacing:.3px;
+  }
+  @media(max-width:1000px){
+    .vs-inner{grid-template-columns:1fr;gap:36px}
+    .vs-text{text-align:center}
+    .vs-text p{margin-left:auto;margin-right:auto}
+    .vs-reel{grid-template-columns:repeat(2,1fr)}
+  }
+  @media(max-width:540px){
+    .vs-reel{grid-template-columns:1fr}
+    .reel-card{aspect-ratio:16/9}
+  }
+</style>
+
+<section class="video-showcase">
+  <div class="vs-inner">
+    <div class="vs-text">
+      <div class="vs-eyebrow">Watch Niks</div>
+      <h2>From Our Kitchen<br/>to Yours</h2>
+      <p>See the authentic Mangalorean masalas in action — straight from our facility to your kitchen.</p>
+      <a href="shop.html" class="vs-cta">Shop now →</a>
+    </div>
+    <div class="vs-reel">
+      <!-- MP4 first (Chrome, Firefox, Edge, Android, modern Safari).
+           MOV fallback for older Safari builds. -->
+      <div class="reel-card" onclick="toggleReel(this)">
+        <video poster="assets/IMG_1944-poster.jpg" playsinline preload="metadata">
+          <source src="IMG_1944.mp4" type="video/mp4">
+          <source src="IMG_1944.MOV"  type="video/quicktime">
+        </video>
+        <div class="reel-play"></div>
+        <div class="reel-sound-badge">▶ Tap to play</div>
+        <button class="reel-mute-btn" onclick="event.stopPropagation();toggleMute(this)" title="Mute / Unmute">🔊</button>
+        <div class="reel-label">Niks Masala Ad</div>
+      </div>
+      <div class="reel-card" onclick="toggleReel(this)">
+        <video poster="assets/IMG_1947-poster.jpg" playsinline preload="metadata">
+          <source src="IMG_1947.mp4" type="video/mp4">
+          <source src="IMG_1947.MOV"  type="video/quicktime">
+        </video>
+        <div class="reel-play"></div>
+        <div class="reel-sound-badge">▶ Tap to play</div>
+        <button class="reel-mute-btn" onclick="event.stopPropagation();toggleMute(this)" title="Mute / Unmute">🔊</button>
+        <div class="reel-label">Our Kitchen</div>
+      </div>
+      <div class="reel-card" onclick="toggleReel(this)">
+        <video poster="assets/IMG_1948-poster.jpg" playsinline preload="metadata">
+          <source src="IMG_1948.mp4" type="video/mp4">
+          <source src="IMG_1948.MOV"  type="video/quicktime">
+        </video>
+        <div class="reel-play"></div>
+        <div class="reel-sound-badge">▶ Tap to play</div>
+        <button class="reel-mute-btn" onclick="event.stopPropagation();toggleMute(this)" title="Mute / Unmute">🔊</button>
+        <div class="reel-label">The Craft</div>
+      </div>
+      <div class="reel-card" onclick="toggleReel(this)">
+        <video poster="assets/IMG_1949-poster.jpg" playsinline preload="metadata">
+          <source src="IMG_1949.mp4" type="video/mp4">
+          <source src="IMG_1949.MOV"  type="video/quicktime">
+        </video>
+        <div class="reel-play"></div>
+        <div class="reel-sound-badge">▶ Tap to play</div>
+        <button class="reel-mute-btn" onclick="event.stopPropagation();toggleMute(this)" title="Mute / Unmute">🔊</button>
+        <div class="reel-label">Real Flavour</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
      BESTSELLERS
      ============================================================ -->
 <section id="bestsellers" style="background:#fcf8f0;padding:96px 24px">
@@ -865,6 +995,44 @@ document.addEventListener('keydown', function (e) {
     if (lb && lb.classList.contains('open')) closeYt();
   }
 });
+
+/* ===== Reel playback (the .MOV/.mp4 video showcase) =====
+   Only one reel plays at a time. Tap to play, tap again to stop.
+   Mute toggle is separate. */
+function toggleReel(card){
+  const vid = card.querySelector('video');
+  const badge = card.querySelector('.reel-sound-badge');
+  // Pause every other reel first
+  document.querySelectorAll('.reel-card').forEach(c => {
+    if (c !== card) {
+      const v = c.querySelector('video');
+      if (v) { v.pause(); v.currentTime = 0; }
+      c.classList.remove('playing');
+      const b = c.querySelector('.reel-sound-badge');
+      if (b) b.textContent = '▶ Tap to play';
+    }
+  });
+  if (vid.paused) {
+    if (vid.readyState === 0) vid.load();
+    const p = vid.play();
+    if (p && p.catch) p.catch(() => {});
+    card.classList.add('playing');
+    if (badge) badge.textContent = '⏹ Tap to stop';
+    vid.onended = function () {
+      card.classList.remove('playing');
+      if (badge) badge.textContent = '↺ Play again';
+    };
+  } else {
+    vid.pause(); vid.currentTime = 0;
+    card.classList.remove('playing');
+    if (badge) badge.textContent = '▶ Tap to play';
+  }
+}
+function toggleMute(btn){
+  const vid = btn.closest('.reel-card').querySelector('video');
+  vid.muted = !vid.muted;
+  btn.textContent = vid.muted ? '🔇' : '🔊';
+}
 
 </script>
 <script src="assets/theme-anim.js"></script>
