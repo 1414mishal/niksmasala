@@ -156,11 +156,10 @@
     <h1>Niks Masala Admin</h1>
     <p>Sign in to manage your store</p>
     <form onsubmit="doLogin(event)">
-      <input type="text" id="user" placeholder="Username" required autocomplete="username">
-      <input type="password" id="pass" placeholder="Password" required autocomplete="current-password">
+      <input type="password" id="pass" placeholder="Admin password" required autocomplete="current-password" autofocus>
       <button type="submit">Sign In →</button>
     </form>
-    <p class="hint">Unauthorised access is prohibited. All activity is logged.</p>
+    <p class="hint">Unauthorised access is prohibited. All activity is logged. 5 wrong attempts will lock this IP for 10 minutes.</p>
   </div>
 </div>
 
@@ -264,13 +263,14 @@
       </div>
       <div class="panel">
         <h2 style="font-size:18px;margin-bottom:18px">Admin Password</h2>
-        <form onsubmit="changePassword(event)">
-          <div class="form-grid">
-            <div class="form-row"><label>New Password</label><input type="password" id="np1" minlength="4" required></div>
-            <div class="form-row"><label>Confirm Password</label><input type="password" id="np2" minlength="4" required></div>
-          </div>
-          <button class="btn btn-primary" type="submit">Update Password</button>
-        </form>
+        <p style="color:var(--muted);font-size:14px;line-height:1.55;margin-bottom:10px">
+          Your admin password lives on the server (Cloudflare → Pages → niksmasala → Settings → Variables and Secrets → <code>ADMIN_PASSWORD</code>).
+          To rotate it: edit the value there, click <b>Save</b>, then <b>Retry deployment</b>. Takes ~60 seconds.
+        </p>
+        <p style="color:var(--muted);font-size:13px;line-height:1.55">
+          Why server-side? A browser-side password can be reset by anyone with DevTools.
+          Keeping it in Cloudflare means even if someone steals your laptop, they still can't sign in without the env secret.
+        </p>
       </div>
     </section>
 
@@ -421,67 +421,10 @@ const _ARAW=[
 ];
 const DEFAULT_PRODUCTS=_ARAW.map((r,i)=>{const minP=Math.min(...r.variants.map(v=>v.price));return{id:'p'+(i+1),name:r.name,slug:r.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),category:_acat(r.name),price:minP,image:_apick(r.name),variants:r.variants,rating:4.6+(i%4)*0.1,reviews:20+(i*7)%180,desc:'Authentic Mangalorean spice blend — traditionally crafted, export-quality.',long:'Packed at our FSSAI-certified 11,000 sq.ft. facility in Yeyyadi, Mangalore.',badge:r.badge||null,stock:50};});
 const DEFAULT_SETTINGS = {brand:'Niks Masala',phone:'+91 73385 19975',email:'hello@niksmasala.com',address:'Plot no. L-6, 5-50, Yeyyadi Industrial Area, Mangaluru, Karnataka 575015',currency:'₹',shippingFree:799,shippingFee:60,shippingFeeHeavy:120,razorpayKey:'rzp_test_SgFzfBVh4i57d2'};
-/* First-run password is configured on the very first login.
-   Stored as a PBKDF2 hash (100k SHA-256 rounds + random per-install salt)
-   in localStorage. Format: pbkdf2$100000$<base64-salt>$<base64-hash>.
-   Old plain-SHA-256 hashes are auto-migrated on the next successful login.
-   TODO(backend): replace with proper server-side auth + bcrypt + email recovery. */
-const FIRST_RUN_KEY    = 'niks_pw_hash';
-const LOGIN_FAILS_KEY  = 'niks_pw_fails';     // {count:n, lockedUntil:ms}
-const LOGIN_FAIL_LIMIT = 5;                   // after 5 wrong attempts...
-const LOGIN_LOCK_MS    = 15 * 60 * 1000;      // ...lock for 15 min
-
-const PBKDF2_ITERS = 100_000;
-function _bufToB64(buf){
-  return btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
-}
-function _b64ToBuf(s){
-  const raw = atob(s); const buf = new Uint8Array(raw.length);
-  for(let i=0;i<raw.length;i++) buf[i] = raw.charCodeAt(i);
-  return buf.buffer;
-}
-async function _pbkdf2(password, saltBuf, iters){
-  const enc = new TextEncoder();
-  const baseKey = await crypto.subtle.importKey(
-    'raw', enc.encode(password), {name:'PBKDF2'}, false, ['deriveBits']
-  );
-  const bits = await crypto.subtle.deriveBits(
-    {name:'PBKDF2', salt:saltBuf, iterations:iters, hash:'SHA-256'},
-    baseKey, 256
-  );
-  return _bufToB64(bits);
-}
-async function _hashPassword(password){
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const hash = await _pbkdf2(password, salt.buffer, PBKDF2_ITERS);
-  return 'pbkdf2$' + PBKDF2_ITERS + '$' + _bufToB64(salt.buffer) + '$' + hash;
-}
-async function _verifyPassword(password, stored){
-  if(!stored) return false;
-  if(stored.startsWith('pbkdf2$')){
-    const parts = stored.split('$');           // ['pbkdf2', iters, salt, hash]
-    if(parts.length !== 4) return false;
-    const iters = parseInt(parts[1], 10);
-    const salt  = _b64ToBuf(parts[2]);
-    const hash  = await _pbkdf2(password, salt, iters);
-    /* constant-time compare — same length and char-by-char XOR */
-    if(hash.length !== parts[3].length) return false;
-    let diff = 0;
-    for(let i=0;i<hash.length;i++) diff |= hash.charCodeAt(i) ^ parts[3].charCodeAt(i);
-    return diff === 0;
-  }
-  /* Legacy plain SHA-256 hash — verify, then caller should upgrade to PBKDF2 */
-  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
-  const hex = Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');
-  return hex === stored;
-}
-
-function _getLoginFails(){
-  try{ return JSON.parse(localStorage.getItem(LOGIN_FAILS_KEY)) || {count:0, lockedUntil:0}; }
-  catch(e){ return {count:0, lockedUntil:0}; }
-}
-function _setLoginFails(v){ localStorage.setItem(LOGIN_FAILS_KEY, JSON.stringify(v)); }
-function _clearLoginFails(){ localStorage.removeItem(LOGIN_FAILS_KEY); }
+/* Admin auth is server-side now — /api/admin/login validates the password
+   against env.ADMIN_PASSWORD (timing-safe compare) and returns env.ADMIN_TOKEN.
+   Rate-limited to 5 attempts / 10 min per IP in functions/_middleware.js.
+   No client-side hashing / signup / lockout state — all moved to the edge. */
 
 /* ---- Supabase ---- */
 const _SB_URL='https://cmyiggiakgimygznlkuo.supabase.co';
@@ -516,70 +459,118 @@ function getSettings(){try{return{...DEFAULT_SETTINGS,...(JSON.parse(localStorag
 function setSettings(s){localStorage.setItem('niks_settings',JSON.stringify(s))}
 function getOrders(){try{return JSON.parse(localStorage.getItem('niks_orders'))||[]}catch(e){return[]}}
 function setOrders(o){localStorage.setItem('niks_orders',JSON.stringify(o))}
-function getPasswordHash(){return localStorage.getItem(FIRST_RUN_KEY)||''}
+/* ====== Admin API token ======
+   Server-side write endpoints (/api/admin/products) require:
+     Authorization: Bearer <ADMIN_TOKEN>
+   The token is issued by /api/admin/login on a correct password and
+   lives in localStorage with an explicit 30-day expiry. ADMIN_PASSWORD
+   itself never touches the browser — it's only stored in Cloudflare env.
 
-/* Login. First-time use: any password ≥ 8 chars sets the admin password
-   (stored as PBKDF2 hash). After that, only that exact password works.
-   No master/backdoor key. 5 wrong attempts → 15 minute lockout. */
+   These constants are declared *before* doLogin and the auto-resume check
+   so that no script-execution path hits a Temporal Dead Zone reference. */
+const ADMIN_TOKEN_KEY = 'niks_admin_token';
+const ADMIN_TOKEN_EXP = 'niks_admin_token_exp';
+
+function getAdminToken(){
+  const t = localStorage.getItem(ADMIN_TOKEN_KEY);
+  if(!t) return null;
+  const expIso = localStorage.getItem(ADMIN_TOKEN_EXP);
+  if(expIso){
+    const exp = Date.parse(expIso);
+    if(Number.isFinite(exp) && exp < Date.now()){
+      clearAdminToken();
+      return null;
+    }
+  }
+  return t;
+}
+function clearAdminToken(){
+  localStorage.removeItem(ADMIN_TOKEN_KEY);
+  localStorage.removeItem(ADMIN_TOKEN_EXP);
+}
+async function adminApi(method, body){
+  const token = getAdminToken();
+  if(!token){
+    /* Session expired — bounce to login screen instead of nagging */
+    sessionStorage.removeItem('niks_auth');
+    location.reload();
+    return {ok:false, error:'Session expired — please sign in again'};
+  }
+  const init = {
+    method,
+    headers: {
+      'Content-Type':'application/json',
+      'Authorization':'Bearer ' + token
+    }
+  };
+  if(body !== undefined) init.body = JSON.stringify(body);
+  let res;
+  try{ res = await fetch('/api/admin/products', init); }
+  catch(ex){ return {ok:false, error:'Network error: '+ex.message}; }
+  if(res.status === 401){
+    clearAdminToken();
+    return {ok:false, error:'Token rejected — please sign in again'};
+  }
+  if(!res.ok){
+    const detail = await res.text();
+    return {ok:false, error:'API ' + res.status + ': ' + detail.slice(0,200)};
+  }
+  return {ok:true, data: await res.json().catch(()=>({}))};
+}
+
+/* Login goes to the server. /api/admin/login validates the password
+   against env.ADMIN_PASSWORD (server-side, constant-time) and returns
+   env.ADMIN_TOKEN on success. We persist both in localStorage with
+   a 30-day expiry so the admin doesn't have to re-type each session.
+
+   No "first-run setup" — there's no signup. Strangers hitting this URL
+   see a login they can never succeed at unless they know the password
+   set in Cloudflare env. 5-attempt rate limit per IP (in middleware). */
 async function doLogin(e){
   e.preventDefault();
-  const u=document.getElementById('user').value.trim();
-  const p=document.getElementById('pass').value;
+  const p = document.getElementById('pass').value;
+  if(!p){ toast('Enter your admin password','err'); return; }
 
-  /* Lockout check first — before we burn CPU on PBKDF2 */
-  const fails = _getLoginFails();
-  const now = Date.now();
-  if(fails.lockedUntil && fails.lockedUntil > now){
-    const mins = Math.ceil((fails.lockedUntil - now)/60000);
-    toast('Too many failed attempts. Try again in '+mins+' min.','err');
-    return;
-  }
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Signing in…'; }
 
-  if(u!=='admin' || p.length<8){
-    if(p.length<8 && !getPasswordHash()){
-      toast('Password must be at least 8 characters','err'); return;
-    }
-    _registerFail(fails);
-    toast('Incorrect credentials','err');
-    return;
-  }
+  try{
+    const res = await fetch('/api/admin/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({password: p})
+    });
+    const j = await res.json().catch(()=>({}));
 
-  const stored=getPasswordHash();
-  if(!stored){
-    if(!confirm('First-time setup — this password will be saved on THIS device only. Make sure it is strong and unique. Continue?')){return}
-    const fresh = await _hashPassword(p);
-    localStorage.setItem(FIRST_RUN_KEY, fresh);
-  } else {
-    const ok = await _verifyPassword(p, stored);
-    if(!ok){
-      _registerFail(fails);
-      toast('Incorrect credentials','err');
+    if(res.status === 429){
+      toast('Too many attempts. Try again in ~10 minutes.','err');
       return;
     }
-    /* Auto-upgrade legacy plain-SHA-256 hashes to PBKDF2 on next successful login */
-    if(!stored.startsWith('pbkdf2$')){
-      try{
-        const upgraded = await _hashPassword(p);
-        localStorage.setItem(FIRST_RUN_KEY, upgraded);
-      }catch(err){ /* upgrade is best-effort; legacy hash still works */ }
+    if(!res.ok){
+      toast(j.error || 'Incorrect password','err');
+      return;
     }
+
+    /* Store token + expiry. Token unlocks /api/admin/products writes.
+       30-day expiry means typing the password ~once a month, not every visit. */
+    localStorage.setItem(ADMIN_TOKEN_KEY, j.token);
+    localStorage.setItem(ADMIN_TOKEN_EXP, j.expiresAt || '');
+    /* Random per-tab UI marker so showApp() can short-circuit on reload */
+    const tok = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
+    sessionStorage.setItem('niks_auth', tok);
+    showApp();
+  } catch(err){
+    toast('Network error — please try again','err');
+  } finally {
+    if(submitBtn){ submitBtn.disabled = false; submitBtn.textContent = 'Sign in'; }
   }
-  _clearLoginFails();
-  /* Random per-session token instead of the trivially forgeable "1" */
-  const tok=Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b=>b.toString(16).padStart(2,'0')).join('');
-  sessionStorage.setItem('niks_auth',tok);
-  showApp();
 }
 
-function _registerFail(prev){
-  const next = {count: (prev.count||0) + 1, lockedUntil: 0};
-  if(next.count >= LOGIN_FAIL_LIMIT){
-    next.lockedUntil = Date.now() + LOGIN_LOCK_MS;
-    next.count = 0;
-  }
-  _setLoginFails(next);
+function logout(){
+  clearAdminToken();
+  sessionStorage.removeItem('niks_auth');
+  location.reload();
 }
-function logout(){sessionStorage.removeItem('niks_auth');location.reload()}
 async function showApp(){
   document.getElementById('login').style.display='none';
   document.getElementById('app').classList.add('on');
@@ -615,10 +606,11 @@ async function showApp(){
   }catch(ex){console.warn('Cloud sync failed:',ex)}
   go('dashboard');
 }
-/* Resume an active admin session — but only if a password has already
-   been set up. This prevents the prior `sessionStorage.setItem('niks_auth','1')`
-   trivial bypass (anyone with DevTools could set the literal "1"). */
-if(sessionStorage.getItem('niks_auth') && getPasswordHash()) showApp();
+/* Resume an active admin session — but only if a real (unexpired) admin
+   token is in localStorage. Setting sessionStorage.niks_auth to the literal
+   "1" via DevTools would have bypassed the old check; now showApp() needs
+   getAdminToken() to return a non-null, non-expired value. */
+if(sessionStorage.getItem('niks_auth') && getAdminToken()) showApp();
 
 /* Navigation */
 document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>go(n.dataset.view)));
@@ -747,50 +739,10 @@ function closeProduct(){
   document.getElementById('productModal').classList.remove('open');
   clearImage();
 }
-/* ====== Admin API token ======
-   Server-side write endpoints (/api/admin/products) require:
-     Authorization: Bearer <ADMIN_TOKEN>
-   The token lives ONLY in Cloudflare env vars and the admin's
-   sessionStorage. Never in code, never in localStorage. */
-const ADMIN_TOKEN_KEY = 'niks_admin_token';
-function getAdminToken(){
-  let t = sessionStorage.getItem(ADMIN_TOKEN_KEY);
-  if(t) return t;
-  t = prompt(
-    'Enter your ADMIN_TOKEN (the long random string from Cloudflare Pages → Settings → Environment variables).\n\n' +
-    'This authorises product / order writes to Supabase. Saved for this session only.'
-  );
-  if(t){
-    sessionStorage.setItem(ADMIN_TOKEN_KEY, t.trim());
-    return t.trim();
-  }
-  return null;
-}
-function clearAdminToken(){ sessionStorage.removeItem(ADMIN_TOKEN_KEY); }
-async function adminApi(method, body){
-  const token = getAdminToken();
-  if(!token) return {ok:false, error:'No admin token provided'};
-  const init = {
-    method,
-    headers: {
-      'Content-Type':'application/json',
-      'Authorization':'Bearer ' + token
-    }
-  };
-  if(body !== undefined) init.body = JSON.stringify(body);
-  let res;
-  try{ res = await fetch('/api/admin/products', init); }
-  catch(ex){ return {ok:false, error:'Network error: '+ex.message}; }
-  if(res.status === 401){
-    clearAdminToken();
-    return {ok:false, error:'Token rejected — please try again'};
-  }
-  if(!res.ok){
-    const detail = await res.text();
-    return {ok:false, error:'API ' + res.status + ': ' + detail.slice(0,200)};
-  }
-  return {ok:true, data: await res.json().catch(()=>({}))};
-}
+/* Admin API token helpers (getAdminToken / clearAdminToken / adminApi)
+   are declared near the top of this script — see the "Admin API token"
+   block above doLogin. Keep them up there so the const bindings exist
+   before any script-execution path that reads them. */
 
 async function saveProduct(e){
   e.preventDefault();
@@ -955,20 +907,6 @@ async function saveSettings(e){
   }catch(ex){console.warn(ex)}
   toast('✅ Settings saved','ok');
 }
-async function changePassword(e){
-  e.preventDefault();
-  const a=document.getElementById('np1').value,b=document.getElementById('np2').value;
-  if(a!==b){toast('Passwords don\'t match','err');return}
-  if(a.length<8){toast('Use at least 8 characters','err');return}
-  if(!/[A-Za-z]/.test(a)||!/\d/.test(a)){toast('Use letters and digits','err');return}
-  const h=await _sha256(a);
-  localStorage.setItem(FIRST_RUN_KEY,h);
-  /* Also evict old plaintext key from any prior version */
-  localStorage.removeItem('niks_pw');
-  document.getElementById('np1').value='';document.getElementById('np2').value='';
-  toast('✅ Password updated','ok');
-}
-
 /* Backup */
 function exportData(){
   const data={
@@ -1020,9 +958,11 @@ async function clearOrders(){
   toast('Orders cleared','ok'); renderDashboard();
 }
 async function factoryReset(){
-  if(!confirm('⚠️ Factory reset erases ALL products, orders, settings and password. Continue?')) return;
+  if(!confirm('⚠️ Factory reset erases ALL products, orders, settings and signs you out. (Your admin password lives in Cloudflare env and is NOT affected.) Continue?')) return;
   if(!confirm('Are you absolutely sure? This cannot be undone.')) return;
-  ['niks_products','niks_orders','niks_settings','niks_pw','niks_cart'].forEach(k=>localStorage.removeItem(k));
+  /* Wipe local mirrors + cached admin token. Server-side ADMIN_PASSWORD/ADMIN_TOKEN
+     are untouched — rotate those in Cloudflare env if you also want to invalidate the token. */
+  ['niks_products','niks_orders','niks_settings','niks_cart','niks_admin_token','niks_admin_token_exp'].forEach(k=>localStorage.removeItem(k));
   try{
     const db=await getDB();
     await Promise.all([

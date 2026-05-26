@@ -95,7 +95,8 @@ export const onRequest = async (ctx) => {
     '/api/contact':            {limit:5,   windowMs:600_000},  // 5 per 10 min
     '/api/newsletter':         {limit:3,   windowMs:600_000},
     '/api/products':           {limit:120, windowMs:60_000},   // GET — read-heavy
-    '/api/admin/products':     {limit:30,  windowMs:60_000}    // tighter
+    '/api/admin/products':     {limit:30,  windowMs:60_000},   // admin write
+    '/api/admin/login':        {limit:5,   windowMs:600_000}   // 5 attempts / 10 min per IP — brute-force shield
   };
   const rule = limits[url.pathname];
   if(rule && !rateLimit(ip, url.pathname, rule.limit, rule.windowMs)){

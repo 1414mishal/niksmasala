@@ -136,25 +136,39 @@ domain free, automatic SSL.
    | `SHIPPING_FEE_HEAVY` | `120` | business rule |
    | `COD_MAX_OPEN` | `3` (default if unset) | Max Cash-on-Delivery orders one phone number can have open (not yet Delivered / Cancelled) before COD is blocked. Stops fake-order spam that costs courier returns. Set to a higher number if your real customers regularly batch orders. |
    | `ALLOWED_ORIGINS` | `https://niksmasala.com,https://www.niksmasala.com` | CORS allow-list — only these origins can hit `/api/*`. Defaults handle both with and without `www`. |
-   | `ADMIN_TOKEN` | a long random string — generate with `openssl rand -hex 32` or any password manager | gates admin write APIs (`/api/admin/products`). Save it somewhere safe — the admin panel asks for it once after login. |
+   | `ADMIN_PASSWORD` | a long human-memorable password (e.g. `Garam-Masala!2026-Mangalore`) | the password the merchant types in `/admin.html` to sign in. Stays server-side — never reaches the browser. |
+   | `ADMIN_TOKEN` | a long random string — generate with `openssl rand -hex 32` or any password manager | the bearer token issued to the browser after a correct password. Used by admin write APIs (`/api/admin/products`). |
 
    Click each one as **Encrypted** so it's never exposed in build logs.
 
-   **How `ADMIN_TOKEN` works:**
-   The admin panel sends `Authorization: Bearer <ADMIN_TOKEN>` on every
-   product save / delete. The Cloudflare Function compares it to this env
-   var with a timing-safe equality check. Anyone without the token gets
-   `401 Unauthorized`. So when your client edits products in
-   `/admin.html`, the changes are immediately persisted to the Supabase
-   `products` table — no SQL editor needed, no redeploy needed. The
-   public homepage and shop fetch from `/api/products` and re-render
-   live, so new products appear within seconds.
+   **How admin auth works (two-step):**
+   1. The merchant opens `/admin.html` and types `ADMIN_PASSWORD`. The
+      browser POSTs it to `/api/admin/login`, which compares it to the
+      env var with a constant-time check and (on success) returns
+      `ADMIN_TOKEN` plus a 30-day expiry. Wrong-password attempts return
+      401 with an 80ms artificial delay. The middleware also rate-limits
+      this endpoint to **5 attempts per 10 min per IP** — brute force is
+      not a realistic attack.
+   2. The admin panel stores `ADMIN_TOKEN` in localStorage with the
+      expiry, then sends `Authorization: Bearer <ADMIN_TOKEN>` on every
+      product save / delete. The token is never typed by the merchant
+      and never appears in the URL.
 
-   **To rotate the token** (e.g., a previous admin should lose access):
-   regenerate `openssl rand -hex 32`, update the env var, redeploy, and
-   give the new value to whoever should still have access. Sessions
-   storing the old token will silently start failing — they'll be
-   re-prompted on next save.
+   Why split them? `ADMIN_PASSWORD` is the *thing you remember*;
+   `ADMIN_TOKEN` is the *thing the API checks*. Rotating one doesn't
+   force you to also rotate the other, and a leaked password without
+   the token (or vice versa) is useless on its own.
+
+   **To rotate the password** (e.g., merchant got a new laptop, or a
+   contractor needs to lose access): edit `ADMIN_PASSWORD` in Cloudflare
+   env, click **Save**, then **Retry deployment**. Active token sessions
+   keep working until they expire (30 days max) — to also kill those,
+   rotate `ADMIN_TOKEN` at the same time.
+
+   **To rotate the token** (e.g., suspect it leaked): regenerate
+   `openssl rand -hex 32`, update the env var, redeploy. Every browser
+   that has the old token will get 401 on the next save and be bounced
+   back to the login screen.
 
 7. **Settings → Functions → Compatibility flags**:
    * Production compatibility date: any date in 2024 or later is fine.
