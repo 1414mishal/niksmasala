@@ -12,7 +12,7 @@ buildHeader = function (activePage) {
     { href: 'index.html', label: 'Home',     key: 'home' },
     { href: 'shop.html',  label: 'Shop',     key: 'shop' },
     { href: 'about.html', label: 'Heritage', key: 'about' },
-    { href: 'index.html#recipes', label: 'Recipes', key: 'recipes' },
+    { href: 'recipes.html', label: 'Recipes', key: 'recipes' },
     { href: 'contact.html', label: 'Contact', key: 'contact' }
   ];
   /* Mobile menu drawer + hamburger toggle:
@@ -115,7 +115,7 @@ buildFooter = function () {
         <h5 style="font:600 11px/1 'Manrope';letter-spacing:.18em;text-transform:uppercase;color:#fed7aa;margin:0 0 18px">Heritage</h5>
         <ul style="list-style:none;padding:0;margin:0;display:grid;gap:12px">
           <li><a href="about.html" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Our Story</a></li>
-          <li><a href="index.html#recipes" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Recipes</a></li>
+          <li><a href="recipes.html" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Recipes</a></li>
           <li><a href="contact.html" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Contact</a></li>
           <li><a href="track.html" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Track Order</a></li>
           <li><a href="shipping.html" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Shipping &amp; Returns</a></li>
