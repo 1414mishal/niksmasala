@@ -61,12 +61,20 @@ create table if not exists orders (
   tracking_status text default 'placed',
   tracking_notes  text,
   paid_at         timestamptz,
-  created_at      timestamptz default now()
+  created_at      timestamptz default now(),
+  -- Shiprocket integration columns. Nullable; populated by
+  -- /api/admin/ship when the merchant clicks "Ship via Shiprocket".
+  shiprocket_order_id    text,
+  shiprocket_shipment_id text,
+  awb                    text,
+  courier                text,
+  label_url              text
 );
 create index if not exists orders_created_at_idx on orders(created_at desc);
 create index if not exists orders_status_idx     on orders(status);
 create index if not exists orders_user_id_idx    on orders(user_id);
 create index if not exists orders_customer_email_idx on orders((customer->>'email'));
+create index if not exists orders_awb_idx on orders(awb) where awb is not null;
 
 -- Profiles row, 1-to-1 with auth.users. Stores non-auth metadata.
 create table if not exists profiles (

@@ -138,6 +138,10 @@ domain free, automatic SSL.
    | `ALLOWED_ORIGINS` | `https://niksmasala.com,https://www.niksmasala.com` | CORS allow-list — only these origins can hit `/api/*`. Defaults handle both with and without `www`. |
    | `ADMIN_PASSWORD` | a long human-memorable password (e.g. `Garam-Masala!2026-Mangalore`) | the password the merchant types in `/admin.html` to sign in. Stays server-side — never reaches the browser. |
    | `ADMIN_TOKEN` | a long random string — generate with `openssl rand -hex 32` or any password manager | the bearer token issued to the browser after a correct password. Used by admin write APIs (`/api/admin/products`). |
+   | `SHIPROCKET_EMAIL` | your Shiprocket login email | needed for `/api/admin/ship` (one-click courier dispatch). See Step 8 below. |
+   | `SHIPROCKET_PASSWORD` | your Shiprocket login password | same. Treated as a Secret. |
+   | `SHIPROCKET_PICKUP_LOCATION` | `Primary` (the pickup-address NAME you set in Shiprocket → Settings → Pickup Addresses) | defaults to `Primary`. Override if you named yours differently. |
+   | `SHIPROCKET_DIM_L` / `SHIPROCKET_DIM_B` / `SHIPROCKET_DIM_H` | default package cm — e.g. `15` / `10` / `8` | spice pouches are small; tune later if you ship bigger boxes. Defaults applied if unset. |
 
    Click each one as **Encrypted** so it's never exposed in build logs.
 
@@ -226,6 +230,61 @@ If any step fails:
 * Cloudflare Pages → Deployments → click latest → **Real-time logs** —
   Function errors appear here.
 * Browser DevTools → Network → look at the failing `/api/...` response.
+
+---
+
+## Step 8 — Shiprocket (one-click courier dispatch)
+
+Free signup, no monthly fee. You pay ~₹35–60 per ½ kg domestic shipment
+when you actually ship. They handle all the couriers (Delhivery, DTDC,
+Bluedart, Xpressbees, Ecom Express) behind one API.
+
+What the integration replaces:
+* Before: open Shiprocket dashboard → manually paste customer name +
+  address + phone + items → choose courier → assign AWB → schedule
+  pickup → download label → copy AWB back into admin.html.
+* After: open admin.html → click **🚚 Ship via Shiprocket** on the
+  order. ~3 seconds later the AWB, courier name, and a "Label" link
+  appear inline. Pickup is auto-scheduled. Done.
+
+1. Go to <https://app.shiprocket.in/register> → sign up with the
+   business email + GST. KYC takes ~1–2 working days.
+2. Once approved: **Settings → Company Setup → Pickup Addresses → Add**.
+   * Pickup name: `Primary` (this is the string we send to the API;
+     change `SHIPROCKET_PICKUP_LOCATION` env var if you call it
+     anything else)
+   * Address: `Plot L-6, 5-50, Yeyyadi Industrial Area, Mangaluru, KA 575015`
+   * Phone: +91 73385 19975
+   * Save. Shiprocket sends a verification call/SMS — confirm it.
+3. **Settings → API → API User**: create a separate API-only login
+   (recommended) or use your main login. Note the email + password.
+4. Add **`SHIPROCKET_EMAIL`** and **`SHIPROCKET_PASSWORD`** to
+   Cloudflare env (Step 4.6 table above), marked **Encrypted**.
+   Optionally add `SHIPROCKET_PICKUP_LOCATION` if not `Primary`,
+   and `SHIPROCKET_DIM_L/B/H` if your standard package is not the
+   default 15×10×8 cm.
+5. Run the migration: Supabase → SQL Editor → paste
+   [`db/migrate-shiprocket-columns.sql`](db/migrate-shiprocket-columns.sql)
+   → Run. Adds `shiprocket_order_id`, `shiprocket_shipment_id`, `awb`,
+   `courier`, `label_url` columns to `orders`. Safe + idempotent.
+6. Retry deployment in Cloudflare so the new env vars take effect.
+7. Place a test order on the live site, pay it, then go to admin.html
+   → Orders → click **🚚 Ship via Shiprocket**. You should see:
+   * AWB number + courier name appear in the row
+   * "Label" link → opens the PDF shipping label
+   * The order's `tracking_status` flips to `shipped`
+   * Customer can see all of this on /track.html
+
+If a step fails:
+* "Pickup location not found" → name mismatch between Shiprocket
+  dashboard and `SHIPROCKET_PICKUP_LOCATION` env var. Most common
+  rookie error.
+* "AWB assignment failed" → no courier services that PIN. Open the
+  Shiprocket dashboard, the order is already there, pick a courier
+  manually. The `shiprocket_shipment_id` is persisted so admin.html
+  will show "already shipped" once you finish.
+* "Order is not paid yet" → Razorpay verification hasn't fired.
+  Refresh; this clears once `payment_id` is set.
 
 ---
 

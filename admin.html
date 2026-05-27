@@ -808,6 +808,17 @@ function renderOrders(){
       const ts = o.tracking_status || o.trackingStatus || 'placed';
       const notes = o.tracking_notes || o.trackingNotes || '';
       const cust = o.customer || {};
+      const hasAwb = !!o.awb;
+      const isPaid = !!o.payment_id || o.payment === 'COD';
+      /* Ship button states:
+           - already shipped (hasAwb)        → grey, shows AWB + label link
+           - unpaid prepaid (no payment_id)  → disabled
+           - otherwise                       → primary "Ship via Shiprocket" */
+      const shipBtnHtml = hasAwb
+        ? `<div style="font:600 11px/1.3 'Manrope';color:var(--ok);margin-top:4px">📦 ${esc(o.courier||'Shipped')} · ${esc(o.awb)}${o.label_url?` · <a href="${attr(o.label_url)}" target="_blank" rel="noopener" style="color:var(--red);text-decoration:underline">Label</a>`:''}</div>`
+        : !isPaid
+          ? `<button class="btn btn-secondary btn-sm" disabled title="Order is not paid yet" style="opacity:.5;cursor:not-allowed;margin-top:4px">🚚 Ship</button>`
+          : `<button class="btn btn-primary btn-sm" onclick="shipOrder('${attr(o.id)}',this)" style="margin-top:4px">🚚 Ship via Shiprocket</button>`;
       return `
     <tr>
       <td><strong>${esc(o.id)}</strong><br><a href="track.html?id=${attr(o.id)}" target="_blank" style="font-size:11px;color:var(--red)">🔍 Track</a></td>
@@ -823,6 +834,7 @@ function renderOrders(){
           ${TRACK_STEPS.map(s=>`<option value="${attr(s)}" ${s===ts?'selected':''}>${esc(TRACK_LABELS[s]||s)}</option>`).join('')}
         </select>
         <input type="text" placeholder="AWB / courier note" value="${attr(notes)}" onblur="saveTrackingNotes('${attr(o.id)}',this.value)" style="width:100%;border:1px solid var(--line);padding:3px 6px;border-radius:6px;font-size:11px">
+        ${shipBtnHtml}
       </td>
       <td><small>${esc(new Date(o.date).toLocaleDateString('en-IN'))}<br>${esc(new Date(o.date).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}))}</small></td>
       <td><button class="btn btn-secondary btn-sm" onclick="viewOrder('${attr(o.id)}')">View</button></td>
@@ -866,6 +878,65 @@ async function saveTrackingNotes(id, tracking_notes){
     await db.from('orders').update({tracking_notes}).eq('id',id);
   }catch(ex){console.warn(ex)}
   toast('Tracking note saved','ok');
+}
+
+/* One-click "Ship via Shiprocket". POSTs to /api/admin/ship which
+   creates the SR order, assigns AWB, schedules pickup, and generates
+   the shipping label PDF. On success we update the local row and
+   re-render so the row swaps "Ship" button for the AWB + label link.
+   Idempotent server-side — double clicks return the existing AWB. */
+async function shipOrder(id, btn){
+  if(!confirm('Push order '+id+' to Shiprocket?\n\nThis will:\n• Create the shipment\n• Auto-assign a courier (AWB)\n• Schedule pickup from Yeyyadi\n• Generate the shipping label\n\nYou can still cancel from the Shiprocket dashboard if needed.')) return;
+  const token = getAdminToken();
+  if(!token){ toast('Session expired — please sign in again','err'); sessionStorage.removeItem('niks_auth'); location.reload(); return; }
+  const original = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = 'Shipping…'; }
+  try{
+    const r = await fetch('/api/admin/ship', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({order_id: id})
+    });
+    const j = await r.json().catch(()=>({}));
+    if(r.status === 401){
+      clearAdminToken();
+      toast('Token rejected — please sign in again','err');
+      sessionStorage.removeItem('niks_auth'); location.reload();
+      return;
+    }
+    if(r.status === 429){
+      toast('Too many ship requests. Wait a minute and try again.','err');
+      if(btn){ btn.disabled = false; btn.textContent = original; }
+      return;
+    }
+    if(!r.ok){
+      /* Partial success: order is in SR but no AWB. Tell admin to finish in SR dashboard. */
+      if(j.shiprocket_shipment_id){
+        toast('Shipment created in Shiprocket (#'+j.shiprocket_shipment_id+') but courier could not be auto-assigned. Open your Shiprocket dashboard to pick one manually.','err');
+      } else {
+        toast(j.error || 'Shipping failed','err');
+      }
+      if(btn){ btn.disabled = false; btn.textContent = original; }
+      return;
+    }
+    /* Update local copy so the UI shows the AWB without a full refresh */
+    const all = getOrders();
+    const o = all.find(x=>x.id===id);
+    if(o){
+      o.awb = j.awb; o.courier = j.courier; o.label_url = j.label_url;
+      o.tracking_status = 'shipped'; o.status = 'Shipped';
+      o.tracking_notes = (j.courier||'Courier') + ' ' + (j.awb||'');
+      setOrders(all);
+    }
+    toast('📦 Shipped via '+(j.courier||'courier')+' · AWB '+(j.awb||'')+(j.pickup_scheduled?' · Pickup scheduled':' · Pickup not scheduled yet'),'ok');
+    renderOrders();
+  } catch(err){
+    toast('Network error: '+(err.message||err),'err');
+    if(btn){ btn.disabled = false; btn.textContent = original; }
+  }
 }
 function viewOrder(id){
   const o=getOrders().find(x=>x.id===id); if(!o) return;
