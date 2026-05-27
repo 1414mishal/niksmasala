@@ -130,9 +130,8 @@ buildFooter = function () {
       </div>
     </div>
 
-    <div style="max-width:1280px;margin:48px auto 0;padding-top:24px;border-top:1px solid rgba(254,215,170,.12);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <div style="max-width:1280px;margin:48px auto 0;padding-top:24px;border-top:1px solid rgba(254,215,170,.12);display:flex;justify-content:flex-start;flex-wrap:wrap;gap:12px">
       <p style="color:rgba(254,215,170,.5);font:400 12px/1 'Manrope';margin:0">© <span data-year>2026</span> Niks Masala · ${esc(s.company)}. All rights reserved.</p>
-      <p style="color:rgba(254,215,170,.5);font:500 11px/1 'Manrope';letter-spacing:.15em;text-transform:uppercase;margin:0">Crafted in Mangalore</p>
     </div>
   </footer>
   <style>
