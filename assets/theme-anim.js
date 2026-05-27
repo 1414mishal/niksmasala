@@ -123,8 +123,15 @@
   timelineDots.forEach(function (el) { dotObserver.observe(el); });
 
   // ===== Hero parallax (Ken Burns + translate) =====
+  // Disabled on mobile (< 900px) and when the user prefers reduced motion.
+  // On mobile, iOS Safari's address-bar collapse resizes the viewport mid-
+  // scroll, which makes a transform-driven parallax look like a wobble.
+  // On desktop the effect is subtle and adds depth, so we keep it there.
   const heroBg = document.getElementById('heroBg');
-  if (heroBg) {
+  const wantsParallax = heroBg
+    && window.matchMedia('(min-width: 900px)').matches
+    && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (wantsParallax) {
     let ticking = false;
     function updateParallax() {
       const y = window.scrollY;

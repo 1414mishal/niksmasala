@@ -90,11 +90,6 @@ function render(){
         <div class="row"><span>Subtotal (${cart.reduce((s,i)=>s+i.qty,0)} items)</span><span>${money(sub)}</span></div>
         <div class="row"><span>Shipping</span><span>${ship===0?'<strong style="color:var(--ok)">FREE</strong>':money(ship)}</span></div>
         ${ship>0?`<div style="font-size:12px;color:var(--muted);margin:6px 0">Add ${money(s.shippingFree-sub)} more for FREE shipping!</div>`:''}
-        <div class="coupon-row">
-          <input type="text" id="coupon" placeholder="Coupon code">
-          <button class="btn btn-primary btn-sm" onclick="applyCoupon()">Apply</button>
-        </div>
-        <div id="discountRow"></div>
         <div class="row total"><span>Total</span><span>${money(total)}</span></div>
         <a href="checkout.html" class="btn btn-primary" style="width:100%;margin-top:14px;display:block">PROCEED TO CHECKOUT →</a>
         <div style="display:flex;justify-content:center;gap:14px;margin-top:18px;color:var(--muted);font-size:12px">
@@ -103,25 +98,14 @@ function render(){
       </div>
     </div>`;
 }
-function applyCoupon(){
-  const c=document.getElementById('coupon').value.trim().toUpperCase();
-  if(!c){toast('Enter a coupon code','err');return}
-  /* The server validates the coupon authoritatively when the order is
-     created (`/api/order/create`). Here we just stash the code so the
-     buyer doesn't have to retype it; the optimistic 10% preview below
-     is a UI hint, not a binding discount. */
-  localStorage.setItem('niks_coupon', c);
-  toast('✓ Coupon saved — applied at checkout','ok');
-  render(); updateDiscount();
-}
-function updateDiscount(){
-  const code=localStorage.getItem('niks_coupon')||'';
-  const row=document.getElementById('discountRow'); if(!row) return;
-  if(code){
-    row.innerHTML=`<div class="row" style="color:var(--ok)"><span>Coupon</span><span><strong>${esc(code)}</strong></span></div>
-      <div style="font-size:11px;color:var(--muted);text-align:right">Discount applied at checkout</div>`;
-  } else { row.innerHTML=''; }
-}
+/* Coupon UI removed on request. The backend validator still exists
+   (try_consume_coupon in supabase-schema.sql + handling in
+   /api/order/create) so we can wire a new UI back in later without
+   another DB migration. For now no coupon code is sent. */
+/* Clear any leftover localStorage coupon / discount keys from earlier
+   versions so checkout doesn't show a stale discount line. */
+localStorage.removeItem('niks_coupon');
+localStorage.removeItem('niks_discount');
 render();
 // hide floating cart btn on cart page itself
 window.addEventListener('DOMContentLoaded',()=>{

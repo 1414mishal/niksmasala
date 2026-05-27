@@ -586,12 +586,9 @@ section.block{padding:70px 24px}
 .cart-empty-box h3{font-size:26px;margin-bottom:10px}
 .cart-empty-box p{color:var(--muted);margin-bottom:24px}
 
-.coupon-row{display:flex;gap:8px;margin:16px 0}
-.coupon-row input{
-  flex:1;padding:10px 16px;border:2px solid var(--line);border-radius:var(--radius-pill);
-  transition:border-color .2s;font-size:14px;background:var(--cream);
-}
-.coupon-row input:focus{outline:none;border-color:var(--red);background:#fff}
+/* .coupon-row styles removed — coupon UI was disabled. Kept the
+   server-side validator (try_consume_coupon in supabase-schema.sql)
+   so we can wire a new UI back in later if the merchant wants. */
 
 /* ========= CHECKOUT ========= */
 .checkout-steps{

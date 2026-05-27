@@ -200,8 +200,14 @@ a { color: inherit; text-decoration: none; }
 .zoom-on-hover img { transition: transform 1400ms var(--ease-out-expo); }
 .zoom-on-hover:hover img { transform: scale(1.08); }
 
-/* ===== Hero parallax + ken-burns ===== */
-.hero-bg-parallax { will-change: transform; transition: transform 100ms linear; }
+/* ===== Hero parallax + ken-burns =====
+   Note: NO `transition: transform` here. The scroll handler in
+   theme-anim.js updates transform every animation frame; a CSS
+   transition on top of that creates a visible 100ms lag that reads
+   as a wobble. Stick the image to scroll position perfectly by
+   only setting will-change. Parallax is also disabled on mobile
+   (see theme-anim.js) where iOS address-bar resize amplifies it. */
+.hero-bg-parallax { will-change: transform; }
 @keyframes ken-burns { 0% { transform: scale(1); } 100% { transform: scale(1.08); } }
 .ken-burns { animation: ken-burns 20s ease-in-out infinite alternate; }
 
@@ -484,11 +490,8 @@ body.drawer-open { overflow: hidden; }
   color: var(--accent-terra);
   margin: 0 0 32px;
 }
-.hero-premium__eyebrow::before {
-  content: ''; width: 36px; height: 1px;
-  background: var(--accent-terra);
-  display: inline-block;
-}
+/* Eyebrow dashes (the "— LABEL" pattern) removed sitewide on
+   request — they read as AI-generated boilerplate. */
 .hero-premium__title {
   font-family: 'Source Serif 4', Georgia, serif;
   font-weight: 500;
@@ -1358,10 +1361,7 @@ header[data-sticky-nav].is-scrolled img[alt="Niks Masala"] { height: 48px; }
   color: var(--accent-terra);
   margin: 0 0 10px;
 }
-.recipe-vid-eyebrow::before {
-  content: ''; width: 18px; height: 1px;
-  background: var(--accent-terra);
-}
+/* .recipe-vid-eyebrow::before dash removed (sitewide eyebrow-dash purge) */
 .recipe-vid-title {
   font: 600 16px/1.35 'Manrope', sans-serif;
   letter-spacing: -0.01em;
@@ -1479,11 +1479,7 @@ body.yt-open { overflow: hidden; }
   color: var(--accent-gold);
   margin: 0 0 36px;
 }
-.black-panel__eyebrow::before {
-  content: ''; width: 28px; height: 1px;
-  background: var(--accent-gold);
-  display: inline-block;
-}
+/* .black-panel__eyebrow::before dash removed (sitewide eyebrow-dash purge) */
 
 .black-panel__display {
   font-family: 'Source Serif 4', Georgia, serif;
@@ -1610,9 +1606,7 @@ body.yt-open { overflow: hidden; }
   color: var(--accent-gold);
   margin: 0 0 32px;
 }
-.promo-black__eyebrow::before, .promo-black__eyebrow::after {
-  content: ''; width: 24px; height: 1px; background: rgba(212,162,90,0.5);
-}
+/* .promo-black__eyebrow ::before/::after dashes removed (sitewide eyebrow-dash purge) */
 .promo-black__display {
   font: 400 clamp(40px,6vw,80px)/0.98 'Source Serif 4',serif;
   letter-spacing: -0.035em;
@@ -1677,9 +1671,7 @@ body.yt-open { overflow: hidden; }
   color: var(--accent-gold);
   margin: 0 0 30px;
 }
-.bulk-black__eyebrow::before {
-  content: ''; width: 28px; height: 1px; background: var(--accent-gold);
-}
+/* .bulk-black__eyebrow::before dash removed (sitewide eyebrow-dash purge) */
 .bulk-black__display {
   font: 400 clamp(36px,5vw,60px)/1.0 'Source Serif 4', serif;
   letter-spacing: -0.032em;
@@ -1814,19 +1806,46 @@ body { overflow-wrap: break-word; -webkit-text-size-adjust: 100%; }
 
 /* (3) Below 760px tighten general padding / hero / containers */
 @media (max-width: 760px){
-  /* Hero — keep dramatic but get the content above the fold */
+  /* Hero — on phones the original landscape masala photo was getting
+     center-cropped to ribbons because the section uses object-fit:cover
+     on a tall narrow viewport. Restructure: stack the section as a
+     column, give the image wrapper a fixed aspect ratio, and let the
+     full image show. Copy block flows below. */
   section[style*="min-height:88vh"] {
     min-height: auto !important;
-    padding-top: 30px;
-    padding-bottom: 50px;
+    padding: 0 0 32px !important;
+    background-color: #1f1410;       /* matches gradient overlay */
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  section[style*="min-height:88vh"] > div:first-child {
+    /* Background-image wrapper — give it real height, full image visible */
+    position: relative !important;
+    inset: auto !important;
+    width: 100% !important;
+    aspect-ratio: 16 / 11;            /* photo-friendly, not too tall */
+    flex: 0 0 auto !important;
+  }
+  section[style*="min-height:88vh"] #heroBg {
+    object-fit: cover !important;
+    object-position: center 35% !important;
+    transform: none !important;       /* parallax already disabled on mobile */
+  }
+  section[style*="min-height:88vh"] > div:nth-child(2) {
+    position: relative !important;
+    padding: 32px 22px 8px !important;
+    max-width: 100% !important;
   }
   section[style*="min-height:88vh"] h1 {
-    font-size: clamp(34px, 8vw, 52px) !important;
+    font-size: clamp(30px, 7.5vw, 46px) !important;
     line-height: 1.05 !important;
+    margin-bottom: 18px !important;
   }
   section[style*="min-height:88vh"] p {
     font-size: 15px !important;
     line-height: 1.6 !important;
+    margin-bottom: 24px !important;
   }
   /* Big serif section titles shrink on phone so they fit */
   h2.font-serif,
@@ -1882,18 +1901,11 @@ body { overflow-wrap: break-word; -webkit-text-size-adjust: 100%; }
   #featuredGrid {
     grid-template-columns: 1fr !important;
   }
-  /* Mobile nav text — buildHeader currently shows the desktop nav.
-     Hide it below 640px in the buildHeader-injected header so the
-     logo + cart icon don't fight for space with menu links. */
-  header[data-sticky-nav] nav { display: none !important; }
-  header[data-sticky-nav] > div { padding: 12px 14px !important; }
+  /* Desktop nav + Bulk Order pill are hidden at <= 900px (see hamburger
+     block below). Here we just tighten header padding + logo on tiny
+     phones so the burger + cart + logo fit on one row. */
+  header[data-sticky-nav] > div { padding: 12px 14px !important; gap: 8px !important; }
   header[data-sticky-nav] img[alt="Niks Masala"] { height: 44px !important; }
-  /* "Bulk Order" button shrinks */
-  header[data-sticky-nav] a[href="contact.html"][class*="hidden"] {
-    padding: 9px 14px !important;
-    font-size: 10px !important;
-    letter-spacing: .12em !important;
-  }
 }
 
 /* (5) Force consistent header font everywhere.
@@ -1907,4 +1919,145 @@ header[data-sticky-nav] .nav-link,
 header[data-sticky-nav] a {
   font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI',
                Roboto, sans-serif !important;
+}
+
+/* ============================================================
+   MOBILE NAV — hamburger button + slide-down drawer
+   buildHeader() injects a .nav-burger button and a .mobile-menu
+   overlay. CSS controls visibility based on viewport. The toggle
+   is driven by body.mobile-menu-open (set by the burger's onclick).
+   ============================================================ */
+.nav-burger {
+  display: none;
+  width: 44px; height: 44px;
+  align-items: center; justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(46,26,22,0.16);
+  border-radius: 12px;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 6px;
+  transition: background-color .25s var(--ease-premium),
+              border-color .25s var(--ease-premium);
+}
+.nav-burger:hover { background-color: rgba(46,26,22,0.06); }
+.nav-burger__icon {
+  position: relative;
+  width: 20px; height: 14px;
+  display: block;
+}
+.nav-burger__icon span {
+  position: absolute; left: 0; right: 0;
+  height: 1.5px;
+  background: #1a0e08;
+  border-radius: 2px;
+  transition: transform .35s var(--ease-premium),
+              opacity .25s var(--ease-premium),
+              top .35s var(--ease-premium);
+}
+.nav-burger__icon span:nth-child(1) { top: 0; }
+.nav-burger__icon span:nth-child(2) { top: 6px; }
+.nav-burger__icon span:nth-child(3) { top: 12px; }
+body.mobile-menu-open .nav-burger__icon span:nth-child(1) { top: 6px; transform: rotate(45deg); }
+body.mobile-menu-open .nav-burger__icon span:nth-child(2) { opacity: 0; }
+body.mobile-menu-open .nav-burger__icon span:nth-child(3) { top: 6px; transform: rotate(-45deg); }
+
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 49;                 /* below the sticky header (50) */
+  background: rgba(31, 20, 16, 0.55);
+  backdrop-filter: blur(6px) saturate(140%);
+  -webkit-backdrop-filter: blur(6px) saturate(140%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .35s var(--ease-premium);
+}
+.mobile-menu__panel {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  background: #fdfbf7;
+  padding: 96px 28px 36px;
+  transform: translateY(-100%);
+  transition: transform .45s var(--ease-premium);
+  box-shadow: 0 24px 60px -20px rgba(46,26,22,0.35);
+  max-height: 88vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+body.mobile-menu-open .mobile-menu {
+  opacity: 1;
+  pointer-events: auto;
+}
+body.mobile-menu-open .mobile-menu__panel { transform: translateY(0); }
+body.mobile-menu-open { overflow: hidden; }      /* lock background scroll */
+
+.mobile-menu__links {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 24px;
+}
+.mobile-menu__link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font: 500 17px/1.2 'Manrope', sans-serif;
+  letter-spacing: .01em;
+  color: #1a0e08;
+  text-decoration: none;
+  padding: 16px 4px;
+  border-bottom: 1px solid rgba(46,26,22,0.08);
+  transition: color .2s, padding-left .25s var(--ease-premium);
+}
+.mobile-menu__link:hover,
+.mobile-menu__link.active { color: #c86a36; padding-left: 8px; }
+.mobile-menu__link::after {
+  content: '→';
+  opacity: 0.4;
+  font-size: 18px;
+  transition: transform .25s var(--ease-premium), opacity .25s;
+}
+.mobile-menu__link:hover::after { opacity: 1; transform: translateX(4px); }
+
+.mobile-menu__cta {
+  display: block;
+  text-align: center;
+  background: #1a0e08;
+  color: #fdfbf7;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font: 600 12px/1 'Manrope', sans-serif;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  text-decoration: none;
+  margin-top: 8px;
+}
+.mobile-menu__cta:hover { background: #c86a36; }
+
+.mobile-menu__meta {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(46,26,22,0.08);
+  font: 400 12px/1 'Manrope', sans-serif;
+  color: #7a6754;
+}
+.mobile-menu__meta a {
+  color: #7a6754;
+  text-decoration: none;
+}
+.mobile-menu__meta a:hover { color: #c86a36; }
+
+/* Show hamburger + hide desktop nav on phones & small tablets */
+@media (max-width: 900px) {
+  header[data-sticky-nav] nav.primary-nav { display: none !important; }
+  header[data-sticky-nav] a[href="contact.html"].header-bulk-cta { display: none !important; }
+  .nav-burger { display: inline-flex; }
+}
+@media (min-width: 901px) {
+  /* Above the breakpoint hide the burger + mobile menu entirely */
+  .nav-burger { display: none; }
+  .mobile-menu { display: none !important; }
 }

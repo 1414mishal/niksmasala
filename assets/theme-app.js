@@ -15,17 +15,23 @@ buildHeader = function (activePage) {
     { href: 'index.html#recipes', label: 'Recipes', key: 'recipes' },
     { href: 'contact.html', label: 'Contact', key: 'contact' }
   ];
+  /* Mobile menu drawer + hamburger toggle:
+     - .nav-burger is hidden on >=901px (CSS), visible below.
+     - Clicking the burger toggles body.mobile-menu-open which
+       drives the .mobile-menu visibility + the burger's X animation.
+     - The overlay also closes on link tap and on backdrop click. */
+  const closeMenu = "document.body.classList.remove('mobile-menu-open');document.querySelector('.nav-burger').setAttribute('aria-expanded','false');";
   return `
   <header data-sticky-nav>
-    <div style="max-width:1280px;margin:0 auto;padding:22px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;transition:padding .4s cubic-bezier(0.25,1,0.5,1)">
+    <div style="max-width:1280px;margin:0 auto;padding:22px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:nowrap;transition:padding .4s cubic-bezier(0.25,1,0.5,1)">
       <a href="index.html" aria-label="Niks Masala home" style="display:flex;align-items:center;gap:14px;text-decoration:none;flex-shrink:0">
         <img src="${attr(LOGO)}" alt="Niks Masala" style="height:60px;width:auto;object-fit:contain;display:block;transition:height .4s cubic-bezier(0.25,1,0.5,1)" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
         <div style="display:none;width:48px;height:48px;border-radius:10px;background:radial-gradient(circle at 30% 30%,#fed7aa,#b8451a);align-items:center;justify-content:center;color:#fff;font:700 24px/1 'Source Serif 4',serif">N</div>
       </a>
-      <nav style="display:flex;align-items:center;gap:36px" class="hidden lg:flex">
+      <nav class="primary-nav" style="display:flex;align-items:center;gap:36px">
         ${links.map(l => `<a href="${attr(l.href)}" class="nav-link ${l.key === activePage ? 'active' : ''}" style="font:500 13px/1 'Manrope';letter-spacing:.08em;color:${l.key === activePage ? '#2e1a16' : '#4a3a2e'};text-decoration:none;transition:color .25s">${esc(l.label)}</a>`).join('')}
       </nav>
-      <div style="display:flex;align-items:center;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
         <a href="${attr(s.instagram)}" target="_blank" rel="noopener" aria-label="Instagram" title="Instagram" style="width:40px;height:40px;display:grid;place-items:center;border-radius:50%;color:#4a3a2e;border:1px solid transparent;transition:all .25s" onmouseover="this.style.background='rgba(46,26,22,0.06)';this.style.color='#2e1a16'" onmouseout="this.style.background='transparent';this.style.color='#4a3a2e'">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
         </a>
@@ -36,12 +42,32 @@ buildHeader = function (activePage) {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           <span data-cart-count style="position:absolute;top:0;right:0;background:#c86a36;color:#fff;font:700 10px/1 'Manrope';min-width:18px;height:18px;border-radius:9px;display:grid;place-items:center;padding:0 5px">0</span>
         </a>
-        <a href="contact.html" class="hidden md:inline-flex" style="background:#2e1a16;color:#fdfbf7;padding:13px 22px;border-radius:999px;font:600 11px/1 'Manrope';letter-spacing:.18em;text-transform:uppercase;text-decoration:none;transition:all .4s cubic-bezier(0.25,1,0.5,1)" onmouseover="this.style.background='#c86a36';this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#2e1a16';this.style.transform='translateY(0)'">
+        <a href="contact.html" class="header-bulk-cta" style="background:#2e1a16;color:#fdfbf7;padding:13px 22px;border-radius:999px;font:600 11px/1 'Manrope';letter-spacing:.18em;text-transform:uppercase;text-decoration:none;transition:all .4s cubic-bezier(0.25,1,0.5,1)" onmouseover="this.style.background='#c86a36';this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#2e1a16';this.style.transform='translateY(0)'">
           Bulk Order
         </a>
+        <button type="button" class="nav-burger" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu"
+          onclick="var open=this.getAttribute('aria-expanded')!=='true';this.setAttribute('aria-expanded',open);document.body.classList.toggle('mobile-menu-open',open);">
+          <span class="nav-burger__icon"><span></span><span></span><span></span></span>
+        </button>
       </div>
     </div>
-  </header>`;
+  </header>
+  <div class="mobile-menu" id="mobileMenu" role="dialog" aria-modal="true" aria-label="Main menu"
+       onclick="if(event.target===this){${closeMenu}}">
+    <div class="mobile-menu__panel">
+      <div class="mobile-menu__links">
+        ${links.map(l => `<a class="mobile-menu__link ${l.key === activePage ? 'active' : ''}" href="${attr(l.href)}" onclick="${closeMenu}">${esc(l.label)}</a>`).join('')}
+      </div>
+      <a class="mobile-menu__cta" href="contact.html" onclick="${closeMenu}">Bulk Order →</a>
+      <div class="mobile-menu__meta">
+        <a href="account.html" onclick="${closeMenu}">Account</a>
+        <span>·</span>
+        <a href="track.html" onclick="${closeMenu}">Track Order</a>
+        <span>·</span>
+        <a href="${attr(s.instagram)}" target="_blank" rel="noopener">Instagram</a>
+      </div>
+    </div>
+  </div>`;
 };
 
 buildFooter = function () {

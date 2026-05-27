@@ -68,9 +68,9 @@ if(cart.length===0){
 }else{
   const sub=cartSubtotal();
   const ship=computeShipping();
-  const disc=+localStorage.getItem('niks_discount')||0;
-  const discAmt=Math.round(sub*disc/100);
-  const total=sub+ship-discAmt;
+  /* Coupon UI removed on request — no discount shown on the client.
+     The server still recomputes total authoritatively. */
+  const total=sub+ship;
   document.getElementById('checkoutContent').innerHTML=`
     <div class="checkout-wrap">
       <form class="checkout-form-card" onsubmit="placeOrder(event)">
@@ -153,7 +153,6 @@ if(cart.length===0){
           `).join('')}
           <div class="row" style="margin-top:12px"><span>Subtotal</span><span>${money(sub)}</span></div>
           <div class="row"><span>Shipping</span><span>${ship===0?'<strong style="color:var(--ok)">FREE</strong>':money(ship)}</span></div>
-          ${disc?`<div class="row" style="color:var(--ok)"><span>Discount (${disc}%)</span><span>-${money(discAmt)}</span></div>`:''}
           <div class="row total"><span>Total</span><span>${money(total)}</span></div>
         </div>
       </aside>
@@ -179,7 +178,8 @@ async function placeOrder(e){
 
   const payload = {
     items: cart.map(i=>({id:i.id, pack:i.pack, qty:i.qty})),
-    coupon: (localStorage.getItem('niks_coupon')||'').trim(),
+    /* Coupon UI removed on request — backend still validates an
+       optional `coupon` field, but we don't send one for now. */
     payment: f.get('pay'),
     customer:{
       name:((f.get('fname')||'')+' '+(f.get('lname')||'')).trim(),
@@ -276,7 +276,6 @@ async function placeOrder(e){
           return;
         }
         setCart([]);
-        localStorage.removeItem('niks_coupon');
         location.href='thankyou.html?id='+encodeURIComponent(created.order_id);
       }catch(_){
         toast('Payment captured — verifying. If you do not see a confirmation, contact us with order '+created.order_id,'err');
