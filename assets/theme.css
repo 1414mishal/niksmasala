@@ -1806,47 +1806,110 @@ body { overflow-wrap: break-word; -webkit-text-size-adjust: 100%; }
 
 /* (3) Below 760px tighten general padding / hero / containers */
 @media (max-width: 760px){
-  /* Hero — on phones the original landscape masala photo was getting
-     center-cropped to ribbons because the section uses object-fit:cover
-     on a tall narrow viewport. Restructure: stack the section as a
-     column, give the image wrapper a fixed aspect ratio, and let the
-     full image show. Copy block flows below. */
+  /* Hero on phone — show the FULL landscape image (the source is
+     1600 × 604, a ~2.65:1 ultra-wide banner). Stack the section as
+     a column with the image's natural aspect ratio, no cropping,
+     then copy flows below on cream background. PC layout unchanged. */
   section[style*="min-height:88vh"] {
     min-height: auto !important;
     padding: 0 0 32px !important;
-    background-color: #1f1410;       /* matches gradient overlay */
+    background-color: #fcf8f0 !important;   /* cream, matches body */
     display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
+    overflow: visible !important;
   }
   section[style*="min-height:88vh"] > div:first-child {
-    /* Background-image wrapper — give it real height, full image visible */
+    /* Image wrapper — match the source aspect exactly so the whole
+       image is visible with no letterboxing and no cropping. */
     position: relative !important;
     inset: auto !important;
     width: 100% !important;
-    aspect-ratio: 16 / 11;            /* photo-friendly, not too tall */
+    aspect-ratio: 1600 / 604 !important;    /* natural source aspect */
     flex: 0 0 auto !important;
+    background: transparent !important;
   }
   section[style*="min-height:88vh"] #heroBg {
-    object-fit: cover !important;
-    object-position: center 35% !important;
-    transform: none !important;       /* parallax already disabled on mobile */
+    position: relative !important;
+    inset: auto !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;           /* equals contain since aspect matches */
+    object-position: center !important;
+    transform: none !important;
   }
+  /* Kill the dark gradient overlays — they were for white text-on-image
+     readability, but on mobile the copy is below the image now. */
+  section[style*="min-height:88vh"] > div:first-child > div { display: none !important; }
   section[style*="min-height:88vh"] > div:nth-child(2) {
     position: relative !important;
-    padding: 32px 22px 8px !important;
+    padding: 28px 22px 8px !important;
     max-width: 100% !important;
+    color: #2e1a16 !important;
   }
   section[style*="min-height:88vh"] h1 {
-    font-size: clamp(30px, 7.5vw, 46px) !important;
-    line-height: 1.05 !important;
-    margin-bottom: 18px !important;
+    font-size: clamp(28px, 7vw, 42px) !important;
+    line-height: 1.08 !important;
+    color: #2e1a16 !important;
+    margin-bottom: 14px !important;
   }
   section[style*="min-height:88vh"] p {
     font-size: 15px !important;
-    line-height: 1.6 !important;
-    margin-bottom: 24px !important;
+    line-height: 1.65 !important;
+    color: #4a3a2e !important;
+    margin-bottom: 22px !important;
   }
+  /* Hero CTA button — cream→brown looked awful on cream bg; flip it */
+  section[style*="min-height:88vh"] a[href="shop.html"][class*="btn-fancy"] {
+    background: #2e1a16 !important;
+    color: #fdfbf7 !important;
+  }
+  section[style*="min-height:88vh"] a[href="#bestsellers"] {
+    color: #2e1a16 !important;
+    text-decoration-color: rgba(184,69,26,.5) !important;
+  }
+
+  /* ============================================================
+     Sticky header wobble fix.
+     On desktop, scrolling past 50px morphs the header: backdrop blur
+     turns on, padding shrinks, logo shrinks, box-shadow appears. Every
+     time you crossed that threshold on mobile, the header's height
+     changed → page content jumped up/down → "wobble".
+     On phone: lock the header into ONE static state regardless of
+     scroll. Solid cream background, no blur (cheap on iOS), fixed
+     padding, fixed logo size, no transitions = zero scroll-driven
+     layout shift = smooth.
+     ============================================================ */
+  header[data-sticky-nav],
+  header[data-sticky-nav].is-scrolled {
+    background-color: #fdfbf7 !important;
+    border-bottom: 1px solid rgba(46,26,22,0.08) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 4px 16px -10px rgba(46,26,22,0.12) !important;
+    transition: none !important;
+  }
+  header[data-sticky-nav] > div,
+  header[data-sticky-nav].is-scrolled > div {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    transition: none !important;
+  }
+  header[data-sticky-nav] img[alt="Niks Masala"],
+  header[data-sticky-nav].is-scrolled img[alt="Niks Masala"] {
+    height: 44px !important;
+    transition: none !important;
+  }
+
+  /* The page-top scroll-progress bar is a desktop nicety. On a phone
+     it adds another scroll listener + repaint for ~3px of visual gain.
+     Hide it. */
+  .scroll-progress { display: none !important; }
+
+  /* Native scroll-smooth + iOS momentum-scroll fight each other and
+     produce a stuttery feel on anchor jumps. The `<html class="scroll-smooth">`
+     declaration is global; override it on phone. */
+  html.scroll-smooth { scroll-behavior: auto !important; }
   /* Big serif section titles shrink on phone so they fit */
   h2.font-serif,
   .font-serif[style*="clamp(32px"],

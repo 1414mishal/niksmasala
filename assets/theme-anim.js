@@ -5,20 +5,29 @@
 (function () {
   'use strict';
 
+  /* On phones / small tablets we skip scroll-driven progress bars and
+     the sticky-nav morph entirely. Each of those handlers fires on
+     every scroll event and the resulting style/class updates were the
+     source of the on-scroll "wobble" the user reported — the header
+     was changing height as it crossed the 50px threshold, which
+     shifted the entire page underneath it. Desktop keeps the effects. */
+  const IS_MOBILE = window.matchMedia('(max-width: 900px)').matches;
+
   // ===== Year =====
   document.querySelectorAll('[data-year]').forEach(el => { el.textContent = new Date().getFullYear(); });
 
-  // ===== Scroll progress bar =====
+  // ===== Scroll progress bar (desktop only) =====
   const progressBar = document.getElementById('scrollProgress');
-  function updateProgress() {
-    if (!progressBar) return;
-    const scrollTop = window.scrollY;
-    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-    const ratio = docHeight > 0 ? Math.min(scrollTop / docHeight, 1) : 0;
-    progressBar.style.transform = 'scaleX(' + ratio + ')';
+  if (!IS_MOBILE && progressBar) {
+    function updateProgress() {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const ratio = docHeight > 0 ? Math.min(scrollTop / docHeight, 1) : 0;
+      progressBar.style.transform = 'scaleX(' + ratio + ')';
+    }
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    updateProgress();
   }
-  window.addEventListener('scroll', updateProgress, { passive: true });
-  updateProgress();
 
   // ===== Reveal-on-scroll via IntersectionObserver =====
   function bindReveal(root) {
@@ -178,35 +187,45 @@
     });
   });
 
-  // ===== Sticky nav: transparent → blurred morph at 50px =====
-  // The header is injected dynamically by mountHeaderFooter(). Bind a single
-  // scroll listener globally — it always re-queries the current header — so
-  // we don't depend on the header being present at any specific moment.
-  // Safety net: only allow the "transparent + light text" state while the
-  // dark hero is still in viewport. Past the hero, the nav must morph to
-  // its solid state regardless of scrollY, or text would be unreadable on
-  // the cream sections below.
-  function syncStickyNav() {
-    const stickyNav = document.querySelector('header[data-sticky-nav]');
-    if (!stickyNav) return;
-    // Find a dark hero on the page (home page only)
-    const darkHero = document.querySelector('body.home-nav-light section[style*="min-height:88vh"]');
-    let solid = window.scrollY > 50;
-    if (darkHero) {
-      const rect = darkHero.getBoundingClientRect();
-      // If hero bottom is above the nav (i.e. user scrolled past hero), always solid.
-      if (rect.bottom < 120) solid = true;
+  // ===== Sticky nav: transparent → blurred morph at 50px (desktop only) =====
+  // On mobile we leave the header in its solid state at all times (CSS
+  // pins it that way) and skip the scroll listener entirely. Cross-page
+  // CSS overrides the visual state to "always solid"; here we just stop
+  // burning a scroll handler per frame on something that has no effect.
+  if (!IS_MOBILE) {
+    function syncStickyNav() {
+      const stickyNav = document.querySelector('header[data-sticky-nav]');
+      if (!stickyNav) return;
+      // Find a dark hero on the page (home page only)
+      const darkHero = document.querySelector('body.home-nav-light section[style*="min-height:88vh"]');
+      let solid = window.scrollY > 50;
+      if (darkHero) {
+        const rect = darkHero.getBoundingClientRect();
+        // If hero bottom is above the nav (i.e. user scrolled past hero), always solid.
+        if (rect.bottom < 120) solid = true;
+      }
+      if (solid) stickyNav.classList.add('is-scrolled');
+      else stickyNav.classList.remove('is-scrolled');
     }
-    if (solid) stickyNav.classList.add('is-scrolled');
-    else stickyNav.classList.remove('is-scrolled');
+    window.addEventListener('scroll', syncStickyNav, { passive: true });
+    window.addEventListener('load', syncStickyNav);
+    // Run a few times on init in case the header arrives slightly after this script
+    syncStickyNav();
+    setTimeout(syncStickyNav, 50);
+    setTimeout(syncStickyNav, 250);
+    setTimeout(syncStickyNav, 800);
+  } else {
+    // On mobile, force the header into its scrolled (solid) state ONCE
+    // so the cream background is always visible — text contrast over
+    // any page content is guaranteed.
+    function pinSolid() {
+      const h = document.querySelector('header[data-sticky-nav]');
+      if (h) h.classList.add('is-scrolled');
+    }
+    pinSolid();
+    setTimeout(pinSolid, 50);
+    setTimeout(pinSolid, 250);
   }
-  window.addEventListener('scroll', syncStickyNav, { passive: true });
-  window.addEventListener('load', syncStickyNav);
-  // Run a few times on init in case the header arrives slightly after this script
-  syncStickyNav();
-  setTimeout(syncStickyNav, 50);
-  setTimeout(syncStickyNav, 250);
-  setTimeout(syncStickyNav, 800);
 
   // ===== Video carousel — horizontal scroll w/ snap, nav arrows =====
   window.__bindVideoCarousel = function () {
