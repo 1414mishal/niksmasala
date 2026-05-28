@@ -42,9 +42,6 @@ buildHeader = function (activePage) {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           <span data-cart-count style="position:absolute;top:0;right:0;background:#c86a36;color:#fff;font:700 10px/1 'Manrope';min-width:18px;height:18px;border-radius:9px;display:grid;place-items:center;padding:0 5px">0</span>
         </a>
-        <a href="contact.html" class="header-bulk-cta" style="background:#2e1a16;color:#fdfbf7;padding:13px 22px;border-radius:999px;font:600 11px/1 'Manrope';letter-spacing:.18em;text-transform:uppercase;text-decoration:none;transition:all .4s cubic-bezier(0.25,1,0.5,1)" onmouseover="this.style.background='#c86a36';this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#2e1a16';this.style.transform='translateY(0)'">
-          Bulk Order
-        </a>
         <button type="button" class="nav-burger" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu"
           onclick="var open=this.getAttribute('aria-expanded')!=='true';this.setAttribute('aria-expanded',open);document.body.classList.toggle('mobile-menu-open',open);">
           <span class="nav-burger__icon"><span></span><span></span><span></span></span>
@@ -117,6 +114,7 @@ buildFooter = function () {
           <li><a href="about.html" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Our Story</a></li>
           <li><a href="recipes.html" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Recipes</a></li>
           <li><a href="contact.html" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Contact</a></li>
+          <li><a href="contact.html?subject=bulk" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Bulk &amp; Wholesale</a></li>
           <li><a href="track.html" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Track Order</a></li>
           <li><a href="shipping.html" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Shipping &amp; Returns</a></li>
         </ul>

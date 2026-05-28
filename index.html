@@ -190,6 +190,23 @@
 </script>
 </head>
 <body>
+<!-- Brand splash / loading screen — fades out once the page has loaded. -->
+<div id="niksLoader" aria-hidden="true">
+  <img src="nobgnikslogo.webp" alt="" class="niks-loader__logo"/>
+  <div class="niks-loader__bar"><span></span></div>
+</div>
+<script>
+(function(){
+  var l = document.getElementById('niksLoader');
+  if (!l) return;
+  var start = Date.now(), MIN = 900;   // show the logo at least ~0.9s
+  function done(){ l.classList.add('is-done'); setTimeout(function(){ if(l && l.parentNode) l.parentNode.removeChild(l); }, 700); }
+  window.addEventListener('load', function(){
+    setTimeout(done, Math.max(0, MIN - (Date.now() - start)));
+  });
+  setTimeout(done, 4500);  // safety: never hang the page behind the splash
+})();
+</script>
 <!-- Fallback nav for users with JS disabled or for crawlers that don't run JS.
      The real header is injected by mountHeaderFooter() once app.js runs. -->
 <noscript>

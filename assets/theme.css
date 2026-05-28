@@ -213,6 +213,7 @@ a { color: inherit; text-decoration: none; }
   transition: transform 400ms var(--ease-out-expo);
 }
 .nav-link:hover::after, .nav-link.active::after { transform: scaleX(1); transform-origin: left; }
+.nav-link.active::after { background: #b8451a; height: 3px; }
 
 /* ===== Image zoom on hover ===== */
 .zoom-on-hover { overflow: hidden; }
@@ -744,8 +745,11 @@ header[data-sticky-nav] .nav-link {
   color: #1a0e08 !important;
   text-shadow: none !important;
 }
+/* Active link: the header bar is light cream, so the old terracotta was
+   barely legible. Keep it dark + bold; the gold underline marks "active". */
 header[data-sticky-nav] .nav-link.active {
-  color: #c86a36 !important;
+  color: #1a0e08 !important;
+  font-weight: 700 !important;
 }
 header[data-sticky-nav] a[aria-label="Instagram"],
 header[data-sticky-nav] a[aria-label="Account"],
@@ -2235,8 +2239,10 @@ section [style*="color:#7a6754"]{ color:#ecdac6 !important; }  /* sublabel → l
     div[style*="background:#fff;"],div[style*="background: #fff;"],div[style*="background:#ffffff"]
    ) [style*="color:#7a6754"]{ color:#7a6754 !important; }
 
-/* (3) Frosted reading panel for dense prose blocks on the texture */
-section.block > div{
+/* (3) Frosted reading panel for dense prose blocks on the texture.
+   Only when the section has NO inline background of its own — otherwise we'd
+   overwrite designed sections (e.g. the About "By The Numbers" dark band). */
+section.block:not([style*="background"]) > div{
   background:rgba(255,255,255,.90);
   -webkit-backdrop-filter:blur(12px) saturate(125%);
   backdrop-filter:blur(12px) saturate(125%);
@@ -2280,4 +2286,53 @@ section.block > div{
 .hero-ctas{ display:flex; flex-wrap:wrap; gap:14px; justify-content:center; align-items:center; }
 @media (max-width:768px){
   .hero-slides{ aspect-ratio:1.9 / 1; }
+}
+
+/* =====================================================================
+   BRAND SPLASH / LOADING SCREEN
+   ===================================================================== */
+#niksLoader{
+  position:fixed; inset:0; z-index:99999;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:28px;
+  background-color:#d97050;
+  background-image:linear-gradient(rgba(122,30,16,.55),rgba(61,31,14,.78)), url('spice-bg-landscape.webp');
+  background-size:cover; background-position:center center;
+  transition:opacity .6s ease, visibility .6s ease;
+}
+#niksLoader.is-done{ opacity:0; visibility:hidden; }
+.niks-loader__logo{
+  width:min(300px,64vw); height:auto;
+  filter:drop-shadow(0 10px 34px rgba(0,0,0,.4));
+  animation:niksLoaderPulse 1.5s ease-in-out infinite;
+}
+.niks-loader__bar{ width:150px; height:4px; border-radius:99px; background:rgba(255,255,255,.22); overflow:hidden; }
+.niks-loader__bar span{ display:block; height:100%; width:42%; border-radius:99px; background:#fed7aa; animation:niksLoaderBar 1.15s ease-in-out infinite; }
+@keyframes niksLoaderPulse{ 0%,100%{ transform:scale(1); opacity:.9 } 50%{ transform:scale(1.05); opacity:1 } }
+@keyframes niksLoaderBar{ 0%{ transform:translateX(-130%) } 100%{ transform:translateX(330%) } }
+@media (prefers-reduced-motion:reduce){ .niks-loader__logo,.niks-loader__bar span{ animation:none } }
+
+/* =====================================================================
+   TYPOGRAPHY POLISH — elegant serif display for the big headings
+   (Manrope bold headlines read a bit generic; Source Serif 4 lifts them.)
+   ===================================================================== */
+.hero-intro h1{ font-family:'Source Serif 4', Georgia, serif; font-weight:600; letter-spacing:-0.02em; }
+.font-serif, h1.font-serif, h2.font-serif{ letter-spacing:-0.015em; }
+
+/* =====================================================================
+   MOBILE STABILITY — stop the "wobble" and accidental zoom on phones
+   ===================================================================== */
+@media (max-width:768px){
+  /* No element may push the page wider than the screen (kills the
+     horizontal jiggle / pinch-zoom-out feeling). */
+  html, body{ max-width:100%; overflow-x:hidden; }
+  img, video, iframe, table{ max-width:100%; height:auto; }
+
+  /* Reveal animations that translate/scale/blur read as "wobble" on a
+     small screen — collapse them to a simple fade so content sits still. */
+  [data-reveal]{ transform:none !important; filter:none !important; }
+
+  /* Touch devices don't hover — neutralise hover-lift transforms that can
+     leave cards/buttons stuck mid-transform after a tap. */
+  .product-card-v2:hover, .lift-card:hover, .btn-fancy:hover,
+  .recipe-vid-card:hover, .rv-card:hover{ transform:none !important; }
 }
