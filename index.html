@@ -215,15 +215,20 @@
      ============================================================ -->
 <section style="position:relative;min-height:88vh;display:flex;align-items:center;overflow:hidden">
   <div style="position:absolute;inset:0;z-index:0">
+    <!-- Hero photo has the red mandala blend baked into its bottom edge
+         (Gemini composite). object-position keeps that bottom edge
+         anchored so the seam with the red strip below stays invisible
+         on any aspect ratio. -->
     <img id="heroBg" class="hero-bg-parallax" src="assets/nikshero.webp"
-         alt="Niks Masala — coastal Mangalorean spices"
+         alt="Niks Masala — Mangalorean masala boxes on warm spice mandala"
          onerror="this.src='assets/niksmasala1.webp'"
-         style="width:100%;height:100%;object-fit:cover"/>
-    <div style="position:absolute;inset:0;background:linear-gradient(100deg,rgba(31,20,16,.85) 0%,rgba(31,20,16,.55) 55%,rgba(31,20,16,.15) 100%)"></div>
+         style="width:100%;height:100%;object-fit:cover;object-position:center bottom"/>
+    <!-- Lighter scrim than before — image is brighter and we want
+         the product boxes + bottom blend to read through. Heavier
+         on the left where the headline sits, near-clear on the right. -->
+    <div style="position:absolute;inset:0;background:linear-gradient(100deg,rgba(31,20,16,.72) 0%,rgba(31,20,16,.40) 50%,rgba(31,20,16,.05) 100%)"></div>
     <!-- Top darkener: guarantees nav text contrast while header is transparent -->
-    <div style="position:absolute;left:0;right:0;top:0;height:180px;background:linear-gradient(180deg,rgba(31,20,16,.65) 0%,rgba(31,20,16,.35) 55%,rgba(31,20,16,0) 100%);pointer-events:none"></div>
-    <!-- Bottom blend: hero photo dissolves into the red strip below -->
-    <div style="position:absolute;left:0;right:0;bottom:0;height:180px;background:linear-gradient(180deg,rgba(217,112,80,0) 0%,rgba(207,90,55,.55) 55%,rgba(184,60,30,.95) 100%);pointer-events:none"></div>
+    <div style="position:absolute;left:0;right:0;top:0;height:180px;background:linear-gradient(180deg,rgba(31,20,16,.55) 0%,rgba(31,20,16,.28) 55%,rgba(31,20,16,0) 100%);pointer-events:none"></div>
   </div>
 
   <div style="position:relative;z-index:10;width:100%;max-width:1280px;margin:0 auto;padding:120px 24px 100px;color:#fcf8f0">
