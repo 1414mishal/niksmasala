@@ -32,11 +32,21 @@
 html { scroll-behavior: smooth; scroll-padding-top: 96px; }
 body {
   font-family: 'Manrope', system-ui, -apple-system, sans-serif;
-  background: #fcf8f0;
+  background-color: #fcf8f0;
+  background-image:
+    linear-gradient(rgba(252, 248, 240, 0.80), rgba(252, 248, 240, 0.80)),
+    url('a_professional_high_resolution_background_for_an_indian_spice_website._the.webp');
+  background-size: cover;
+  background-position: center center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: #1f1410;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   margin: 0;
+}
+@media (max-width: 768px) {
+  body { background-attachment: scroll; }
 }
 img { max-width: 100%; display: block; }
 button { font-family: inherit; cursor: pointer; }
