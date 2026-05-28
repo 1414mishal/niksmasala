@@ -32,9 +32,9 @@
 html { scroll-behavior: smooth; scroll-padding-top: 96px; }
 body {
   font-family: 'Manrope', system-ui, -apple-system, sans-serif;
-  background-color: #fcf8f0;
+  background-color: #d97050;
   background-image:
-    linear-gradient(rgba(252, 248, 240, 0.55), rgba(252, 248, 240, 0.55)),
+    linear-gradient(rgba(184, 60, 30, 0.42), rgba(184, 60, 30, 0.42)),
     url('spice-bg-landscape.webp');
   background-size: cover;
   background-position: center center;
