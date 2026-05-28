@@ -2180,3 +2180,58 @@ section[style*="background:var(--bg-ivory)"] {
 [style*="background:var(--bg-ivory)"]:not(section) {
   background: transparent !important;
 }
+
+/* =====================================================================
+   READABILITY ON THE SPICE TEXTURE
+   The body shows a saturated red/orange spice texture and the override
+   above makes every <section> transparent, so any text that was designed
+   for a white/cream background now sits directly on the red. Fix:
+     (1) Section eyebrows / titles / intros on the texture → light, so
+         they pop on the red (keeps the bold look the brand wants).
+     (2) Re-protect dark text that lives inside a REAL light surface
+         (frosted cards & inline light-bg panels) — those must stay dark.
+     (3) Dense prose blocks (legal pages, generic .block content) get a
+         frosted reading panel so long copy stays comfortable to read.
+   Only INLINE-coloured text is touched, so class-styled card titles are
+   unaffected. Scoped to <section> so the header/nav/footer are untouched.
+   ===================================================================== */
+
+/* (1) Lighten section header text sitting on the texture */
+section [style*="color:#b8451a"]{ color:#ffd29e !important; }  /* eyebrow  → warm gold  */
+section [style*="color:#3d1f0e"]{ color:#fff6ec !important; }  /* heading  → cream white */
+section [style*="color:#4a3a2e"]{ color:#f6e8d9 !important; }  /* intro    → soft cream  */
+section [style*="color:#7a6754"]{ color:#ecdac6 !important; }  /* sublabel → light cream */
+
+/* (2) Restore the original dark text inside real light surfaces.
+   :is() carries the specificity of its most-specific arm, and the trailing
+   descendant attribute selector pushes this above rule (1), so it wins. */
+:is(.lift-card,.recipe-card,.contact-card,.feature,.auth-card,.product-card,.product-card-v2,
+    div[style*="background:rgba(255,255,255"],div[style*="background: rgba(255, 255, 255"],
+    div[style*="background:#fcf8f0"],div[style*="background: #fcf8f0"],
+    div[style*="background:#fff;"],div[style*="background: #fff;"],div[style*="background:#ffffff"]
+   ) [style*="color:#b8451a"]{ color:#b8451a !important; }
+:is(.lift-card,.recipe-card,.contact-card,.feature,.auth-card,.product-card,.product-card-v2,
+    div[style*="background:rgba(255,255,255"],div[style*="background: rgba(255, 255, 255"],
+    div[style*="background:#fcf8f0"],div[style*="background: #fcf8f0"],
+    div[style*="background:#fff;"],div[style*="background: #fff;"],div[style*="background:#ffffff"]
+   ) [style*="color:#3d1f0e"]{ color:#3d1f0e !important; }
+:is(.lift-card,.recipe-card,.contact-card,.feature,.auth-card,.product-card,.product-card-v2,
+    div[style*="background:rgba(255,255,255"],div[style*="background: rgba(255, 255, 255"],
+    div[style*="background:#fcf8f0"],div[style*="background: #fcf8f0"],
+    div[style*="background:#fff;"],div[style*="background: #fff;"],div[style*="background:#ffffff"]
+   ) [style*="color:#4a3a2e"]{ color:#4a3a2e !important; }
+:is(.lift-card,.recipe-card,.contact-card,.feature,.auth-card,.product-card,.product-card-v2,
+    div[style*="background:rgba(255,255,255"],div[style*="background: rgba(255, 255, 255"],
+    div[style*="background:#fcf8f0"],div[style*="background: #fcf8f0"],
+    div[style*="background:#fff;"],div[style*="background: #fff;"],div[style*="background:#ffffff"]
+   ) [style*="color:#7a6754"]{ color:#7a6754 !important; }
+
+/* (3) Frosted reading panel for dense prose blocks on the texture */
+section.block > div{
+  background:rgba(255,255,255,.90);
+  -webkit-backdrop-filter:blur(12px) saturate(125%);
+  backdrop-filter:blur(12px) saturate(125%);
+  border-radius:18px;
+  padding:clamp(22px,4vw,40px);
+  box-shadow:0 12px 44px rgba(60,20,0,.12);
+}
