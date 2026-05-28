@@ -897,6 +897,15 @@ function toggleMute(btn){
     .recipes-grid { grid-template-columns: 1fr !important; }
     h1, h2 { word-break: break-word; }
   }
+  /* Bulk & wholesale section: on phones the big contact text + 56px padding
+     forced each stacked column wider than the screen (min-width:auto), so it
+     overflowed. Let columns shrink, trim padding, and wrap the long values. */
+  @media (max-width:768px) {
+    .bulk-grid, .bulk-grid > div, .bulk-grid * { min-width: 0; }
+    .bulk-grid > div { padding: 34px 20px !important; }
+    .bulk-grid .font-serif { font-size: 17px !important; }
+    .bulk-grid a, .bulk-grid p { overflow-wrap: anywhere; word-break: break-word; }
+  }
 </style>
 </body>
 </html>
