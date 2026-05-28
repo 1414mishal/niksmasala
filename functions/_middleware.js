@@ -35,7 +35,7 @@ function rateLimit(ip, route, limit, windowMs){
  * Tighten as you replace external dependencies. */
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://www.youtube.com https://www.youtube-nocookie.com https://static.cloudflareinsights.com",
+  "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://checkout.razorpay.com https://www.youtube.com https://www.youtube-nocookie.com https://static.cloudflareinsights.com",
   "style-src  'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src   'self' https://fonts.gstatic.com data:",
   "img-src    'self' data: https: blob:",
