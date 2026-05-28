@@ -752,8 +752,8 @@ header[data-sticky-nav] img[alt="Niks Masala"] {
   filter: none !important;
 }
 /* Tighten nav on scroll */
-header[data-sticky-nav].is-scrolled > div { padding-top: 12px; padding-bottom: 12px; }
-header[data-sticky-nav].is-scrolled img[alt="Niks Masala"] { height: 48px; }
+header[data-sticky-nav].is-scrolled > div { padding-top: 8px; padding-bottom: 8px; }
+header[data-sticky-nav].is-scrolled img[alt="Niks Masala"] { height: 72px; }
 
 /* ===== PREMIUM PRODUCT CARDS ===== */
 .product-card-v2 {
@@ -1901,13 +1901,13 @@ body { overflow-wrap: break-word; -webkit-text-size-adjust: 100%; }
   }
   header[data-sticky-nav] > div,
   header[data-sticky-nav].is-scrolled > div {
-    padding-top: 10px !important;
-    padding-bottom: 10px !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
     transition: none !important;
   }
   header[data-sticky-nav] img[alt="Niks Masala"],
   header[data-sticky-nav].is-scrolled img[alt="Niks Masala"] {
-    height: 44px !important;
+    height: 64px !important;
     transition: none !important;
   }
 

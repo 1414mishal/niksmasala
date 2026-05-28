@@ -23,9 +23,9 @@ buildHeader = function (activePage) {
   const closeMenu = "document.body.classList.remove('mobile-menu-open');document.querySelector('.nav-burger').setAttribute('aria-expanded','false');";
   return `
   <header data-sticky-nav>
-    <div style="max-width:1280px;margin:0 auto;padding:22px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:nowrap;transition:padding .4s cubic-bezier(0.25,1,0.5,1)">
+    <div style="max-width:1280px;margin:0 auto;padding:10px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:nowrap;transition:padding .4s cubic-bezier(0.25,1,0.5,1)">
       <a href="index.html" aria-label="Niks Masala home" style="display:flex;align-items:center;gap:14px;text-decoration:none;flex-shrink:0">
-        <img src="${attr(LOGO)}" alt="Niks Masala" style="height:60px;width:auto;object-fit:contain;display:block;transition:height .4s cubic-bezier(0.25,1,0.5,1)" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+        <img src="${attr(LOGO)}" alt="Niks Masala" style="height:88px;width:auto;object-fit:contain;display:block;transition:height .4s cubic-bezier(0.25,1,0.5,1)" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
         <div style="display:none;width:48px;height:48px;border-radius:10px;background:radial-gradient(circle at 30% 30%,#fed7aa,#b8451a);align-items:center;justify-content:center;color:#fff;font:700 24px/1 'Source Serif 4',serif">N</div>
       </a>
       <nav class="primary-nav" style="display:flex;align-items:center;gap:36px">
