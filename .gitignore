@@ -41,3 +41,9 @@ experiment-design-premium/
 experiment-design-revamp/
 stitch_niks_masala_modern_redesign/
 *.production-backup
+
+# Unoptimised image originals at repo root (commit assets/*.webp instead)
+/1.jpg
+/2.png
+/3.png
+/a_professional_high_resolution_background_for_an_indian_spice_website._the.png
