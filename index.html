@@ -213,53 +213,45 @@
 <!-- ============================================================
      HERO — original dark-overlay banner
      ============================================================ -->
-<section style="position:relative;min-height:88vh;display:flex;align-items:center;overflow:hidden">
-  <div style="position:absolute;inset:0;z-index:0">
-    <!-- Hero photo. Alpha-mask fades the bottom ~30% of the image to
-         transparent so the body's red mandala continues seamlessly
-         through it — no visible seam between hero and red strip,
-         regardless of how close (or off) the colours are. -->
-    <!-- Phones get a dedicated 9:16 portrait background (the wide landscape
-         banner crops to an unusable sliver on a tall screen); desktop keeps
-         the landscape product banner. The <img> keeps id=heroBg so the
-         parallax JS + bottom-fade mask still apply to whichever source. -->
-    <picture>
-      <source media="(max-width:768px)" srcset="assets/nikshero-mobile.webp"/>
-      <img id="heroBg" class="hero-bg-parallax" src="assets/niksherofresh.webp"
-         alt="Niks Masala — Mangalorean masala boxes on warm spice mandala"
-         onerror="this.src='assets/niksmasala1.webp'"
-         style="width:100%;height:100%;object-fit:cover;object-position:center top;
-                -webkit-mask-image:linear-gradient(180deg,black 0%,black 72%,rgba(0,0,0,0.55) 86%,rgba(0,0,0,0.18) 95%,transparent 100%);
-                mask-image:linear-gradient(180deg,black 0%,black 72%,rgba(0,0,0,0.55) 86%,rgba(0,0,0,0.18) 95%,transparent 100%)"/>
-    </picture>
-    <!-- Lighter scrim than before — image is brighter and we want
-         the product boxes + bottom blend to read through. Heavier
-         on the left where the headline sits, near-clear on the right. -->
-    <div style="position:absolute;inset:0;background:linear-gradient(100deg,rgba(31,20,16,.72) 0%,rgba(31,20,16,.40) 50%,rgba(31,20,16,.05) 100%)"></div>
-    <!-- Top darkener: guarantees nav text contrast while header is transparent -->
-    <div style="position:absolute;left:0;right:0;top:0;height:180px;background:linear-gradient(180deg,rgba(31,20,16,.55) 0%,rgba(31,20,16,.28) 55%,rgba(31,20,16,0) 100%);pointer-events:none"></div>
+<section class="hero-rotator">
+  <!-- Auto-rotating slideshow of the landscape product banners. Shown at
+       their natural aspect (object-fit:contain on the spice texture) so the
+       full banner + its baked-in text is never cropped — on desktop OR phone.
+       Order: 1, 2, 3, then the clean (non-gemini) nikshero banner. -->
+  <div class="hero-slides" role="img" aria-label="Niks Masala featured masalas">
+    <img class="hero-slide is-active" src="assets/1.webp" fetchpriority="high" alt="Niks Madras Gokulam Sambar Powder — a taste from Madras"/>
+    <img class="hero-slide" src="assets/2.webp" loading="lazy" alt="Niks Fish Fry Masala Powder — Mangalore-style fish fry"/>
+    <img class="hero-slide" src="assets/3.webp" loading="lazy" alt="Niks Madras Gokulam Sambar Powder"/>
+    <img class="hero-slide" src="assets/nikshero.webp" loading="lazy" alt="Niks Masala range — a taste you won't forget"/>
   </div>
 
-  <div style="position:relative;z-index:10;width:100%;max-width:1280px;margin:0 auto;padding:120px 24px 100px;color:#fcf8f0">
-    <div style="max-width:780px">
-      <h1 data-reveal="up" data-delay="150" style="font:700 clamp(44px,7vw,84px)/1.02 'Manrope',sans-serif;letter-spacing:-0.04em;color:#fff;margin:0 0 28px">
-        The taste of Mangalore,<br/>in every pack.
-      </h1>
-      <p data-reveal="up" data-delay="350" style="font:400 19px/1.7 'Manrope';color:rgba(252,248,240,.85);max-width:600px;margin:0 0 40px">
-        Authentic Mangalorean masalas and ground spices, slow-roasted and stone-ground at our FSSAI-certified facility in Yeyyadi. The same recipes a Mangalorean grandmother would recognise.
-      </p>
-      <div data-reveal="up" data-delay="550" style="display:flex;flex-wrap:wrap;gap:14px;align-items:center">
-        <a href="shop.html" class="btn-fancy" style="background:#fed7aa;color:#000;padding:16px 32px;border-radius:12px;font:700 13px/1 'Manrope';letter-spacing:.08em;text-transform:uppercase;text-decoration:none">
-          Shop the collection
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-        </a>
-        <a href="#bestsellers" style="font:600 13px/1 'Manrope';letter-spacing:.08em;text-transform:uppercase;color:#fcf8f0;text-decoration:underline;text-underline-offset:6px;text-decoration-color:rgba(254,215,170,.5);padding:16px 8px">
-          See bestsellers
-        </a>
-      </div>
+  <div class="hero-intro">
+    <h1>The taste of Mangalore,<br/>in every pack.</h1>
+    <p>Authentic Mangalorean masalas and ground spices, slow-roasted and stone-ground at our FSSAI-certified facility in Yeyyadi.</p>
+    <div class="hero-ctas">
+      <a href="shop.html" class="btn-fancy" style="background:#fed7aa;color:#000;padding:16px 32px;border-radius:12px;font:700 13px/1 'Manrope';letter-spacing:.08em;text-transform:uppercase;text-decoration:none">
+        Shop the collection
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+      <a href="#bestsellers" style="font:600 13px/1 'Manrope';letter-spacing:.08em;text-transform:uppercase;color:#fff6ec;text-decoration:underline;text-underline-offset:6px;text-decoration-color:rgba(254,215,170,.5);padding:16px 8px">
+        See bestsellers
+      </a>
     </div>
   </div>
 </section>
+<script>
+/* Crossfade the hero banners every few seconds. */
+(function(){
+  var slides = document.querySelectorAll('.hero-rotator .hero-slide');
+  if (slides.length < 2) return;
+  var i = 0;
+  setInterval(function(){
+    slides[i].classList.remove('is-active');
+    i = (i + 1) % slides.length;
+    slides[i].classList.add('is-active');
+  }, 4500);
+})();
+</script>
 
 <!-- ============================================================
      TRUST STRIP
