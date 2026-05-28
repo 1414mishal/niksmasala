@@ -34,8 +34,8 @@ body {
   font-family: 'Manrope', system-ui, -apple-system, sans-serif;
   background-color: #fcf8f0;
   background-image:
-    linear-gradient(rgba(252, 248, 240, 0.65), rgba(252, 248, 240, 0.65)),
-    url('a_professional_high_resolution_background_for_an_indian_spice_website._the.webp');
+    linear-gradient(rgba(252, 248, 240, 0.55), rgba(252, 248, 240, 0.55)),
+    url('spice-bg-landscape.webp');
   background-size: cover;
   background-position: center center;
   background-attachment: fixed;
@@ -2150,6 +2150,9 @@ section[style*="background:#fcf8f0"],
 section[style*="background: #fcf8f0"],
 section[style*="background:#fdfbf7"],
 section[style*="background: #fdfbf7"],
+section[style*="background:#fff;"],
+section[style*="background: #fff;"],
+section[style*="background:#ffffff"],
 section[style*="background: var(--bg-ivory)"],
 section[style*="background:var(--bg-ivory)"] {
   background: transparent !important;
