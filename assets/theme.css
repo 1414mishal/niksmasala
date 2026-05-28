@@ -34,7 +34,7 @@ body {
   font-family: 'Manrope', system-ui, -apple-system, sans-serif;
   background-color: #fcf8f0;
   background-image:
-    linear-gradient(rgba(252, 248, 240, 0.80), rgba(252, 248, 240, 0.80)),
+    linear-gradient(rgba(252, 248, 240, 0.65), rgba(252, 248, 240, 0.65)),
     url('a_professional_high_resolution_background_for_an_indian_spice_website._the.webp');
   background-size: cover;
   background-position: center center;
@@ -2133,4 +2133,47 @@ body.mobile-menu-open { overflow: hidden; }      /* lock background scroll */
   /* Above the breakpoint hide the burger + mobile menu entirely */
   .nav-burger { display: none; }
   .mobile-menu { display: none !important; }
+}
+
+/* =============================================================
+   SPICE TEXTURE BLEED-THROUGH
+   Let the body background image show through cream sections and
+   white content cards across every page. Surgical: only targets
+   light-toned containers; dark sections (#3d1f0e brown contact
+   panel, #1a0e08 footer, hero photo blocks) keep their solid
+   styling. Form inputs, drawers, buttons left untouched.
+   ============================================================= */
+
+/* Cream/ivory section backgrounds (inline-styled on <section>):
+   make fully transparent so the body spice texture is visible. */
+section[style*="background:#fcf8f0"],
+section[style*="background: #fcf8f0"],
+section[style*="background:#fdfbf7"],
+section[style*="background: #fdfbf7"],
+section[style*="background: var(--bg-ivory)"],
+section[style*="background:var(--bg-ivory)"] {
+  background: transparent !important;
+}
+
+/* White content cards (.lift-card with inline white bg, plus
+   common card classes from style.css). Frosted-glass treatment
+   keeps text readable while showing texture behind. */
+.lift-card[style*="background:#fff"],
+.lift-card[style*="background: #fff"],
+.lift-card[style*="background:#ffffff"],
+.contact-card,
+.recipe-card,
+.auth-card,
+.feature {
+  background-color: rgba(255, 255, 255, 0.62) !important;
+  background-image: none !important;
+  backdrop-filter: blur(14px) saturate(135%);
+  -webkit-backdrop-filter: blur(14px) saturate(135%);
+}
+
+/* Recipes hero, shipping/returns/privacy ivory wrappers, generic
+   wrappers using var(--bg-ivory) for the page-wide background. */
+[style*="background: var(--bg-ivory)"]:not(section),
+[style*="background:var(--bg-ivory)"]:not(section) {
+  background: transparent !important;
 }
