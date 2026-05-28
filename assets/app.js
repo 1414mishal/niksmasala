@@ -454,7 +454,7 @@ function buildFooter(){
     <div class="footer-grid">
       <div class="footer-col">
         <a href="index.html" class="brand" style="margin-bottom:14px" aria-label="Niks Masala home">
-          <img src="${attr(LOGO)}" alt="Niks Masala" style="height:64px" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+          <img src="${attr(LOGO)}" alt="Niks Masala" style="height:88px" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
           <div class="brand-fallback" style="display:none;background:radial-gradient(circle at 30% 30%,var(--gold),var(--red))" aria-hidden="true">N</div>
         </a>
         <p>The Taste of Mangalorean Tradition. Premium, handcrafted Indian masalas &amp; spices — delivered fresh from our Mangalore facility to your kitchen.</p>

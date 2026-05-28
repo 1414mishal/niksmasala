@@ -69,7 +69,7 @@ header.site-header{
   padding:14px 0;
 }
 .brand{display:flex;align-items:center;gap:12px}
-.brand img{height:72px;width:auto;object-fit:contain}
+.brand img{height:100px;width:auto;object-fit:contain}
 .brand-fallback{
   width:50px;height:50px;border-radius:50%;
   background:radial-gradient(circle at 30% 30%,var(--gold),var(--red) 80%);
@@ -1166,7 +1166,7 @@ body.drawer-open{overflow:hidden}
   .hero-inner .eyebrow{font-size:9px;letter-spacing:2px;padding:5px 12px}
   .btn{padding:11px 22px;font-size:13px}
   /* Header */
-  .brand img{height:46px}
+  .brand img{height:64px}
   .icon-link .label{display:none}
   .ig-link{display:none}
   /* Nav mobile menu */
