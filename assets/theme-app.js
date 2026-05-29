@@ -143,11 +143,40 @@ buildFooter = function () {
   </style>`;
 };
 
-/* Premium product card v2 — soft shadow, hover lift, refined pills (single product image only) */
+/* Pouch image shown on hover for products that ALSO have a box image
+   (keyed by name so it works for both default and cloud-synced products). */
+const _HOVER = {
+  'Turmeric Powder':'assets/products/pouch-turmeric.webp',
+  'Red Chilli Powder':'assets/products/pouch-red-chilli.webp',
+  'Coriander Powder':'assets/products/pouch-coriander.webp',
+  'Kashmiri Chilli Powder':'assets/products/pouch-kashmiri.webp',
+  'Jeera Powder':'assets/products/pouch-jeera.webp',
+  'Black Pepper Powder':'assets/products/pouch-pepper.webp',
+  'Garam Masala':'assets/products/pouch-garam.webp',
+  'Udupi Sambar Masala':'assets/products/pouch-sambar.webp',
+  'Udupi Rasam Masala':'assets/products/pouch-rasam.webp',
+  'Vegetable Pulav Masala':'assets/products/pouch-pulav.webp',
+  'Chhole Masala':'assets/products/pouch-chhole.webp',
+  'Jajeera Powder':'assets/products/pouch-jaljeera.webp',
+  'Pav Bhaji Masala':'assets/products/pouch-pavbhaji.webp',
+  'Puliyogare Powder':'assets/products/pouch-puliyogare.webp',
+  'Chicken Ghee Roast Masala':'assets/products/pouch-ghee-roast.webp',
+  'Chicken Kundapura Masala':'assets/products/pouch-kundapura.webp',
+  'Chicken Masala':'assets/products/pouch-chicken.webp',
+  'Chicken Tandoori Masala':'assets/products/pouch-tandoori.webp',
+  'Fish Curry Masala':'assets/products/pouch-fish.webp',
+  'Mutton / Meat Masala':'assets/products/pouch-mutton.webp',
+  'Kasuri Methi':'assets/products/pouch-kasuri-methi.webp',
+  'Soya Chunks':'assets/products/pouch-soya.webp'
+};
+
+/* Premium product card v2 — soft shadow, hover lift. Products with a box show
+   the box, and reveal the pouch on hover (two-image flip). */
 productCardHTML = function (p) {
   const variants = p.variants || [{ pack: p.weight || '', grams: p.grams || 100, price: p.price }];
   const first = variants[0];
   const hasMany = variants.length > 1;
+  const hoverImg = _HOVER[p.name] || '';
   const badgeHtml = p.badge === 'BESTSELLER'
     ? `<span class="product-card-v2__badge">Bestseller</span>`
     : p.badge
@@ -156,9 +185,10 @@ productCardHTML = function (p) {
 
   return `
   <article class="product-card-v2">
-    <a href="product.html?id=${attr(p.id)}" class="product-card-v2__media" aria-label="${attr(p.name)}">
+    <a href="product.html?id=${attr(p.id)}" class="product-card-v2__media${hoverImg ? ' has-hover' : ''}" aria-label="${attr(p.name)}">
       ${badgeHtml}
       <img class="pc-pack" src="${attr(p.image || FALLBACK_IMG)}" alt="${attr(p.name)}" loading="lazy" onerror="this.src='${FALLBACK_IMG}'">
+      ${hoverImg ? `<img class="pc-pack pc-pack--hover" src="${attr(hoverImg)}" alt="${attr(p.name)} pouch pack" loading="lazy" aria-hidden="true">` : ''}
     </a>
     <div class="product-card-v2__body">
       <p class="product-card-v2__cat">${esc(p.category)}</p>

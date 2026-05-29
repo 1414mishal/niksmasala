@@ -252,7 +252,7 @@ const _PIMG = {
   'Garam Masala':'assets/products/box-garam.webp',
   'Super Garam Masala':'assets/products/pouch-super-garam.webp',
   'Udupi Sambar Masala':'assets/products/box-sambar.webp',
-  'Super Sambar Masala':'assets/products/box-sambar.webp',
+  'Super Sambar Masala':'assets/products/pouch-sambar.webp',
   'Udupi Rasam Masala':'assets/products/box-rasam.webp',
   'Vegetable Pulav Masala':'assets/products/box-pulav.webp',
   'Chaat Masala':'assets/products/pouch-chaat.webp',
@@ -272,7 +272,7 @@ const _PIMG = {
   'Chicken Tandoori Masala':'assets/products/box-tandoori.webp',
   'Chicken Tikka Masala':'assets/products/box-tikka.webp',
   'Fish Curry Masala':'assets/products/box-fish.webp',
-  'Fish Pulimunchi Masala':'assets/products/box-fish.webp',
+  'Fish Pulimunchi Masala':'assets/products/pouch-fish2.webp',
   'Fish Fry Masala':'assets/products/pouch-fish-fry.webp',
   'Mutton / Meat Masala':'assets/products/box-mutton.webp',
   'Bafath Masala':'assets/products/pouch-bafath.webp',
@@ -851,9 +851,9 @@ async function getUserFromCloud(email){
    deploy which is awful UX. If the cart schema actually changes, bump
    niks_cart_version too. */
 try{
-  if(localStorage.getItem('niks_products_version')!=='v8-img'){
+  if(localStorage.getItem('niks_products_version')!=='v9-img'){
     localStorage.removeItem('niks_products');
-    localStorage.setItem('niks_products_version','v8-img');
+    localStorage.setItem('niks_products_version','v9-img');
   }
   if(localStorage.getItem('niks_cart_version')!=='v2-variants'){
     localStorage.removeItem('niks_cart');
