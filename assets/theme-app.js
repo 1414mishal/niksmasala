@@ -128,8 +128,9 @@ buildFooter = function () {
       </div>
     </div>
 
-    <div style="max-width:1280px;margin:48px auto 0;padding-top:24px;border-top:1px solid rgba(254,215,170,.12);display:flex;justify-content:flex-start;flex-wrap:wrap;gap:12px">
+    <div style="max-width:1280px;margin:48px auto 0;padding-top:24px;border-top:1px solid rgba(254,215,170,.12);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
       <p style="color:rgba(254,215,170,.5);font:400 12px/1 'Manrope';margin:0">© <span data-year>2026</span> Niks Masala · ${esc(s.company)}. All rights reserved.</p>
+      <a href="admin.html" rel="nofollow" title="Staff login" style="color:rgba(254,215,170,.35);font:500 11px/1 'Manrope';letter-spacing:.1em;text-transform:uppercase;text-decoration:none;transition:color .25s" onmouseover="this.style.color='rgba(254,215,170,.7)'" onmouseout="this.style.color='rgba(254,215,170,.35)'">Admin</a>
     </div>
   </footer>
   <style>
