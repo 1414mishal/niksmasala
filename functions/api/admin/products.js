@@ -49,7 +49,9 @@ function authorised(request, env){
   const header = request.headers.get('Authorization') || '';
   if(!header.startsWith('Bearer ')) return false;
   const token = header.slice(7).trim();
-  return safeEq(token, env.ADMIN_TOKEN);
+  /* Trim the stored secret too — a stray space/newline pasted into the
+     Cloudflare ADMIN_TOKEN value would otherwise reject every valid token. */
+  return safeEq(token, (env.ADMIN_TOKEN || '').trim());
 }
 
 /* App-shape product → Supabase row shape */

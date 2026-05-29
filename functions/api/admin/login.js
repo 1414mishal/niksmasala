@@ -43,7 +43,7 @@ export const onRequestPost = async ({request, env}) => {
 
   /* Constant-time compare — never short-circuit on first-byte mismatch.
      Prevents timing oracles that leak password length / partial match. */
-  if(!safeEq(password, env.ADMIN_PASSWORD)){
+  if(!safeEq(password.trim(), (env.ADMIN_PASSWORD || '').trim())){
     /* Burn a tiny amount of CPU so failure responses don't return
        instantly — adds a few ms latency and discourages serial brute. */
     await new Promise(r => setTimeout(r, 80));
@@ -52,7 +52,7 @@ export const onRequestPost = async ({request, env}) => {
 
   const thirtyDays = 30 * 24 * 60 * 60 * 1000;
   return json({
-    token:     env.ADMIN_TOKEN,
+    token:     (env.ADMIN_TOKEN || '').trim(),
     expiresAt: new Date(Date.now() + thirtyDays).toISOString()
   });
 };
