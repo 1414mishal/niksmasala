@@ -143,10 +143,33 @@ buildFooter = function () {
   </style>`;
 };
 
-/* Hover image map — disabled for now (using pouch images as the primary,
-   no box images, so there's nothing to flip to). Kept empty so the card code
-   simply shows the single pouch image. */
-const _HOVER = {};
+/* Pouch image shown on hover for box products (keyed by name → works for
+   default and cloud-synced products). Box-only products (Sabji, Tikka) and
+   pouch-only products have no hover. */
+const _HOVER = {
+  'Turmeric Powder':'assets/products/pouch-turmeric.webp',
+  'Red Chilli Powder':'assets/products/pouch-red-chilli.webp',
+  'Coriander Powder':'assets/products/pouch-coriander.webp',
+  'Kashmiri Chilli Powder':'assets/products/pouch-kashmiri.webp',
+  'Jeera Powder':'assets/products/pouch-jeera.webp',
+  'Black Pepper Powder':'assets/products/pouch-pepper.webp',
+  'Garam Masala':'assets/products/pouch-garam.webp',
+  'Udupi Sambar Masala':'assets/products/pouch-sambar.webp',
+  'Udupi Rasam Masala':'assets/products/pouch-rasam.webp',
+  'Vegetable Pulav Masala':'assets/products/pouch-pulav.webp',
+  'Chhole Masala':'assets/products/pouch-chhole.webp',
+  'Jal Jeera Powder':'assets/products/pouch-jaljeera.webp',
+  'Pav Bhaji Masala':'assets/products/pouch-pavbhaji.webp',
+  'Puliyogare Powder':'assets/products/pouch-puliyogare.webp',
+  'Chicken Ghee Roast Masala':'assets/products/pouch-ghee-roast.webp',
+  'Chicken Kundapura Masala':'assets/products/pouch-kundapura.webp',
+  'Chicken Masala':'assets/products/pouch-chicken.webp',
+  'Chicken Tandoori Masala':'assets/products/pouch-tandoori.webp',
+  'Fish Curry Masala':'assets/products/pouch-fish2.webp',
+  'Mutton / Meat Masala':'assets/products/pouch-mutton.webp',
+  'Kasuri Methi':'assets/products/pouch-kasuri-methi.webp',
+  'Soya Chunks':'assets/products/pouch-soya.webp'
+};
 
 /* Premium product card v2 — soft shadow, hover lift. Products with a box show
    the box, and reveal the pouch on hover (two-image flip). */

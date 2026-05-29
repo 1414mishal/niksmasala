@@ -399,7 +399,7 @@ const _ARAW=[
   {name:'Vegetable Pulav Masala',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
   {name:'Chaat Masala',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:300}]},
   {name:'Chhole Masala',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Jajeera Powder',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Jal Jeera Powder',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
   {name:'Pav Bhaji Masala',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
   {name:'Sabji Masala',variants:[{pack:'50gm Box',grams:50,price:40},{pack:'100gm Pouch',grams:100,price:70},{pack:'500gm Pouch',grams:500,price:350}]},
   {name:'Puliyogare Powder',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
@@ -426,44 +426,45 @@ const _ARAW=[
   {name:'Kasuri Methi',variants:[{pack:'25gm Box',grams:25,price:38}]},
   {name:'Soya Chunks',variants:[{pack:'200gm Box',grams:200,price:60},{pack:'1 KG Pouch',grams:1000,price:300}]},
 ];
-/* Per-product POUCH image map (pouch photos for now — NO box images).
-   5 products have no pouch photo yet → logo placeholder until supplied. */
+/* Primary product image: BOX where a box photo exists, else POUCH. */
 const _PIMG = {
-  'Turmeric Powder':'assets/products/pouch-turmeric.webp',
-  'Red Chilli Powder':'assets/products/pouch-red-chilli.webp',
-  'Coriander Powder':'assets/products/pouch-coriander.webp',
-  'Kashmiri Chilli Powder':'assets/products/pouch-kashmiri.webp',
-  'Jeera Powder':'assets/products/pouch-jeera.webp',
-  'Black Pepper Powder':'assets/products/pouch-pepper.webp',
-  'Garam Masala':'assets/products/pouch-garam.webp',
+  'Turmeric Powder':'assets/products/box-turmeric.webp',
+  'Red Chilli Powder':'assets/products/box-red-chilli.webp',
+  'Coriander Powder':'assets/products/box-coriander.webp',
+  'Kashmiri Chilli Powder':'assets/products/box-kashmiri.webp',
+  'Jeera Powder':'assets/products/box-jeera.webp',
+  'Black Pepper Powder':'assets/products/box-pepper.webp',
+  'Garam Masala':'assets/products/box-garam.webp',
   'Super Garam Masala':'assets/products/pouch-super-garam.webp',
-  'Udupi Sambar Masala':'assets/products/pouch-sambar.webp',
+  'Udupi Sambar Masala':'assets/products/box-sambar.webp',
   'Super Sambar Masala':'assets/products/pouch-sambar.webp',
-  'Udupi Rasam Masala':'assets/products/pouch-rasam.webp',
-  'Vegetable Pulav Masala':'assets/products/pouch-pulav.webp',
+  'Udupi Rasam Masala':'assets/products/box-rasam.webp',
+  'Vegetable Pulav Masala':'assets/products/box-pulav.webp',
   'Chaat Masala':'assets/products/pouch-chaat.webp',
-  'Chhole Masala':'assets/products/pouch-chhole.webp',
-  'Jajeera Powder':'assets/products/pouch-jaljeera.webp',
-  'Pav Bhaji Masala':'assets/products/pouch-pavbhaji.webp',
-  'Puliyogare Powder':'assets/products/pouch-puliyogare.webp',
-  'Chicken Ghee Roast Masala':'assets/products/pouch-ghee-roast.webp',
-  'Chicken Kundapura Masala':'assets/products/pouch-kundapura.webp',
+  'Chhole Masala':'assets/products/box-chhole.webp',
+  'Jal Jeera Powder':'assets/products/box-jaljeera.webp',
+  'Pav Bhaji Masala':'assets/products/box-pavbhaji.webp',
+  'Sabji Masala':'assets/products/box-sabji.webp',
+  'Puliyogare Powder':'assets/products/box-puliyogare.webp',
+  'Chicken Ghee Roast Masala':'assets/products/box-ghee-roast.webp',
+  'Chicken Kundapura Masala':'assets/products/box-kundapura.webp',
   'Chicken Sukka Masala (Mangalore No.1)':'assets/products/pouch-sukka.webp',
-  'Chicken Masala':'assets/products/pouch-chicken.webp',
+  'Chicken Masala':'assets/products/box-chicken.webp',
   'Super Chicken Masala':'assets/products/pouch-super-chicken.webp',
   'Chicken Pulimunchi Masala':'assets/products/pouch-chicken-pulimunchi.webp',
   'Chicken Kabab / Chicken 65 Masala':'assets/products/pouch-kabab.webp',
   'Chicken Biriyani Masala':'assets/products/pouch-biriyani.webp',
-  'Chicken Tandoori Masala':'assets/products/pouch-tandoori.webp',
-  'Fish Curry Masala':'assets/products/pouch-fish.webp',
-  'Fish Pulimunchi Masala':'assets/products/pouch-fish2.webp',
+  'Chicken Tandoori Masala':'assets/products/box-tandoori.webp',
+  'Chicken Tikka Masala':'assets/products/box-tikka.webp',
+  'Fish Curry Masala':'assets/products/box-fish.webp',
+  'Fish Pulimunchi Masala':'assets/products/pouch-fish.webp',
   'Fish Fry Masala':'assets/products/pouch-fish-fry.webp',
-  'Mutton / Meat Masala':'assets/products/pouch-mutton.webp',
+  'Mutton / Meat Masala':'assets/products/box-mutton.webp',
   'Bafath Masala':'assets/products/pouch-bafath.webp',
   'Egg Curry Masala':'assets/products/pouch-egg.webp',
   'Kitchen King Masala':'assets/products/pouch-kitchen-king.webp',
-  'Kasuri Methi':'assets/products/pouch-kasuri-methi.webp',
-  'Soya Chunks':'assets/products/pouch-soya.webp'
+  'Kasuri Methi':'assets/products/box-kasuri-methi.webp',
+  'Soya Chunks':'assets/products/box-soya.webp'
 };
 function _apick(name){ return _PIMG[name] || 'nobgnikslogo.webp'; }
 
@@ -493,10 +494,10 @@ function _toCloud(p){return{id:p.id,name:p.name,slug:p.slug||(p.name||'').toLowe
 
 function getProducts(){
   try{
-    if(localStorage.getItem('niks_products_version')!=='v10-pouch'){
+    if(localStorage.getItem('niks_products_version')!=='v11-box'){
       localStorage.setItem('niks_products',JSON.stringify(DEFAULT_PRODUCTS));
       localStorage.removeItem('niks_cart');
-      localStorage.setItem('niks_products_version','v10-pouch');
+      localStorage.setItem('niks_products_version','v11-box');
     }
     const s=JSON.parse(localStorage.getItem('niks_products'));
     return(s&&s.length)?s:DEFAULT_PRODUCTS;

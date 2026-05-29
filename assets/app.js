@@ -159,7 +159,7 @@ const _RAW = [
     {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:300}]},
   {name:'Chhole Masala', variants:[
     {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Jajeera Powder', variants:[
+  {name:'Jal Jeera Powder', variants:[
     {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
   {name:'Pav Bhaji Masala', variants:[
     {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
@@ -238,45 +238,48 @@ const _DESCRIPTIONS = {
 /* Ratings & review counts removed — we don't have real customer reviews yet.
    Showing fabricated numbers is a violation of the Consumer Protection
    (E-Commerce) Rules 2020 and ASCI guidelines. */
-/* Per-product POUCH image map (pouch photos for now — NO box images).
-   5 products have no pouch photo yet (Sabji, Chicken Tikka, Asafoetida,
-   Ginger-Garlic Paste, Niks Papad) → logo placeholder until supplied. */
+/* Primary product image: BOX where a box photo exists, else POUCH.
+   (The pouch shows on hover for box products — see _HOVER in theme-app.js.)
+   5 products have neither yet (Sabji & Tikka = box only; Asafoetida,
+   Ginger-Garlic Paste, Niks Papad = none). */
 const _PIMG = {
-  'Turmeric Powder':'assets/products/pouch-turmeric.webp',
-  'Red Chilli Powder':'assets/products/pouch-red-chilli.webp',
-  'Coriander Powder':'assets/products/pouch-coriander.webp',
-  'Kashmiri Chilli Powder':'assets/products/pouch-kashmiri.webp',
-  'Jeera Powder':'assets/products/pouch-jeera.webp',
-  'Black Pepper Powder':'assets/products/pouch-pepper.webp',
-  'Garam Masala':'assets/products/pouch-garam.webp',
+  'Turmeric Powder':'assets/products/box-turmeric.webp',
+  'Red Chilli Powder':'assets/products/box-red-chilli.webp',
+  'Coriander Powder':'assets/products/box-coriander.webp',
+  'Kashmiri Chilli Powder':'assets/products/box-kashmiri.webp',
+  'Jeera Powder':'assets/products/box-jeera.webp',
+  'Black Pepper Powder':'assets/products/box-pepper.webp',
+  'Garam Masala':'assets/products/box-garam.webp',
   'Super Garam Masala':'assets/products/pouch-super-garam.webp',
-  'Udupi Sambar Masala':'assets/products/pouch-sambar.webp',
+  'Udupi Sambar Masala':'assets/products/box-sambar.webp',
   'Super Sambar Masala':'assets/products/pouch-sambar.webp',
-  'Udupi Rasam Masala':'assets/products/pouch-rasam.webp',
-  'Vegetable Pulav Masala':'assets/products/pouch-pulav.webp',
+  'Udupi Rasam Masala':'assets/products/box-rasam.webp',
+  'Vegetable Pulav Masala':'assets/products/box-pulav.webp',
   'Chaat Masala':'assets/products/pouch-chaat.webp',
-  'Chhole Masala':'assets/products/pouch-chhole.webp',
-  'Jajeera Powder':'assets/products/pouch-jaljeera.webp',
-  'Pav Bhaji Masala':'assets/products/pouch-pavbhaji.webp',
-  'Puliyogare Powder':'assets/products/pouch-puliyogare.webp',
-  'Chicken Ghee Roast Masala':'assets/products/pouch-ghee-roast.webp',
-  'Chicken Kundapura Masala':'assets/products/pouch-kundapura.webp',
+  'Chhole Masala':'assets/products/box-chhole.webp',
+  'Jal Jeera Powder':'assets/products/box-jaljeera.webp',
+  'Pav Bhaji Masala':'assets/products/box-pavbhaji.webp',
+  'Sabji Masala':'assets/products/box-sabji.webp',
+  'Puliyogare Powder':'assets/products/box-puliyogare.webp',
+  'Chicken Ghee Roast Masala':'assets/products/box-ghee-roast.webp',
+  'Chicken Kundapura Masala':'assets/products/box-kundapura.webp',
   'Chicken Sukka Masala (Mangalore No.1)':'assets/products/pouch-sukka.webp',
-  'Chicken Masala':'assets/products/pouch-chicken.webp',
+  'Chicken Masala':'assets/products/box-chicken.webp',
   'Super Chicken Masala':'assets/products/pouch-super-chicken.webp',
   'Chicken Pulimunchi Masala':'assets/products/pouch-chicken-pulimunchi.webp',
   'Chicken Kabab / Chicken 65 Masala':'assets/products/pouch-kabab.webp',
   'Chicken Biriyani Masala':'assets/products/pouch-biriyani.webp',
-  'Chicken Tandoori Masala':'assets/products/pouch-tandoori.webp',
-  'Fish Curry Masala':'assets/products/pouch-fish.webp',
-  'Fish Pulimunchi Masala':'assets/products/pouch-fish2.webp',
+  'Chicken Tandoori Masala':'assets/products/box-tandoori.webp',
+  'Chicken Tikka Masala':'assets/products/box-tikka.webp',
+  'Fish Curry Masala':'assets/products/box-fish.webp',
+  'Fish Pulimunchi Masala':'assets/products/pouch-fish.webp',
   'Fish Fry Masala':'assets/products/pouch-fish-fry.webp',
-  'Mutton / Meat Masala':'assets/products/pouch-mutton.webp',
+  'Mutton / Meat Masala':'assets/products/box-mutton.webp',
   'Bafath Masala':'assets/products/pouch-bafath.webp',
   'Egg Curry Masala':'assets/products/pouch-egg.webp',
   'Kitchen King Masala':'assets/products/pouch-kitchen-king.webp',
-  'Kasuri Methi':'assets/products/pouch-kasuri-methi.webp',
-  'Soya Chunks':'assets/products/pouch-soya.webp'
+  'Kasuri Methi':'assets/products/box-kasuri-methi.webp',
+  'Soya Chunks':'assets/products/box-soya.webp'
 };
 function _pick(name){ return _PIMG[name] || 'nobgnikslogo.webp'; }
 
@@ -328,10 +331,14 @@ async function loadProductsFromCloud(){
     if(!res.ok) return null;                            // 404 (no functions) / 500 → keep cache
     const fresh = await res.json();
     if(!Array.isArray(fresh) || fresh.length === 0) return null;  // empty table → keep DEFAULT_PRODUCTS seed
-    /* Resolve the product image by NAME on the client. This guarantees the
-       correct (pouch) photo even if the cloud DB still holds an old/stale
-       image path — so images are right without needing a DB re-seed. */
-    fresh.forEach(p => { if(p && p.name) p.image = _pick(p.name); });
+    /* Normalise renamed products + resolve the image by NAME on the client,
+       so a stale name/image path in the cloud DB can't show wrong data
+       (no DB re-seed needed). */
+    fresh.forEach(p => {
+      if(!p) return;
+      if(p.name === 'Jajeera Powder') p.name = 'Jal Jeera Powder';
+      if(p.name) p.image = _pick(p.name);
+    });
     localStorage.setItem('niks_products', JSON.stringify(fresh));
     localStorage.setItem('niks_products_fetched_at', Date.now().toString());
     window.dispatchEvent(new CustomEvent('niks:products-updated', {detail:{count:fresh.length}}));
@@ -852,9 +859,9 @@ async function getUserFromCloud(email){
    deploy which is awful UX. If the cart schema actually changes, bump
    niks_cart_version too. */
 try{
-  if(localStorage.getItem('niks_products_version')!=='v10-pouch'){
+  if(localStorage.getItem('niks_products_version')!=='v11-box'){
     localStorage.removeItem('niks_products');
-    localStorage.setItem('niks_products_version','v10-pouch');
+    localStorage.setItem('niks_products_version','v11-box');
   }
   if(localStorage.getItem('niks_cart_version')!=='v2-variants'){
     localStorage.removeItem('niks_cart');
