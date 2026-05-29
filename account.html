@@ -298,26 +298,39 @@ async function sendResetLink(email){
   setTimeout(render, 1200);
 }
 
-/* Handle the recovery callback. Supabase fires PASSWORD_RECOVERY on auth
-   state change after the user clicks the email link. Show a "set new password" form. */
+/* The "set a new password" form. Shared by the URL check below and the
+   PASSWORD_RECOVERY auth event. */
+function showResetForm(){
+  const head=document.getElementById('accHead'); if(head) head.textContent='Reset your password';
+  const sub=document.getElementById('accSub'); if(sub) sub.textContent='Almost done — choose a new password below.';
+  document.getElementById('accPanel').innerHTML=`
+    <div style="max-width:480px;margin:50px auto;padding:0 24px">
+      <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px">
+        <h3 style="font-size:22px;margin-bottom:6px">Set a new password</h3>
+        <p style="color:var(--muted);font-size:14px;margin-bottom:20px">Choose a strong, unique password.</p>
+        <form onsubmit="completeReset(event)">
+          <div class="form-row"><label>New Password *</label><input type="password" name="pw1" required minlength="8" autofocus autocomplete="new-password"></div>
+          <div class="form-row"><label>Confirm Password *</label><input type="password" name="pw2" required minlength="8" autocomplete="new-password"></div>
+          <button type="submit" class="btn btn-primary" style="width:100%">Update Password</button>
+        </form>
+      </div>
+    </div>`;
+}
+
+/* Did we arrive from a password-recovery email link? Supabase consumes the
+   #...type=recovery... hash the instant the client is created — usually BEFORE
+   our onAuthStateChange listener is attached — so relying on the event alone
+   meant the recovery just looked like a normal login. We set ?reset=1 as the
+   redirect target, and that query param survives, so it's the reliable tell. */
+function isRecovery(){
+  return /[?&]reset=1\b/.test(location.search) || /type=recovery/.test(location.hash);
+}
+
 (async()=>{
   const db=await sb();
-  db.auth.onAuthStateChange(async (event)=>{
-    if(event==='PASSWORD_RECOVERY'){
-      document.getElementById('accPanel').innerHTML=`
-        <div style="max-width:480px;margin:50px auto;padding:0 24px">
-          <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:32px">
-            <h3 style="font-size:22px;margin-bottom:6px">Set a new password</h3>
-            <p style="color:var(--muted);font-size:14px;margin-bottom:20px">Choose a strong, unique password.</p>
-            <form onsubmit="completeReset(event)">
-              <div class="form-row"><label>New Password *</label><input type="password" name="pw1" required minlength="8" autofocus autocomplete="new-password"></div>
-              <div class="form-row"><label>Confirm Password *</label><input type="password" name="pw2" required minlength="8" autocomplete="new-password"></div>
-              <button type="submit" class="btn btn-primary" style="width:100%">Update Password</button>
-            </form>
-          </div>
-        </div>`;
-    }
-  });
+  /* Still listen for the event in case it fires after we attach (belt + braces). */
+  db.auth.onAuthStateChange((event)=>{ if(event==='PASSWORD_RECOVERY') showResetForm(); });
+  if(isRecovery()){ showResetForm(); return; }
   render();
 })();
 
@@ -329,6 +342,8 @@ async function completeReset(e){
   const db=await sb();
   const {error}=await db.auth.updateUser({password:p1});
   if(error){toast(error.message,'err');return}
+  /* Drop ?reset=1 / the recovery hash so a refresh doesn't reopen this form. */
+  try{ history.replaceState(null,'', location.pathname); }catch(_){}
   toast('✓ Password updated. Welcome back!','ok');
   setTimeout(render,800);
 }
