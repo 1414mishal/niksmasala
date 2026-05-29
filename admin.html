@@ -426,6 +426,49 @@ const _ARAW=[
   {name:'Kasuri Methi',variants:[{pack:'25gm Box',grams:25,price:38}]},
   {name:'Soya Chunks',variants:[{pack:'200gm Box',grams:200,price:60},{pack:'1 KG Pouch',grams:1000,price:300}]},
 ];
+/* Exact per-product image map (box where available, else pouch). Overrides
+   the old keyword guesser so admin + shop show the correct packaging photo. */
+const _PIMG = {
+  'Turmeric Powder':'assets/products/box-turmeric.webp',
+  'Red Chilli Powder':'assets/products/box-red-chilli.webp',
+  'Coriander Powder':'assets/products/box-coriander.webp',
+  'Kashmiri Chilli Powder':'assets/products/box-kashmiri.webp',
+  'Jeera Powder':'assets/products/box-jeera.webp',
+  'Black Pepper Powder':'assets/products/box-pepper.webp',
+  'Garam Masala':'assets/products/box-garam.webp',
+  'Super Garam Masala':'assets/products/pouch-super-garam.webp',
+  'Udupi Sambar Masala':'assets/products/box-sambar.webp',
+  'Super Sambar Masala':'assets/products/box-sambar.webp',
+  'Udupi Rasam Masala':'assets/products/box-rasam.webp',
+  'Vegetable Pulav Masala':'assets/products/box-pulav.webp',
+  'Chaat Masala':'assets/products/pouch-chaat.webp',
+  'Chhole Masala':'assets/products/box-chhole.webp',
+  'Jajeera Powder':'assets/products/box-jaljeera.webp',
+  'Pav Bhaji Masala':'assets/products/box-pavbhaji.webp',
+  'Sabji Masala':'assets/products/box-sabji.webp',
+  'Puliyogare Powder':'assets/products/box-puliyogare.webp',
+  'Chicken Ghee Roast Masala':'assets/products/box-ghee-roast.webp',
+  'Chicken Kundapura Masala':'assets/products/box-kundapura.webp',
+  'Chicken Sukka Masala (Mangalore No.1)':'assets/products/pouch-sukka.webp',
+  'Chicken Masala':'assets/products/box-chicken.webp',
+  'Super Chicken Masala':'assets/products/pouch-super-chicken.webp',
+  'Chicken Pulimunchi Masala':'assets/products/pouch-chicken-pulimunchi.webp',
+  'Chicken Kabab / Chicken 65 Masala':'assets/products/pouch-kabab.webp',
+  'Chicken Biriyani Masala':'assets/products/pouch-biriyani.webp',
+  'Chicken Tandoori Masala':'assets/products/box-tandoori.webp',
+  'Chicken Tikka Masala':'assets/products/box-tikka.webp',
+  'Fish Curry Masala':'assets/products/box-fish.webp',
+  'Fish Pulimunchi Masala':'assets/products/box-fish.webp',
+  'Fish Fry Masala':'assets/products/pouch-fish-fry.webp',
+  'Mutton / Meat Masala':'assets/products/box-mutton.webp',
+  'Bafath Masala':'assets/products/pouch-bafath.webp',
+  'Egg Curry Masala':'assets/products/pouch-egg.webp',
+  'Kitchen King Masala':'assets/products/pouch-kitchen-king.webp',
+  'Kasuri Methi':'assets/products/box-kasuri-methi.webp',
+  'Soya Chunks':'assets/products/box-soya.webp'
+};
+function _apick(name){ return _PIMG[name] || 'assets/products/box-garam.webp'; }
+
 const DEFAULT_PRODUCTS=_ARAW.map((r,i)=>{const minP=Math.min(...r.variants.map(v=>v.price));return{id:'p'+(i+1),name:r.name,slug:r.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),category:_acat(r.name),price:minP,image:_apick(r.name),variants:r.variants,rating:4.6+(i%4)*0.1,reviews:20+(i*7)%180,desc:'Authentic Mangalorean spice blend — traditionally crafted, export-quality.',long:'Packed at our FSSAI-certified 11,000 sq.ft. facility in Yeyyadi, Mangalore.',badge:r.badge||null,stock:50};});
 const DEFAULT_SETTINGS = {brand:'Niks Masala',phone:'+91 73385 19975',email:'hello@niksmasala.com',address:'Plot no. L-6, 5-50, Yeyyadi Industrial Area, Mangaluru, Karnataka 575015',currency:'₹',shippingFree:799,shippingFee:60,shippingFeeHeavy:120,razorpayKey:'rzp_test_SgFzfBVh4i57d2'};
 /* Admin auth is server-side now — /api/admin/login validates the password
@@ -452,10 +495,10 @@ function _toCloud(p){return{id:p.id,name:p.name,slug:p.slug||(p.name||'').toLowe
 
 function getProducts(){
   try{
-    if(localStorage.getItem('niks_products_version')!=='v6-cats'){
+    if(localStorage.getItem('niks_products_version')!=='v8-img'){
       localStorage.setItem('niks_products',JSON.stringify(DEFAULT_PRODUCTS));
       localStorage.removeItem('niks_cart');
-      localStorage.setItem('niks_products_version','v6-cats');
+      localStorage.setItem('niks_products_version','v8-img');
     }
     const s=JSON.parse(localStorage.getItem('niks_products'));
     return(s&&s.length)?s:DEFAULT_PRODUCTS;

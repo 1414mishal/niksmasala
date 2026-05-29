@@ -238,6 +238,51 @@ const _DESCRIPTIONS = {
 /* Ratings & review counts removed — we don't have real customer reviews yet.
    Showing fabricated numbers is a violation of the Consumer Protection
    (E-Commerce) Rules 2020 and ASCI guidelines. */
+/* Exact per-product image map — replaces the old keyword guesser so every
+   product shows its OWN packaging photo (box where available, else pouch).
+   Asafoetida / Ginger-Garlic Paste / Niks Papad have no supplied photo yet
+   → they fall back to FALLBACK_IMG until images are added. */
+const _PIMG = {
+  'Turmeric Powder':'assets/products/box-turmeric.webp',
+  'Red Chilli Powder':'assets/products/box-red-chilli.webp',
+  'Coriander Powder':'assets/products/box-coriander.webp',
+  'Kashmiri Chilli Powder':'assets/products/box-kashmiri.webp',
+  'Jeera Powder':'assets/products/box-jeera.webp',
+  'Black Pepper Powder':'assets/products/box-pepper.webp',
+  'Garam Masala':'assets/products/box-garam.webp',
+  'Super Garam Masala':'assets/products/pouch-super-garam.webp',
+  'Udupi Sambar Masala':'assets/products/box-sambar.webp',
+  'Super Sambar Masala':'assets/products/box-sambar.webp',
+  'Udupi Rasam Masala':'assets/products/box-rasam.webp',
+  'Vegetable Pulav Masala':'assets/products/box-pulav.webp',
+  'Chaat Masala':'assets/products/pouch-chaat.webp',
+  'Chhole Masala':'assets/products/box-chhole.webp',
+  'Jajeera Powder':'assets/products/box-jaljeera.webp',
+  'Pav Bhaji Masala':'assets/products/box-pavbhaji.webp',
+  'Sabji Masala':'assets/products/box-sabji.webp',
+  'Puliyogare Powder':'assets/products/box-puliyogare.webp',
+  'Chicken Ghee Roast Masala':'assets/products/box-ghee-roast.webp',
+  'Chicken Kundapura Masala':'assets/products/box-kundapura.webp',
+  'Chicken Sukka Masala (Mangalore No.1)':'assets/products/pouch-sukka.webp',
+  'Chicken Masala':'assets/products/box-chicken.webp',
+  'Super Chicken Masala':'assets/products/pouch-super-chicken.webp',
+  'Chicken Pulimunchi Masala':'assets/products/pouch-chicken-pulimunchi.webp',
+  'Chicken Kabab / Chicken 65 Masala':'assets/products/pouch-kabab.webp',
+  'Chicken Biriyani Masala':'assets/products/pouch-biriyani.webp',
+  'Chicken Tandoori Masala':'assets/products/box-tandoori.webp',
+  'Chicken Tikka Masala':'assets/products/box-tikka.webp',
+  'Fish Curry Masala':'assets/products/box-fish.webp',
+  'Fish Pulimunchi Masala':'assets/products/box-fish.webp',
+  'Fish Fry Masala':'assets/products/pouch-fish-fry.webp',
+  'Mutton / Meat Masala':'assets/products/box-mutton.webp',
+  'Bafath Masala':'assets/products/pouch-bafath.webp',
+  'Egg Curry Masala':'assets/products/pouch-egg.webp',
+  'Kitchen King Masala':'assets/products/pouch-kitchen-king.webp',
+  'Kasuri Methi':'assets/products/box-kasuri-methi.webp',
+  'Soya Chunks':'assets/products/box-soya.webp'
+};
+function _pick(name){ return _PIMG[name] || FALLBACK_IMG; }
+
 const DEFAULT_PRODUCTS = _RAW.map((r,i)=>{
   const desc = _DESCRIPTIONS[r.name] || 'Authentic Mangalorean spice blend — traditionally crafted, export-quality.';
   const minPrice = Math.min(...r.variants.map(v=>v.price));
@@ -806,9 +851,9 @@ async function getUserFromCloud(email){
    deploy which is awful UX. If the cart schema actually changes, bump
    niks_cart_version too. */
 try{
-  if(localStorage.getItem('niks_products_version')!=='v7-clean'){
+  if(localStorage.getItem('niks_products_version')!=='v8-img'){
     localStorage.removeItem('niks_products');
-    localStorage.setItem('niks_products_version','v7-clean');
+    localStorage.setItem('niks_products_version','v8-img');
   }
   if(localStorage.getItem('niks_cart_version')!=='v2-variants'){
     localStorage.removeItem('niks_cart');

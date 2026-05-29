@@ -59,6 +59,13 @@
   </aside>
 
   <main>
+    <div class="shop-search" style="margin-bottom:18px">
+      <input type="search" id="shopSearch" autocomplete="off" aria-label="Search products"
+        placeholder="🔍  Search products — e.g. chicken, garam, fish fry…"
+        oninput="searchProducts(this.value)"
+        style="width:100%;padding:14px 18px;border:1px solid var(--line);border-radius:12px;font:400 15px 'Manrope';background:#fff;color:var(--ink);outline:none;box-shadow:0 2px 10px rgba(60,20,0,.05);transition:border-color .2s"
+        onfocus="this.style.borderColor='var(--red)'" onblur="this.style.borderColor='var(--line)'">
+    </div>
     <div class="shop-main-head">
       <div class="count" id="count">Showing all products</div>
       <div class="shop-sort">
@@ -135,7 +142,20 @@ function renderShop(){
     `<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--muted)">No products found. <a href="shop.html" style="color:var(--red)">Clear filters</a></div>`;
 }
 
+/* Live product search — filters the grid as you type, keeps ?q= in the URL. */
+function searchProducts(v){
+  FILTER.q = v || '';
+  try {
+    const u = new URL(location.href);
+    if (FILTER.q) u.searchParams.set('q', FILTER.q); else u.searchParams.delete('q');
+    history.replaceState(null, '', u);
+  } catch(_){}
+  renderShop();
+}
+
 updateURL();buildCatList();renderShop();
+/* Pre-fill the search box if the page opened with ?q= */
+{ const _si = document.getElementById('shopSearch'); if (_si && FILTER.q) _si.value = FILTER.q; }
 
 /* Re-render when /api/products returns fresh catalog (admin added a new product etc.) */
 window.addEventListener('niks:products-updated', () => {

@@ -48,3 +48,8 @@ stitch_niks_masala_modern_redesign/
 /3.png
 /a_professional_high_resolution_background_for_an_indian_spice_website._the.png
 /a_professional_high_resolution_landscape_background_for_an_indian_spice_website.png
+
+# Local image sources (only the optimized webp in assets/products are deployed)
+/Box Images/
+/Pouch Images/
+_convert_imgs.py
