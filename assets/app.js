@@ -736,7 +736,7 @@ async function getSB(){
   if(!window.supabase){
     await new Promise((res,rej)=>{
       const s=document.createElement('script');
-      s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+      s.src='assets/supabase.min.js';   // self-hosted so CSP/CDN/ad-blockers can't break auth
       s.onload=res; s.onerror=rej; document.head.appendChild(s);
     });
   }
