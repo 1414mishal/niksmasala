@@ -32,16 +32,16 @@
 const SR_BASE = 'https://apiv2.shiprocket.in/v1/external';
 let _srToken = null, _srExp = 0;
 
-export const onRequestPost = async (ctx) => {
-  /* Catch-all wrapper so ANY unexpected error returns a readable JSON
-     message instead of a bare 500 HTML page (which the admin panel could
-     only surface as the useless "Shipping failed"). */
-  try { return await _ship(ctx); }
+export async function onRequestPost(ctx){
+  /* Catch-all wrapper so ANY error returns readable JSON, never a bare
+     502. Plain function declarations (not const arrows) so there's zero
+     chance of a load-order / temporal-dead-zone issue. */
+  try { return await handleShip(ctx); }
   catch (e) {
     return json({error: 'Ship handler error: ' + (e && e.message ? e.message : String(e))}, 500);
   }
-};
-const _ship = async ({request, env}) => {
+}
+async function handleShip({request, env}){
   /* Bearer auth — timing-safe compare. BOTH sides trimmed: the ADMIN_TOKEN
      pasted into Cloudflare often carries a trailing newline/space, and the
      login endpoint returns the trimmed value to the browser. Without the
