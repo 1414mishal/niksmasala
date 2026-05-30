@@ -32,7 +32,7 @@ const SR_BASE = 'https://apiv2.shiprocket.in/v1/external';
 let _srToken = null, _srExp = 0;
 
 /* Build marker — confirm WHICH version is live via GET /api/admin/ship. */
-const SHIP_BUILD = 'ship-2026-bg-v7';
+const SHIP_BUILD = 'ship-2026-bg-v8';
 
 /* Hard per-request timeout on every outbound fetch. AbortSignal.timeout()
    is missing on older Workers compat dates, so we use an explicit
@@ -88,7 +88,7 @@ export async function onRequestGet({request, env}){
       const j = await r.json().catch(()=>({}));
       const addrs = (j && j.data && j.data.shipping_address) || [];
       return json({ok:true, step:'pickups', tookMs: Date.now()-t0,
-        usingInCode: env.SHIPROCKET_PICKUP_LOCATION || 'Primary (env var NOT set — using default)',
+        usingInCode: env.SHIPROCKET_PICKUP_LOCATION || 'work (env var not set — using code default)',
         registeredInShiprocket: addrs.map(a => a.pickup_location),
         build: SHIP_BUILD});
     } catch(e){
@@ -104,7 +104,7 @@ export async function onRequestGet({request, env}){
     hasAdminToken:        !!(env.ADMIN_TOKEN && env.ADMIN_TOKEN.trim()),
     hasShiprocketEmail:   !!env.SHIPROCKET_EMAIL,
     hasShiprocketPassword:!!env.SHIPROCKET_PASSWORD,
-    pickupLocation:       env.SHIPROCKET_PICKUP_LOCATION || 'Primary'
+    pickupLocation:       env.SHIPROCKET_PICKUP_LOCATION || 'work'
   });
 }
 
@@ -226,7 +226,7 @@ async function runShiprocketFlow(env, sb, o){
   const billing_customer_name = nameParts[0] || (cust.name || 'Customer');
   const billing_last_name = nameParts.slice(1).join(' ') || '.';   // SR requires non-empty
 
-  const PICKUP = env.SHIPROCKET_PICKUP_LOCATION || 'Primary';
+  const PICKUP = env.SHIPROCKET_PICKUP_LOCATION || 'work';
   const orderDate = (o.date || o.created_at || new Date().toISOString());
 
   const payload = {
@@ -286,7 +286,7 @@ async function runShiprocketFlow(env, sb, o){
     console.log('ship:', id, 'BG no shipment_id:', JSON.stringify(created).slice(0,400));
     await markFailure(env, sb, id,
       'No shipment_id from Shiprocket — ' + why +
-      ' [pickup_location sent="' + (env.SHIPROCKET_PICKUP_LOCATION || 'Primary') + '"]');
+      ' [pickup_location sent="' + (env.SHIPROCKET_PICKUP_LOCATION || 'work') + '"]');
     return;
   }
 
