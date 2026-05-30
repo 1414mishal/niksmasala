@@ -32,7 +32,7 @@ const SR_BASE = 'https://apiv2.shiprocket.in/v1/external';
 let _srToken = null, _srExp = 0;
 
 /* Build marker — confirm WHICH version is live via GET /api/admin/ship. */
-const SHIP_BUILD = 'ship-2026-bg-v8';
+const SHIP_BUILD = 'ship-2026-bg-v9';
 
 /* Hard per-request timeout on every outbound fetch. AbortSignal.timeout()
    is missing on older Workers compat dates, so we use an explicit
@@ -212,90 +212,104 @@ async function runShiprocketFlow(env, sb, o){
   const t0 = Date.now();
   console.log('ship:', id, 'BG start');
 
-  /* Total package weight in kg, floored at 0.5 kg — Shiprocket bills a
-     0.5 kg minimum regardless, and declaring less than the actual packed
-     weight risks a weight-discrepancy penalty when the courier weighs
-     the parcel. */
-  const items = Array.isArray(o.items) ? o.items : [];
-  let totalGrams = 0;
-  for(const it of items) totalGrams += (Number(it.grams) || 100) * (Number(it.qty) || 1);
-  const weightKg = Math.max(0.5, Math.round((totalGrams / 1000) * 100) / 100);
+  /* Shipment-level idempotency. If a previous attempt already created the
+     order in Shiprocket (shiprocket_shipment_id persisted) but failed at a
+     LATER step — e.g. AWB blocked by an empty wallet — REUSE that shipment
+     instead of creating a duplicate. Without this, every retry spawns
+     another SR order for the same NM26 id and the merchant gets billed/
+     confused by phantom duplicates. */
+  let shipment_id = o.shiprocket_shipment_id ? String(o.shiprocket_shipment_id) : '';
+  let sr_order_id = o.shiprocket_order_id ? String(o.shiprocket_order_id) : '';
 
-  const cust = o.customer || {};
-  const nameParts = String(cust.name || '').trim().split(/\s+/);
-  const billing_customer_name = nameParts[0] || (cust.name || 'Customer');
-  const billing_last_name = nameParts.slice(1).join(' ') || '.';   // SR requires non-empty
+  if(shipment_id){
+    console.log('ship:', id, 'BG reusing existing shipment_id=', shipment_id, '— skipping create');
+  } else {
+    /* Total package weight in kg, floored at 0.5 kg — Shiprocket bills a
+       0.5 kg minimum regardless, and declaring less than the actual packed
+       weight risks a weight-discrepancy penalty when the courier weighs
+       the parcel. */
+    const items = Array.isArray(o.items) ? o.items : [];
+    let totalGrams = 0;
+    for(const it of items) totalGrams += (Number(it.grams) || 100) * (Number(it.qty) || 1);
+    const weightKg = Math.max(0.5, Math.round((totalGrams / 1000) * 100) / 100);
 
-  const PICKUP = env.SHIPROCKET_PICKUP_LOCATION || 'work';
-  const orderDate = (o.date || o.created_at || new Date().toISOString());
+    const cust = o.customer || {};
+    const nameParts = String(cust.name || '').trim().split(/\s+/);
+    const billing_customer_name = nameParts[0] || (cust.name || 'Customer');
+    const billing_last_name = nameParts.slice(1).join(' ') || '.';   // SR requires non-empty
 
-  const payload = {
-    order_id: o.id,
-    order_date: String(orderDate).slice(0, 19).replace('T', ' '),
-    pickup_location: PICKUP,
-    channel_id: '',
-    comment: '',
-    billing_customer_name,
-    billing_last_name,
-    billing_address: String(cust.address || ''),
-    billing_city: String(cust.city || ''),
-    billing_pincode: String(cust.pincode || cust.pin || ''),
-    billing_state: String(cust.state || ''),
-    billing_country: 'India',
-    billing_email: String(cust.email || ''),
-    billing_phone: String(cust.phone || ''),
-    shipping_is_billing: true,
-    order_items: items.map(it => ({
-      name: String(it.name || it.pack || 'Spice').slice(0, 100),
-      sku: (String(it.id || 'sku') + '-' + String(it.pack || '').replace(/\s+/g,'-')).slice(0, 50),
-      units: Math.max(1, Number(it.qty) || 1),
-      selling_price: Number(it.price) || 0,
-      discount: 0,
-      tax: 0,
-      hsn: 0
-    })),
-    payment_method: (o.payment === 'COD') ? 'COD' : 'Prepaid',
-    sub_total: Number(o.subtotal) || Number(o.total) || 0,
-    length: +env.SHIPROCKET_DIM_L || 15,
-    breadth: +env.SHIPROCKET_DIM_B || 10,
-    height: +env.SHIPROCKET_DIM_H || 8,
-    weight: weightKg
-  };
+    const PICKUP = env.SHIPROCKET_PICKUP_LOCATION || 'work';
+    const orderDate = (o.date || o.created_at || new Date().toISOString());
 
-  /* 1. Create the order in Shiprocket */
-  let created;
-  try {
-    const t1 = Date.now();
-    created = await srCreateOrder(env, payload);
-    console.log('ship:', id, 'BG createOrder ok in', Date.now()-t1, 'ms shipment_id=', created.shipment_id);
-  } catch (e) {
-    console.log('ship:', id, 'BG createOrder FAILED:', e.message);
-    await markFailure(env, sb, id, 'Shiprocket order create failed: ' + e.message);
-    return;
+    const payload = {
+      order_id: o.id,
+      order_date: String(orderDate).slice(0, 19).replace('T', ' '),
+      pickup_location: PICKUP,
+      channel_id: '',
+      comment: '',
+      billing_customer_name,
+      billing_last_name,
+      billing_address: String(cust.address || ''),
+      billing_city: String(cust.city || ''),
+      billing_pincode: String(cust.pincode || cust.pin || ''),
+      billing_state: String(cust.state || ''),
+      billing_country: 'India',
+      billing_email: String(cust.email || ''),
+      billing_phone: String(cust.phone || ''),
+      shipping_is_billing: true,
+      order_items: items.map(it => ({
+        name: String(it.name || it.pack || 'Spice').slice(0, 100),
+        sku: (String(it.id || 'sku') + '-' + String(it.pack || '').replace(/\s+/g,'-')).slice(0, 50),
+        units: Math.max(1, Number(it.qty) || 1),
+        selling_price: Number(it.price) || 0,
+        discount: 0,
+        tax: 0,
+        hsn: 0
+      })),
+      payment_method: (o.payment === 'COD') ? 'COD' : 'Prepaid',
+      sub_total: Number(o.subtotal) || Number(o.total) || 0,
+      length: +env.SHIPROCKET_DIM_L || 15,
+      breadth: +env.SHIPROCKET_DIM_B || 10,
+      height: +env.SHIPROCKET_DIM_H || 8,
+      weight: weightKg
+    };
+
+    /* Create the order in Shiprocket */
+    let created;
+    try {
+      const t1 = Date.now();
+      created = await srCreateOrder(env, payload);
+      console.log('ship:', id, 'BG createOrder ok in', Date.now()-t1, 'ms shipment_id=', created.shipment_id);
+    } catch (e) {
+      console.log('ship:', id, 'BG createOrder FAILED:', e.message);
+      await markFailure(env, sb, id, 'Shiprocket order create failed: ' + e.message);
+      return;
+    }
+
+    shipment_id = created.shipment_id ? String(created.shipment_id) : '';
+    sr_order_id = created.order_id ? String(created.order_id) : '';
+    if(!shipment_id){
+      /* SR accepted the call (HTTP 200) but gave no shipment. The reason is
+         almost always in created.message (e.g. wrong pickup location). Surface
+         it verbatim in tracking_notes + include the pickup nickname we sent,
+         so the admin sees WHY without log-diving. */
+      const why = created && created.message ? created.message
+                : ('SR response: ' + JSON.stringify(created).slice(0,300));
+      console.log('ship:', id, 'BG no shipment_id:', JSON.stringify(created).slice(0,400));
+      await markFailure(env, sb, id,
+        'No shipment_id from Shiprocket — ' + why +
+        ' [pickup_location sent="' + (env.SHIPROCKET_PICKUP_LOCATION || 'work') + '"]');
+      return;
+    }
+
+    /* Persist the SR IDs now — even if AWB fails, the order EXISTS in
+       Shiprocket and the admin can finish the assignment from there. The
+       idempotency block above reuses these on the next retry. */
+    await patchOrder(env, sb, id, {
+      shiprocket_order_id:    sr_order_id,
+      shiprocket_shipment_id: shipment_id
+    });
   }
-
-  const shipment_id = created.shipment_id;
-  const sr_order_id = created.order_id;
-  if(!shipment_id){
-    /* SR accepted the call (HTTP 200) but gave no shipment. The reason is
-       almost always in created.message (e.g. wrong pickup location). Surface
-       it verbatim in tracking_notes + include the pickup nickname we sent,
-       so the admin sees WHY without log-diving. */
-    const why = created && created.message ? created.message
-              : ('SR response: ' + JSON.stringify(created).slice(0,300));
-    console.log('ship:', id, 'BG no shipment_id:', JSON.stringify(created).slice(0,400));
-    await markFailure(env, sb, id,
-      'No shipment_id from Shiprocket — ' + why +
-      ' [pickup_location sent="' + (env.SHIPROCKET_PICKUP_LOCATION || 'work') + '"]');
-    return;
-  }
-
-  /* Persist the SR IDs now — even if AWB fails, the order EXISTS in
-     Shiprocket and the admin can finish the assignment from there. */
-  await patchOrder(env, sb, id, {
-    shiprocket_order_id:    String(sr_order_id || ''),
-    shiprocket_shipment_id: String(shipment_id)
-  });
 
   /* 2. Assign AWB */
   let awb;
