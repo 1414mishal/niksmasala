@@ -70,7 +70,7 @@ buildHeader = function (activePage) {
 buildFooter = function () {
   const s = getSettings();
   return `
-  <footer style="background:#3d1f0e;color:#fed7aa;padding:80px 24px 32px;margin-top:80px;border-top:1px solid rgba(254,215,170,.1)">
+  <footer style="background:#3d1f0e;color:#fed7aa;padding:80px 24px 110px;margin-top:80px;border-top:1px solid rgba(254,215,170,.1)">
     <div style="max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:48px" class="footer-grid-premium">
       <div>
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
@@ -128,9 +128,13 @@ buildFooter = function () {
       </div>
     </div>
 
-    <div style="max-width:1280px;margin:48px auto 0;padding-top:24px;border-top:1px solid rgba(254,215,170,.12);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
-      <p style="color:rgba(254,215,170,.5);font:400 12px/1 'Manrope';margin:0">© <span data-year>2026</span> Niks Masala · ${esc(s.company)}. All rights reserved.</p>
-      <a href="admin.html" rel="nofollow" title="Staff login" style="color:rgba(254,215,170,.35);font:500 11px/1 'Manrope';letter-spacing:.1em;text-transform:uppercase;text-decoration:none;transition:color .25s" onmouseover="this.style.color='rgba(254,215,170,.7)'" onmouseout="this.style.color='rgba(254,215,170,.35)'">Admin</a>
+    <div style="max-width:1280px;margin:48px auto 0;padding-top:24px;border-top:1px solid rgba(254,215,170,.12);display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center">
+      <p style="color:rgba(254,215,170,.5);font:400 12px/1.5 'Manrope';margin:0">© <span data-year>2026</span> Niks Masala · ${esc(s.company)}. All rights reserved.</p>
+      <!-- Owner/staff login. Centered (not in a bottom corner) so the
+           floating WhatsApp + Cart buttons never cover it, and styled as
+           a clear pill so the owner can find it — still understated for
+           customers. -->
+      <a href="admin.html" rel="nofollow" title="Staff / owner login" style="display:inline-flex;align-items:center;gap:7px;color:rgba(254,215,170,.6);font:600 11px/1 'Manrope';letter-spacing:.14em;text-transform:uppercase;text-decoration:none;border:1px solid rgba(254,215,170,.28);padding:9px 18px;border-radius:999px;transition:all .25s" onmouseover="this.style.color='#fed7aa';this.style.borderColor='rgba(254,215,170,.55)';this.style.background='rgba(254,215,170,.08)'" onmouseout="this.style.color='rgba(254,215,170,.6)';this.style.borderColor='rgba(254,215,170,.28)';this.style.background='transparent'">🔒 Staff Login</a>
     </div>
   </footer>
   <style>

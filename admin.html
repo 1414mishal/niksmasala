@@ -133,17 +133,40 @@
   .img-url-row{display:flex;align-items:center;gap:8px;margin-top:8px}
   .img-url-row input{flex:1}
 
+  /* ===== Phone layout (PC layout above is untouched) ===== */
   @media(max-width:900px){
     .app{grid-template-columns:1fr}
-    .sidebar{position:relative;height:auto;flex-direction:row;overflow-x:auto;padding:12px}
-    .sidebar-bot,.brand{display:none}
-    .nav-item{padding:8px 14px;white-space:nowrap;border-left:none;border-bottom:3px solid transparent}
+    /* Sidebar → a sticky horizontal tab bar at the top */
+    .sidebar{position:sticky;top:0;z-index:50;height:auto;flex-direction:row;align-items:center;overflow-x:auto;overflow-y:hidden;padding:8px 10px;gap:4px;-webkit-overflow-scrolling:touch}
+    .sidebar::-webkit-scrollbar{display:none}
+    .brand{display:none}
+    .nav-item{padding:9px 14px;white-space:nowrap;border-left:none;border-bottom:3px solid transparent;border-radius:8px 8px 0 0;font-size:13px}
     .nav-item.active{border-left:none;border-bottom-color:var(--turmeric)}
-    main{padding:18px}
-    .stats{grid-template-columns:repeat(2,1fr)}
+    /* Keep View Store + Sign Out reachable — pin them to the right end of the tab row */
+    .sidebar-bot{display:flex !important;gap:6px;margin:0 0 0 auto;padding:0 6px;border:none;align-items:center;white-space:nowrap}
+    .sidebar-bot br{display:none}
+    .sidebar-bot button{padding:8px 10px;font-size:12px}
+    main{padding:16px}
+    /* Topbar stacks: heading on top, actions full-width below */
+    .topbar{flex-direction:column;align-items:stretch;gap:12px;margin-bottom:18px}
+    .topbar h1{font-size:22px}
+    .topbar-actions{width:100%;flex-wrap:wrap}
+    .topbar-actions .btn,.topbar-actions select{flex:1;justify-content:center}
+    /* Stats → 2-up, tighter */
+    .stats{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:18px}
+    .stat-card{padding:14px}
+    .stat-card .val{font-size:24px}
     .form-grid{grid-template-columns:1fr}
-    table{font-size:13px}
-    th:nth-child(3),td:nth-child(3){display:none}
+    .panel{padding:16px;margin-bottom:14px}
+    /* Wide tables scroll sideways instead of squishing — every column stays
+       readable. Overrides the inline overflow:hidden on the table panels so
+       only the table scrolls, not the whole page. */
+    .panel[style*="overflow:hidden"]{overflow-x:auto !important;-webkit-overflow-scrolling:touch}
+    table{font-size:13px;min-width:680px}
+    th,td{padding:10px 8px}
+    /* Modals fill the small screen */
+    .modal{padding:10px}
+    .modal-box{padding:18px;max-height:94vh}
   }
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
