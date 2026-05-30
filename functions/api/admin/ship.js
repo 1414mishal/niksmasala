@@ -24,9 +24,13 @@
  * Rate-limited upstream by functions/_middleware.js (10/min/IP).
  */
 
-import {
-  srCreateOrder, srAssignAWB, srGeneratePickup, srGenerateLabel
-} from '../../_lib/shiprocket.js';
+/* Shiprocket client is INLINED at the bottom of this file (not imported
+   from _lib/shiprocket.js). A module-resolution failure on the shared
+   import was crashing the whole route at load time and returning a bare
+   502 that the handler's try/catch could never reach. Self-contained =
+   no import to fail. */
+const SR_BASE = 'https://apiv2.shiprocket.in/v1/external';
+let _srToken = null, _srExp = 0;
 
 export const onRequestPost = async (ctx) => {
   /* Catch-all wrapper so ANY unexpected error returns a readable JSON
@@ -232,4 +236,63 @@ function json(obj, status = 200){
   return new Response(JSON.stringify(obj), {
     status, headers: {'Content-Type': 'application/json'}
   });
+}
+
+/* ===== Shiprocket REST client (inlined; was functions/_lib/shiprocket.js) ===== */
+async function srToken(env){
+  if(!env.SHIPROCKET_EMAIL || !env.SHIPROCKET_PASSWORD){
+    throw new Error('Shiprocket not configured — set SHIPROCKET_EMAIL + SHIPROCKET_PASSWORD in Cloudflare env vars.');
+  }
+  const now = Date.now();
+  if(_srToken && _srExp > now + 3_600_000) return _srToken;
+  const res = await fetch(SR_BASE + '/auth/login', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({email: env.SHIPROCKET_EMAIL, password: env.SHIPROCKET_PASSWORD})
+  });
+  if(!res.ok){
+    throw new Error('Shiprocket login failed (check SHIPROCKET_EMAIL/PASSWORD): ' + (await res.text()).slice(0,180));
+  }
+  const j = await res.json();
+  if(!j.token) throw new Error('Shiprocket login returned no token: ' + JSON.stringify(j).slice(0,180));
+  _srToken = j.token; _srExp = now + 9*24*60*60*1000;
+  return _srToken;
+}
+async function srFetch(env, path, init = {}){
+  const tok = await srToken(env);
+  const headers = {...(init.headers||{}), 'Content-Type':'application/json', 'Authorization':'Bearer '+tok};
+  let res = await fetch(SR_BASE + path, {...init, headers});
+  if(res.status === 401){
+    _srToken = null; _srExp = 0;
+    const tok2 = await srToken(env);
+    res = await fetch(SR_BASE + path, {...init, headers:{...headers,'Authorization':'Bearer '+tok2}});
+  }
+  return res;
+}
+async function srCreateOrder(env, payload){
+  const r = await srFetch(env, '/orders/create/adhoc', {method:'POST', body: JSON.stringify(payload)});
+  const j = await r.json().catch(()=>({}));
+  if(!r.ok){
+    const msg = j.message || (j.errors && JSON.stringify(j.errors)) || JSON.stringify(j);
+    throw new Error('Shiprocket order create failed: ' + String(msg).slice(0,220));
+  }
+  return j;
+}
+async function srAssignAWB(env, shipment_id, courier_id){
+  const body = {shipment_id}; if(courier_id) body.courier_id = courier_id;
+  const r = await srFetch(env, '/courier/assign/awb', {method:'POST', body: JSON.stringify(body)});
+  const j = await r.json().catch(()=>({}));
+  const data = j && j.response && j.response.data;
+  if(!r.ok || !data || !data.awb_code){
+    const msg = j.message || (data && data.message) || JSON.stringify(j);
+    throw new Error('AWB assignment failed: ' + String(msg).slice(0,220));
+  }
+  return data;
+}
+async function srGeneratePickup(env, shipment_id){
+  const r = await srFetch(env, '/courier/generate/pickup', {method:'POST', body: JSON.stringify({shipment_id: Array.isArray(shipment_id)?shipment_id:[shipment_id]})});
+  return r.json().catch(()=>({}));
+}
+async function srGenerateLabel(env, shipment_id){
+  const r = await srFetch(env, '/courier/generate/label', {method:'POST', body: JSON.stringify({shipment_id: Array.isArray(shipment_id)?shipment_id:[shipment_id]})});
+  return r.json().catch(()=>({}));
 }
