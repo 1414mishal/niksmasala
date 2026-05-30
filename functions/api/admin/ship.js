@@ -35,7 +35,35 @@ let _srToken = null, _srExp = 0;
 /* Build marker — included in responses so we can confirm WHICH version of
    this function is actually deployed. If an error/success ever lacks this,
    you're running stale code (re-deploy the latest commit). */
-const SHIP_BUILD = 'ship-2026-inline-fndecl-v3';
+const SHIP_BUILD = 'ship-2026-timeout-v4';
+
+/* Every network call gets a hard timeout. A hung upstream (Shiprocket or
+   Supabase) otherwise makes the whole function run until Cloudflare KILLS
+   it — which produces an uncatchable bare 502 with no error body (exactly
+   the symptom we hit). With a timeout, a hang throws AbortError, which our
+   try/catch turns into a readable message. */
+const FETCH_TIMEOUT_MS = 12000;
+function tfetch(url, init){
+  const opts = {...(init || {})};
+  try { opts.signal = AbortSignal.timeout(FETCH_TIMEOUT_MS); } catch(_){}
+  return fetch(url, opts);
+}
+
+/* GET /api/admin/ship — unauthenticated health check (booleans only, no
+   secret values). Visit https://niksmasala.com/api/admin/ship in a browser
+   to instantly confirm which build is live and whether the Shiprocket +
+   admin env vars are actually set. */
+export async function onRequestGet({env}){
+  return json({
+    ok: true,
+    build: SHIP_BUILD,
+    message: 'ship endpoint alive',
+    hasAdminToken:        !!(env.ADMIN_TOKEN && env.ADMIN_TOKEN.trim()),
+    hasShiprocketEmail:   !!env.SHIPROCKET_EMAIL,
+    hasShiprocketPassword:!!env.SHIPROCKET_PASSWORD,
+    pickupLocation:       env.SHIPROCKET_PICKUP_LOCATION || 'Primary'
+  });
+}
 
 export async function onRequestPost(ctx){
   /* Catch-all wrapper so ANY error returns readable JSON, never a bare
@@ -73,7 +101,7 @@ async function handleShip({request, env}){
     'apikey': env.SUPABASE_SERVICE_ROLE,
     'Authorization': 'Bearer ' + env.SUPABASE_SERVICE_ROLE
   };
-  const oRes = await fetch(
+  const oRes = await tfetch(
     `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(order_id)}&select=*`,
     {headers: sb}
   );
@@ -219,7 +247,7 @@ async function handleShip({request, env}){
 };
 
 async function patchOrder(env, sb, id, fields){
-  return fetch(
+  return tfetch(
     `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(id)}`,
     {
       method: 'PATCH',
@@ -250,7 +278,7 @@ async function srToken(env){
   }
   const now = Date.now();
   if(_srToken && _srExp > now + 3_600_000) return _srToken;
-  const res = await fetch(SR_BASE + '/auth/login', {
+  const res = await tfetch(SR_BASE + '/auth/login', {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({email: env.SHIPROCKET_EMAIL, password: env.SHIPROCKET_PASSWORD})
   });
@@ -265,11 +293,11 @@ async function srToken(env){
 async function srFetch(env, path, init = {}){
   const tok = await srToken(env);
   const headers = {...(init.headers||{}), 'Content-Type':'application/json', 'Authorization':'Bearer '+tok};
-  let res = await fetch(SR_BASE + path, {...init, headers});
+  let res = await tfetch(SR_BASE + path, {...init, headers});
   if(res.status === 401){
     _srToken = null; _srExp = 0;
     const tok2 = await srToken(env);
-    res = await fetch(SR_BASE + path, {...init, headers:{...headers,'Authorization':'Bearer '+tok2}});
+    res = await tfetch(SR_BASE + path, {...init, headers:{...headers,'Authorization':'Bearer '+tok2}});
   }
   return res;
 }
