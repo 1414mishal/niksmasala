@@ -52,7 +52,7 @@ const CSP = [
 function applySecurityHeaders(resp, originAllow){
   // CORS (only for /api/* — but harmless on others)
   resp.headers.set('Access-Control-Allow-Origin', originAllow);
-  resp.headers.set('Access-Control-Allow-Methods','GET,POST,OPTIONS');
+  resp.headers.set('Access-Control-Allow-Methods','GET,POST,PATCH,DELETE,OPTIONS');
   resp.headers.set('Access-Control-Allow-Headers','Content-Type,Authorization');
   resp.headers.set('Access-Control-Max-Age','86400');
   resp.headers.set('Vary','Origin');

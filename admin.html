@@ -653,6 +653,39 @@ async function adminPatchOrder(id, fields){
     return {ok:true, order:j.order};
   }catch(ex){ return {ok:false, error: ex.message}; }
 }
+async function adminDeleteOrder(id){
+  const token = getAdminToken();
+  if(!token) return {ok:false, error:'Session expired'};
+  try{
+    const r = await fetch('/api/admin/orders?id='+encodeURIComponent(id), {
+      method:'DELETE',
+      headers:{'Authorization':'Bearer '+token}
+    });
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok) return {ok:false, error: j.error || ('HTTP '+r.status)};
+    return {ok:true};
+  }catch(ex){ return {ok:false, error: ex.message}; }
+}
+/* Permanently delete an order. Warns harder for PAID/active orders —
+   those should normally be set to "Cancelled" (keeps the record for
+   accounting/GST) rather than hard-deleted. Test + abandoned carts
+   are safe to delete. */
+async function deleteOrder(id){
+  const o = getOrders().find(x=>x.id===id);
+  const isLive = o && ['Processing','Shipped','Delivered'].includes(o.status);
+  const msg = isLive
+    ? `⚠️ Order ${id} is PAID/active (${o.status}).\n\nDeleting it permanently removes the payment + customer record — bad for accounting/GST. For a real order you usually want the "Cancelled" status instead, which keeps the record.\n\nDelete permanently anyway?`
+    : `Delete order ${id} permanently? This can't be undone.\n\n(Fine for test orders and abandoned carts.)`;
+  if(!confirm(msg)) return;
+  const res = await adminDeleteOrder(id);
+  if(res.ok){
+    setOrders(getOrders().filter(x=>x.id!==id));
+    renderOrders(); renderDashboard();
+    toast('🗑 Order deleted','ok');
+  }else{
+    toast('Delete failed: '+res.error,'err');
+  }
+}
 
 async function showApp(){
   document.getElementById('login').style.display='none';
@@ -921,7 +954,10 @@ function renderOrders(){
         ${shipBtnHtml}
       </td>
       <td><small>${esc(new Date(o.date).toLocaleDateString('en-IN'))}<br>${esc(new Date(o.date).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}))}</small></td>
-      <td><button class="btn btn-secondary btn-sm" onclick="viewOrder('${attr(o.id)}')">View</button></td>
+      <td>
+        <button class="btn btn-secondary btn-sm" onclick="viewOrder('${attr(o.id)}')">View</button>
+        <button class="btn btn-sm" onclick="deleteOrder('${attr(o.id)}')" title="Delete this order" style="background:#fde8e8;color:#c0392b;border:1px solid #f5c6cb;margin-top:6px;display:block;width:100%">🗑 Delete</button>
+      </td>
     </tr>`;}).join('');
 }
 async function refreshOrders(){

@@ -83,6 +83,32 @@ export const onRequestPatch = async ({request, env}) => {
   return json({ ok: true, order: rows[0] });
 };
 
+export const onRequestDelete = async ({request, env}) => {
+  const auth = checkAuth(request, env);
+  if(auth) return auth;
+
+  const url = new URL(request.url);
+  const id = (url.searchParams.get('id') || '').trim();
+  if(!/^[A-Za-z0-9_-]{1,40}$/.test(id)){
+    return json({error: 'Missing or invalid order id'}, 400);
+  }
+
+  const sb = sbHeaders(env);
+  const res = await fetch(
+    `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(id)}`,
+    { method: 'DELETE', headers: {...sb, 'Prefer': 'return=representation'} }
+  );
+  if(!res.ok){
+    const t = await res.text();
+    return json({error: 'Delete failed', detail: t.slice(0,200)}, 502);
+  }
+  const rows = await res.json().catch(()=>[]);
+  if(!Array.isArray(rows) || rows.length === 0){
+    return json({error: 'Order not found'}, 404);
+  }
+  return json({ ok: true, deleted: id });
+};
+
 /* ---- helpers ---- */
 function checkAuth(request, env){
   const authHdr = request.headers.get('Authorization') || '';
