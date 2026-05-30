@@ -29,10 +29,16 @@ import {
 } from '../../_lib/shiprocket.js';
 
 export const onRequestPost = async ({request, env}) => {
-  /* Bearer auth — same timing-safe compare used by /api/admin/products */
+  /* Bearer auth — timing-safe compare. BOTH sides trimmed: the ADMIN_TOKEN
+     pasted into Cloudflare often carries a trailing newline/space, and the
+     login endpoint returns the trimmed value to the browser. Without the
+     trim here, the stored (trimmed) token never matches the (untrimmed) env
+     value — which 401'd ONLY this endpoint and logged the admin out on the
+     Ship button. login/products/orders already trim; this brings ship in line. */
   const authHdr = request.headers.get('Authorization') || '';
-  const tok = authHdr.replace(/^Bearer\s+/i, '');
-  if(!env.ADMIN_TOKEN || !timingSafeEq(tok, env.ADMIN_TOKEN)){
+  const tok = authHdr.replace(/^Bearer\s+/i, '').trim();
+  const expected = (env.ADMIN_TOKEN || '').trim();
+  if(!expected || !timingSafeEq(tok, expected)){
     return json({error: 'Unauthorized'}, 401);
   }
 
@@ -76,7 +82,13 @@ export const onRequestPost = async ({request, env}) => {
   const items = Array.isArray(o.items) ? o.items : [];
   let totalGrams = 0;
   for(const it of items) totalGrams += (Number(it.grams) || 100) * (Number(it.qty) || 1);
-  const weightKg = Math.max(0.1, Math.round((totalGrams / 1000) * 100) / 100);
+  /* Weight = sum of each item's grams × qty, in kg. Floored at 0.5 kg
+     because Shiprocket bills a 0.5 kg minimum regardless, and DECLARING
+     less than the actual packed weight (product + box + padding) risks a
+     weight-discrepancy penalty when the courier weighs the real parcel.
+     A 50 g spice pouch ships at the 0.5 kg minimum anyway; heavier orders
+     use their real summed weight. */
+  const weightKg = Math.max(0.5, Math.round((totalGrams / 1000) * 100) / 100);
 
   /* Build the Shiprocket create-order payload */
   const cust = o.customer || {};
