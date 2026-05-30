@@ -1048,11 +1048,13 @@ async function shipOrder(id, btn){
       return;
     }
     if(!r.ok){
-      /* Partial success: order is in SR but no AWB. Tell admin to finish in SR dashboard. */
+      /* Use alert() not toast() for ship errors — the real Shiprocket
+         message matters and a 2.8s toast that truncates is useless for
+         diagnosing. */
       if(j.shiprocket_shipment_id){
-        toast('Shipment created in Shiprocket (#'+j.shiprocket_shipment_id+') but courier could not be auto-assigned. Open your Shiprocket dashboard to pick one manually.','err');
+        alert('Order WAS created in Shiprocket (shipment #'+j.shiprocket_shipment_id+') but a courier could not be auto-assigned.\n\nUsual causes: KYC still pending, empty wallet, or no serviceable courier for that PIN. The order is already in your Shiprocket dashboard — assign a courier there manually.');
       } else {
-        toast(j.error || 'Shipping failed','err');
+        alert('Shipping failed (HTTP '+r.status+')\n\n'+(j.error || 'No detail returned — the function may have crashed. Check Cloudflare → Pages → Deployments → Real-time logs.')+(j.detail ? ('\n\nDetail: '+j.detail) : ''));
       }
       if(btn){ btn.disabled = false; btn.textContent = original; }
       return;

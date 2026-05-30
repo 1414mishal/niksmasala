@@ -28,7 +28,16 @@ import {
   srCreateOrder, srAssignAWB, srGeneratePickup, srGenerateLabel
 } from '../../_lib/shiprocket.js';
 
-export const onRequestPost = async ({request, env}) => {
+export const onRequestPost = async (ctx) => {
+  /* Catch-all wrapper so ANY unexpected error returns a readable JSON
+     message instead of a bare 500 HTML page (which the admin panel could
+     only surface as the useless "Shipping failed"). */
+  try { return await _ship(ctx); }
+  catch (e) {
+    return json({error: 'Ship handler error: ' + (e && e.message ? e.message : String(e))}, 500);
+  }
+};
+const _ship = async ({request, env}) => {
   /* Bearer auth — timing-safe compare. BOTH sides trimmed: the ADMIN_TOKEN
      pasted into Cloudflare often carries a trailing newline/space, and the
      login endpoint returns the trimmed value to the browser. Without the
