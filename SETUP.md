@@ -76,12 +76,28 @@ Free account, 2% per successful transaction (no setup or monthly fee).
      and `Key Secret`. Use these until you've tested end-to-end.
    * Once KYC passes: flip to **Live mode** and generate live keys.
      Same fields — different prefix (`rzp_live_...`).
-4. **Settings → Webhooks** (recommended, optional for v1):
-   * Add `https://niksmasala.com/api/order/verify` as a webhook URL.
-   * Subscribe to: `payment.captured`, `payment.failed`.
-   * Set the webhook secret — paste it into Cloudflare env as
-     `RAZORPAY_WEBHOOK_SECRET`. (Our verify.js can be extended to also
-     accept webhook signatures — extra belt-and-braces.)
+4. **Settings → Webhooks** — ⚠️ **NOT optional. Do this before launch.**
+   This is the safety net that stops orders getting stranded in
+   `AwaitingPayment` when a customer's browser drops out after paying
+   (closed tab, dead network, slow redirect). Without it, you have to
+   manually rescue those orders. With it, Razorpay tells our server
+   directly and the order is marked Processing automatically.
+   * **+ Add New Webhook**
+   * Webhook URL: `https://niksmasala.com/api/order/webhook`
+     (use `https://niksmasala.pages.dev/api/order/webhook` until DNS
+     is pointed)
+   * Secret: type a strong random string (e.g. `openssl rand -hex 24`)
+   * Active events: tick **`payment.captured`** (that's the only one
+     the handler needs)
+   * Save.
+   * Then Cloudflare → Pages → niksmasala → Settings → Variables and
+     Secrets → add **`RAZORPAY_WEBHOOK_SECRET`** = the same secret you
+     just typed. Mark it Encrypted. Retry deployment.
+   * The handler lives at `functions/api/order/webhook.js`. It verifies
+     the `X-Razorpay-Signature` HMAC, then runs the exact same
+     mark-paid logic as the browser `/verify` call — and the two can
+     never double-fulfil because both flip status with an atomic
+     `status = AwaitingPayment` guard.
 
 ---
 
@@ -128,6 +144,7 @@ domain free, automatic SSL.
    | `SUPABASE_SERVICE_ROLE` | `eyJhbGc...` (the SECRET one) | Supabase Step 1.7 |
    | `RAZORPAY_KEY_ID` | `rzp_test_xxx` or `rzp_live_xxx` | Razorpay Step 2.3 |
    | `RAZORPAY_KEY_SECRET` | the secret half | Razorpay Step 2.3 |
+   | `RAZORPAY_WEBHOOK_SECRET` | the secret you set when creating the webhook | Razorpay Step 2.4 — **required before launch** so paid orders never get stranded if a browser drops. Powers `/api/order/webhook`. |
    | `RESEND_API_KEY` | `re_xxx` | Resend Step 3.3 |
    | `RESEND_FROM` | `Niks Masala <orders@niksmasala.com>` | **MUST be a verified-domain address — Resend will NOT send FROM a Gmail / Yahoo / Outlook address.** Verify `niksmasala.com` with Resend (Step 3) first, then use any address `@niksmasala.com` here. Until verified, use Resend's sandbox `Niks Masala <onboarding@resend.dev>` (only sends to your own verified email). |
    | `OPS_EMAIL` | `inihaex@gmail.com` | where contact-form submissions get delivered. This is just a destination, not a sender — Gmail is fine here. |
