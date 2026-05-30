@@ -63,7 +63,7 @@
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
   .stat-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px}
   .stat-card .lbl{font-size:12px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-weight:600}
-  .stat-card .val{font-family:'Playfair Display',serif;font-size:32px;color:var(--red);margin-top:6px}
+  .stat-card .val{font-family:'Manrope','Inter',sans-serif;font-weight:800;font-size:34px;letter-spacing:-0.02em;font-feature-settings:'tnum' 1;color:var(--red);margin-top:6px}
   .stat-card .sub{font-size:12px;color:var(--muted);margin-top:4px}
 
   .panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px;margin-bottom:20px}
@@ -282,20 +282,8 @@
             <div class="form-row"><label>Free Shipping Above (₹)</label><input type="number" name="shippingFree" min="0"></div>
             <div class="form-row"><label>Shipping Fee (₹)</label><input type="number" name="shippingFee" min="0"></div>
           </div>
-          <div class="form-row"><label>Razorpay Key ID <small style="color:var(--muted);text-transform:none;letter-spacing:0">(from razorpay.com dashboard — use <code>rzp_test_...</code> for testing, <code>rzp_live_...</code> to accept real payments)</small></label><input type="text" name="razorpayKey" placeholder="rzp_test_xxxxxxxxxxxx"></div>
           <button class="btn btn-primary" type="submit">Save Settings</button>
         </form>
-      </div>
-      <div class="panel">
-        <h2 style="font-size:18px;margin-bottom:18px">Admin Password</h2>
-        <p style="color:var(--muted);font-size:14px;line-height:1.55;margin-bottom:10px">
-          Your admin password lives on the server (Cloudflare → Pages → niksmasala → Settings → Variables and Secrets → <code>ADMIN_PASSWORD</code>).
-          To rotate it: edit the value there, click <b>Save</b>, then <b>Retry deployment</b>. Takes ~60 seconds.
-        </p>
-        <p style="color:var(--muted);font-size:13px;line-height:1.55">
-          Why server-side? A browser-side password can be reset by anyone with DevTools.
-          Keeping it in Cloudflare means even if someone steals your laptop, they still can't sign in without the env secret.
-        </p>
       </div>
     </section>
 
@@ -492,7 +480,7 @@ const _PIMG = {
 function _apick(name){ return _PIMG[name] || 'nobgnikslogo.webp'; }
 
 const DEFAULT_PRODUCTS=_ARAW.map((r,i)=>{const minP=Math.min(...r.variants.map(v=>v.price));return{id:'p'+(i+1),name:r.name,slug:r.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),category:_acat(r.name),price:minP,image:_apick(r.name),variants:r.variants,rating:4.6+(i%4)*0.1,reviews:20+(i*7)%180,desc:'Authentic Mangalorean spice blend — traditionally crafted, export-quality.',long:'Packed at our FSSAI-certified 11,000 sq.ft. facility in Yeyyadi, Mangalore.',badge:r.badge||null,stock:50};});
-const DEFAULT_SETTINGS = {brand:'Niks Masala',phone:'+91 73385 19975',email:'inihaex@gmail.com',address:'Plot no. L-6, 5-50, Yeyyadi Industrial Area, Mangaluru, Karnataka 575015',currency:'₹',shippingFree:799,shippingFee:60,shippingFeeHeavy:120,razorpayKey:'rzp_test_SgFzfBVh4i57d2'};
+const DEFAULT_SETTINGS = {brand:'Niks Masala',phone:'+91 73385 19975',email:'inihaex@gmail.com',address:'Plot no. L-6, 5-50, Yeyyadi Industrial Area, Mangaluru, Karnataka 575015',currency:'₹',shippingFree:799,shippingFee:60,shippingFeeHeavy:120};
 /* Admin auth is server-side now — /api/admin/login validates the password
    against env.ADMIN_PASSWORD (timing-safe compare) and returns env.ADMIN_TOKEN.
    Rate-limited to 5 attempts / 10 min per IP in functions/_middleware.js.
@@ -740,7 +728,7 @@ async function showApp(){
     if(co) setOrders(co);
     // Settings: merge cloud values over defaults
     if(cs&&cs.length){
-      const s={};cs.forEach(r=>{s[r.key]=isNaN(r.value)||['brand','phone','email','address','currency','razorpayKey'].includes(r.key)?r.value:+r.value});
+      const s={};cs.forEach(r=>{s[r.key]=isNaN(r.value)||['brand','phone','email','address','currency'].includes(r.key)?r.value:+r.value});
       setSettings({...DEFAULT_SETTINGS,...s});
     }
   }catch(ex){console.warn('Cloud sync failed:',ex)}
@@ -1122,7 +1110,7 @@ function fillSettingsForm(){
 async function saveSettings(e){
   e.preventDefault();
   const fd=new FormData(e.target);
-  const s={};fd.forEach((v,k)=>s[k]=isNaN(v)||['brand','phone','email','address','currency','razorpayKey'].includes(k)?v:+v);
+  const s={};fd.forEach((v,k)=>s[k]=isNaN(v)||['brand','phone','email','address','currency'].includes(k)?v:+v);
   setSettings(s);
   try{
     const db=await getDB();
