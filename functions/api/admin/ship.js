@@ -54,7 +54,39 @@ function tfetch(url, init){
    secret values). Visit https://niksmasala.com/api/admin/ship in a browser
    to instantly confirm which build is live and whether the Shiprocket +
    admin env vars are actually set. */
-export async function onRequestGet({env}){
+export async function onRequestGet({request, env}){
+  const url = new URL(request.url);
+  const test = url.searchParams.get('test');
+
+  /* /api/admin/ship?test=auth — actually attempt the Shiprocket login from
+     Cloudflare's edge and report the result. This pinpoints whether the
+     hang is in reaching Shiprocket at all (no Ship-button click needed). */
+  if(test === 'auth'){
+    const t0 = Date.now();
+    try {
+      const tok = await srToken(env);
+      return json({ok:true, step:'auth', tookMs: Date.now()-t0,
+        tokenPreview: String(tok||'').slice(0,10)+'…', build: SHIP_BUILD});
+    } catch(e){
+      return json({ok:false, step:'auth', tookMs: Date.now()-t0,
+        error: String(e && e.message ? e.message : e), build: SHIP_BUILD}, 200);
+    }
+  }
+
+  /* ?test=ping — raw fetch to Shiprocket's host with NO auth, just to see
+     if the edge can even reach apiv2.shiprocket.in. */
+  if(test === 'ping'){
+    const t0 = Date.now();
+    try {
+      const r = await tfetch(SR_BASE + '/auth/login', {method:'POST',
+        headers:{'Content-Type':'application/json'}, body: JSON.stringify({email:'x',password:'x'})});
+      return json({ok:true, step:'ping', tookMs: Date.now()-t0, status: r.status, build: SHIP_BUILD});
+    } catch(e){
+      return json({ok:false, step:'ping', tookMs: Date.now()-t0,
+        error: String(e && e.message ? e.message : e), build: SHIP_BUILD}, 200);
+    }
+  }
+
   return json({
     ok: true,
     build: SHIP_BUILD,
