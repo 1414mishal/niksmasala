@@ -129,8 +129,8 @@ domain free, automatic SSL.
    | `RAZORPAY_KEY_ID` | `rzp_test_xxx` or `rzp_live_xxx` | Razorpay Step 2.3 |
    | `RAZORPAY_KEY_SECRET` | the secret half | Razorpay Step 2.3 |
    | `RESEND_API_KEY` | `re_xxx` | Resend Step 3.3 |
-   | `RESEND_FROM` | `Niks Masala <orders@niksmasala.com>` | your own |
-   | `OPS_EMAIL` | `hello@niksmasala.com` | where contact-form goes |
+   | `RESEND_FROM` | `Niks Masala <orders@niksmasala.com>` | **MUST be a verified-domain address — Resend will NOT send FROM a Gmail / Yahoo / Outlook address.** Verify `niksmasala.com` with Resend (Step 3) first, then use any address `@niksmasala.com` here. Until verified, use Resend's sandbox `Niks Masala <onboarding@resend.dev>` (only sends to your own verified email). |
+   | `OPS_EMAIL` | `inihaex@gmail.com` | where contact-form submissions get delivered. This is just a destination, not a sender — Gmail is fine here. |
    | `FREE_SHIPPING_THRESHOLD` | `799` | business rule |
    | `SHIPPING_FEE_LIGHT` | `60` | business rule |
    | `SHIPPING_FEE_HEAVY` | `120` | business rule |

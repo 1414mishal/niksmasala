@@ -304,7 +304,7 @@ const DEFAULT_PRODUCTS = _RAW.map((r,i)=>{
 const DEFAULT_SETTINGS = {
   brand:'Niks Masala',
   phone:'+91 73385 19975',
-  email:'hello@niksmasala.com',
+  email:'inihaex@gmail.com',
   address:'Plot no. L-6, 5-50, Yeyyadi Industrial Area, Mangaluru, Dakshina Kannada, Karnataka 575015',
   gstin:'29AAFCI2793E1ZD',
   company:'Iniha Exports Pvt Ltd',
