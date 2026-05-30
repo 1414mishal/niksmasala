@@ -32,7 +32,7 @@ const SR_BASE = 'https://apiv2.shiprocket.in/v1/external';
 let _srToken = null, _srExp = 0;
 
 /* Build marker — confirm WHICH version is live via GET /api/admin/ship. */
-const SHIP_BUILD = 'ship-2026-bg-v6';
+const SHIP_BUILD = 'ship-2026-bg-v7';
 
 /* Hard per-request timeout on every outbound fetch. AbortSignal.timeout()
    is missing on older Workers compat dates, so we use an explicit
@@ -72,6 +72,27 @@ export async function onRequestGet({request, env}){
       return json({ok:true, step:'ping', tookMs: Date.now()-t0, status: r.status, build: SHIP_BUILD});
     } catch(e){
       return json({ok:false, step:'ping', tookMs: Date.now()-t0,
+        error: String(e && e.message ? e.message : e), build: SHIP_BUILD}, 200);
+    }
+  }
+
+  /* ?test=pickups — list the pickup-location NICKNAMES actually registered
+     in this Shiprocket account, alongside the nickname the code is using.
+     If they don't match, that's why create-order returns no shipment_id:
+     Shiprocket needs the pickup_location field to be EXACTLY a registered
+     nickname. */
+  if(test === 'pickups'){
+    const t0 = Date.now();
+    try {
+      const r = await srFetch(env, '/settings/company/pickup', {method:'GET'});
+      const j = await r.json().catch(()=>({}));
+      const addrs = (j && j.data && j.data.shipping_address) || [];
+      return json({ok:true, step:'pickups', tookMs: Date.now()-t0,
+        usingInCode: env.SHIPROCKET_PICKUP_LOCATION || 'Primary (env var NOT set — using default)',
+        registeredInShiprocket: addrs.map(a => a.pickup_location),
+        build: SHIP_BUILD});
+    } catch(e){
+      return json({ok:false, step:'pickups', tookMs: Date.now()-t0,
         error: String(e && e.message ? e.message : e), build: SHIP_BUILD}, 200);
     }
   }
@@ -256,8 +277,16 @@ async function runShiprocketFlow(env, sb, o){
   const shipment_id = created.shipment_id;
   const sr_order_id = created.order_id;
   if(!shipment_id){
-    console.log('ship:', id, 'BG no shipment_id returned:', JSON.stringify(created).slice(0,200));
-    await markFailure(env, sb, id, 'Shiprocket did not return shipment_id');
+    /* SR accepted the call (HTTP 200) but gave no shipment. The reason is
+       almost always in created.message (e.g. wrong pickup location). Surface
+       it verbatim in tracking_notes + include the pickup nickname we sent,
+       so the admin sees WHY without log-diving. */
+    const why = created && created.message ? created.message
+              : ('SR response: ' + JSON.stringify(created).slice(0,300));
+    console.log('ship:', id, 'BG no shipment_id:', JSON.stringify(created).slice(0,400));
+    await markFailure(env, sb, id,
+      'No shipment_id from Shiprocket — ' + why +
+      ' [pickup_location sent="' + (env.SHIPROCKET_PICKUP_LOCATION || 'Primary') + '"]');
     return;
   }
 
