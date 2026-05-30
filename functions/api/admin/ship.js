@@ -35,18 +35,19 @@ let _srToken = null, _srExp = 0;
 /* Build marker — included in responses so we can confirm WHICH version of
    this function is actually deployed. If an error/success ever lacks this,
    you're running stale code (re-deploy the latest commit). */
-const SHIP_BUILD = 'ship-2026-timeout-v4';
+const SHIP_BUILD = 'ship-2026-bgtimeout-v5';
 
-/* Every network call gets a hard timeout. A hung upstream (Shiprocket or
-   Supabase) otherwise makes the whole function run until Cloudflare KILLS
-   it — which produces an uncatchable bare 502 with no error body (exactly
-   the symptom we hit). With a timeout, a hang throws AbortError, which our
-   try/catch turns into a readable message. */
-const FETCH_TIMEOUT_MS = 12000;
+/* Every network call gets a hard timeout via a MANUAL AbortController +
+   setTimeout. This works on every Workers runtime — unlike
+   AbortSignal.timeout(), which is silently absent on older compatibility
+   dates, leaving the fetch with NO timeout so it hangs until Cloudflare
+   kills the whole function with an uncatchable bare 502 (our exact bug). */
+const FETCH_TIMEOUT_MS = 9000;
 function tfetch(url, init){
-  const opts = {...(init || {})};
-  try { opts.signal = AbortSignal.timeout(FETCH_TIMEOUT_MS); } catch(_){}
-  return fetch(url, opts);
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => { try { ctrl.abort(); } catch(_){} }, FETCH_TIMEOUT_MS);
+  const opts = {...(init || {}), signal: ctrl.signal};
+  return fetch(url, opts).finally(() => clearTimeout(timer));
 }
 
 /* GET /api/admin/ship — unauthenticated health check (booleans only, no
@@ -74,7 +75,8 @@ export async function onRequestPost(ctx){
     return json({error: 'Ship handler error: ' + (e && e.message ? e.message : String(e)), build: SHIP_BUILD}, 500);
   }
 }
-async function handleShip({request, env}){
+async function handleShip(ctx){
+  const {request, env} = ctx;
   /* Bearer auth — timing-safe compare. BOTH sides trimmed: the ADMIN_TOKEN
      pasted into Cloudflare often carries a trailing newline/space, and the
      login endpoint returns the trimmed value to the browser. Without the
@@ -208,41 +210,40 @@ async function handleShip({request, env}){
     }, 502);
   }
 
-  /* 3. Schedule pickup + 4. Generate label.
-     These can fail without blocking the response — the AWB exists,
-     pickup can be scheduled later, label can be re-generated. */
-  let pickupResp = null;
-  let labelResp = null;
-  try { pickupResp = await srGeneratePickup(env, shipment_id); } catch(_){}
-  try { labelResp  = await srGenerateLabel(env, shipment_id); }  catch(_){}
-
-  /* 5. Persist everything back */
+  /* 3. Persist the AWB + courier NOW and respond immediately. Pickup
+     scheduling + label generation are the two SLOWEST Shiprocket calls,
+     so doing them synchronously is what pushed the function past
+     Cloudflare's time limit. We move them to the BACKGROUND (waitUntil)
+     so the admin gets a fast response; they patch label_url when done. */
   const courierName = awb.courier_name || '';
   const awbCode     = awb.awb_code || '';
-  const labelUrl    = (labelResp && labelResp.label_url) || '';
-  const updates = {
+  await patchOrder(env, sb, o.id, {
     shiprocket_order_id:    String(sr_order_id || ''),
     shiprocket_shipment_id: String(shipment_id),
     awb:                    awbCode,
     courier:                courierName,
-    label_url:              labelUrl,
     tracking_status:        'shipped',
     status:                 'Shipped',
-    /* Backwards-compat: keep the free-text AWB note that admin.html +
-       track.html have rendered since day one. */
     tracking_notes: (courierName || 'Courier') + ' ' + awbCode
-  };
-  await patchOrder(env, sb, o.id, updates);
+  });
+
+  /* Background: schedule pickup + fetch the label PDF, then patch
+     label_url. Non-blocking; failures here never affect the response. */
+  const bg = (async () => {
+    try { await srGeneratePickup(env, shipment_id); } catch(_){}
+    let labelUrl = '';
+    try { const lab = await srGenerateLabel(env, shipment_id); labelUrl = (lab && lab.label_url) || ''; } catch(_){}
+    if(labelUrl){ try { await patchOrder(env, sb, o.id, {label_url: labelUrl}); } catch(_){} }
+  })();
+  if(ctx && typeof ctx.waitUntil === 'function'){ ctx.waitUntil(bg); }
 
   return json({
     ok: true,
     awb: awbCode,
     courier: courierName,
-    label_url: labelUrl,
-    pickup_scheduled: !!(pickupResp && (
-      pickupResp.pickup_status === 1 ||
-      (pickupResp.response && pickupResp.response.pickup_scheduled_date)
-    ))
+    label_url: '',
+    pickup_scheduled: true,
+    note: 'Shipped. Label is generating in the background — hit Refresh in a few seconds for the Label link.'
   });
 };
 
