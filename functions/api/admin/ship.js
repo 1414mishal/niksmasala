@@ -32,13 +32,18 @@
 const SR_BASE = 'https://apiv2.shiprocket.in/v1/external';
 let _srToken = null, _srExp = 0;
 
+/* Build marker — included in responses so we can confirm WHICH version of
+   this function is actually deployed. If an error/success ever lacks this,
+   you're running stale code (re-deploy the latest commit). */
+const SHIP_BUILD = 'ship-2026-inline-fndecl-v3';
+
 export async function onRequestPost(ctx){
   /* Catch-all wrapper so ANY error returns readable JSON, never a bare
      502. Plain function declarations (not const arrows) so there's zero
      chance of a load-order / temporal-dead-zone issue. */
   try { return await handleShip(ctx); }
   catch (e) {
-    return json({error: 'Ship handler error: ' + (e && e.message ? e.message : String(e))}, 500);
+    return json({error: 'Ship handler error: ' + (e && e.message ? e.message : String(e)), build: SHIP_BUILD}, 500);
   }
 }
 async function handleShip({request, env}){
