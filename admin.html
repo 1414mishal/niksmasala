@@ -1059,16 +1059,32 @@ async function shipOrder(id, btn){
       if(btn){ btn.disabled = false; btn.textContent = original; }
       return;
     }
-    /* Update local copy so the UI shows the AWB without a full refresh */
+    /* Update local copy so the UI shows the AWB without a full refresh.
+       Three response shapes:
+         - queued:true   → Shiprocket flow is running in the background.
+                           Show "Shipping…" status; AWB appears on Refresh.
+         - already:true  → Order was already shipped; AWB came back.
+         - default       → Synchronous ship completed; AWB came back. */
     const all = getOrders();
     const o = all.find(x=>x.id===id);
-    if(o){
-      o.awb = j.awb; o.courier = j.courier; o.label_url = j.label_url;
-      o.tracking_status = 'shipped'; o.status = 'Shipped';
-      o.tracking_notes = (j.courier||'Courier') + ' ' + (j.awb||'');
-      setOrders(all);
+    if(j.queued){
+      if(o){
+        o.status = 'Shipping';
+        o.tracking_notes = 'Shipping in progress…';
+        setOrders(all);
+      }
+      toast('🚀 Shipping started. AWB appears in ~20–30s — hit Refresh to see it.','ok');
+      /* Auto-refresh so the admin doesn't have to remember to click. */
+      setTimeout(()=>{ try{ refreshOrders(); }catch(_){} }, 25_000);
+    } else {
+      if(o){
+        o.awb = j.awb; o.courier = j.courier; o.label_url = j.label_url;
+        o.tracking_status = 'shipped'; o.status = 'Shipped';
+        o.tracking_notes = (j.courier||'Courier') + ' ' + (j.awb||'');
+        setOrders(all);
+      }
+      toast('📦 Shipped via '+(j.courier||'courier')+' · AWB '+(j.awb||'')+(j.pickup_scheduled?' · Pickup scheduled':' · Pickup not scheduled yet'),'ok');
     }
-    toast('📦 Shipped via '+(j.courier||'courier')+' · AWB '+(j.awb||'')+(j.pickup_scheduled?' · Pickup scheduled':' · Pickup not scheduled yet'),'ok');
     renderOrders();
   } catch(err){
     toast('Network error: '+(err.message||err),'err');

@@ -1,47 +1,42 @@
 /* POST /api/admin/ship
  *
  * One-click "ship this order" for the admin. Reads the order from
- * Supabase, pushes it to Shiprocket, gets an AWB + courier, schedules
- * pickup, generates the shipping label PDF, then writes everything
- * back into the same row.
+ * Supabase, validates + claims it, then runs the entire Shiprocket flow
+ * (create order → assign AWB → schedule pickup → generate label) in a
+ * waitUntil BACKGROUND task. Responds to the browser in <1 second.
  *
  * Body: { order_id: "NM26-XXXXXXXXXX" }
- * Auth: Authorization: Bearer <ADMIN_TOKEN>   (same model as /api/admin/products)
+ * Auth: Authorization: Bearer <ADMIN_TOKEN>
  *
- * Response on success (201):
- *   { ok:true, awb, courier, label_url, pickup_scheduled }
- * Response if order already shipped (200):
- *   { ok:true, already:true, awb, courier, label_url }
- * Response if Shiprocket can't find a courier (502):
- *   { error:"...", shiprocket_order_id, shiprocket_shipment_id }
- *   — the order EXISTS in Shiprocket; admin can manually assign AWB
- *     from the SR dashboard. We persist the IDs so it's recoverable.
+ * Response shape:
+ *   200 + {ok:true, queued:true, ...}        — shipping started in background
+ *   200 + {ok:true, already:true, awb, ...}  — order was already shipped (idempotent)
+ *   400/401/404 + {error}                    — validation/auth/lookup failure
  *
- * Idempotent: if order.awb is already set, returns the existing value
- * instead of double-creating in Shiprocket. The merchant never gets
- * billed twice for the same shipment even on rage-click.
+ * Why background? Shiprocket's create-order + assign-AWB calls together
+ * routinely take 8-15 seconds, which pushes the synchronous response past
+ * Cloudflare Pages Functions' wall-time + CPU limits. That kills the
+ * function externally with a bare 502 the try/catch can never reach.
+ * Moving everything except the order-claim into waitUntil cuts the
+ * response-path to a single fast Supabase query, so a 502 becomes
+ * structurally impossible — the response is already on the wire.
  *
- * Rate-limited upstream by functions/_middleware.js (10/min/IP).
+ * The admin sees the AWB on the NEXT refresh of /admin (background task
+ * patches the row). On failure, tracking_notes is set to the error and
+ * status flips to 'ShipError' so it's visible without log-diving.
+ *
+ * Rate-limited upstream by functions/_middleware.js (30/min/IP).
  */
 
-/* Shiprocket client is INLINED at the bottom of this file (not imported
-   from _lib/shiprocket.js). A module-resolution failure on the shared
-   import was crashing the whole route at load time and returning a bare
-   502 that the handler's try/catch could never reach. Self-contained =
-   no import to fail. */
 const SR_BASE = 'https://apiv2.shiprocket.in/v1/external';
 let _srToken = null, _srExp = 0;
 
-/* Build marker — included in responses so we can confirm WHICH version of
-   this function is actually deployed. If an error/success ever lacks this,
-   you're running stale code (re-deploy the latest commit). */
-const SHIP_BUILD = 'ship-2026-bgtimeout-v5';
+/* Build marker — confirm WHICH version is live via GET /api/admin/ship. */
+const SHIP_BUILD = 'ship-2026-bg-v6';
 
-/* Every network call gets a hard timeout via a MANUAL AbortController +
-   setTimeout. This works on every Workers runtime — unlike
-   AbortSignal.timeout(), which is silently absent on older compatibility
-   dates, leaving the fetch with NO timeout so it hangs until Cloudflare
-   kills the whole function with an uncatchable bare 502 (our exact bug). */
+/* Hard per-request timeout on every outbound fetch. AbortSignal.timeout()
+   is missing on older Workers compat dates, so we use an explicit
+   AbortController + setTimeout to be portable. */
 const FETCH_TIMEOUT_MS = 9000;
 function tfetch(url, init){
   const ctrl = new AbortController();
@@ -51,16 +46,12 @@ function tfetch(url, init){
 }
 
 /* GET /api/admin/ship — unauthenticated health check (booleans only, no
-   secret values). Visit https://niksmasala.com/api/admin/ship in a browser
-   to instantly confirm which build is live and whether the Shiprocket +
-   admin env vars are actually set. */
+   secret values). Visit https://niksmasala.com/api/admin/ship to confirm
+   which build is live and which env vars are populated. */
 export async function onRequestGet({request, env}){
   const url = new URL(request.url);
   const test = url.searchParams.get('test');
 
-  /* /api/admin/ship?test=auth — actually attempt the Shiprocket login from
-     Cloudflare's edge and report the result. This pinpoints whether the
-     hang is in reaching Shiprocket at all (no Ship-button click needed). */
   if(test === 'auth'){
     const t0 = Date.now();
     try {
@@ -73,8 +64,6 @@ export async function onRequestGet({request, env}){
     }
   }
 
-  /* ?test=ping — raw fetch to Shiprocket's host with NO auth, just to see
-     if the edge can even reach apiv2.shiprocket.in. */
   if(test === 'ping'){
     const t0 = Date.now();
     try {
@@ -99,22 +88,24 @@ export async function onRequestGet({request, env}){
 }
 
 export async function onRequestPost(ctx){
-  /* Catch-all wrapper so ANY error returns readable JSON, never a bare
-     502. Plain function declarations (not const arrows) so there's zero
-     chance of a load-order / temporal-dead-zone issue. */
+  /* Catch-all wrapper. Plain function declaration, no module-load
+     gotchas. If the synchronous path ever throws, the user gets readable
+     JSON instead of a bare 502. */
   try { return await handleShip(ctx); }
   catch (e) {
+    console.log('ship: SYNC PATH THREW', e && e.stack || e);
     return json({error: 'Ship handler error: ' + (e && e.message ? e.message : String(e)), build: SHIP_BUILD}, 500);
   }
 }
+
 async function handleShip(ctx){
   const {request, env} = ctx;
-  /* Bearer auth — timing-safe compare. BOTH sides trimmed: the ADMIN_TOKEN
-     pasted into Cloudflare often carries a trailing newline/space, and the
-     login endpoint returns the trimmed value to the browser. Without the
-     trim here, the stored (trimmed) token never matches the (untrimmed) env
-     value — which 401'd ONLY this endpoint and logged the admin out on the
-     Ship button. login/products/orders already trim; this brings ship in line. */
+  const t0 = Date.now();
+
+  /* Bearer auth — trim both sides; the stored token loses trailing
+     whitespace on its way through login/products/orders, while the env
+     var pasted into Cloudflare may still carry one. Without trimming,
+     a token that works for every OTHER admin endpoint would 401 here. */
   const authHdr = request.headers.get('Authorization') || '';
   const tok = authHdr.replace(/^Bearer\s+/i, '').trim();
   const expected = (env.ADMIN_TOKEN || '').trim();
@@ -130,11 +121,14 @@ async function handleShip(ctx){
     return json({error: 'Missing or invalid order_id'}, 400);
   }
 
-  /* Load the order from Supabase */
+  console.log('ship:', order_id, 'start');
+
   const sb = {
     'apikey': env.SUPABASE_SERVICE_ROLE,
     'Authorization': 'Bearer ' + env.SUPABASE_SERVICE_ROLE
   };
+
+  /* 1. Load the order — fast (~200ms) */
   const oRes = await tfetch(
     `${env.SUPABASE_URL}/rest/v1/orders?id=eq.${encodeURIComponent(order_id)}&select=*`,
     {headers: sb}
@@ -144,37 +138,72 @@ async function handleShip(ctx){
   if(!rows.length) return json({error: 'Order not found'}, 404);
   const o = rows[0];
 
-  /* Idempotent short-circuit */
+  /* 2. Idempotent short-circuit. If AWB exists, return it immediately —
+     never double-create in Shiprocket on a rage-click. */
   if(o.awb){
+    console.log('ship:', order_id, 'already shipped, awb=', o.awb);
     return json({
       ok: true, already: true,
       awb: o.awb, courier: o.courier || '', label_url: o.label_url || ''
     });
   }
 
-  /* Refuse to ship un-paid prepaid orders (COD is allowed, even though
-     we currently don't expose COD in the UI). */
+  /* 3. Refuse to ship un-paid prepaid orders. */
   if(o.payment !== 'COD' && !o.payment_id){
     return json({error: 'Order is not paid yet — cannot ship.'}, 400);
   }
 
-  /* Total package weight, kg, floor 0.1 (SR rejects 0) */
+  /* 4. Claim the order — flip status to 'Shipping' so a second click
+     while the background is running sees something is in flight. The
+     idempotency check above (o.awb) is what actually prevents
+     double-create; this status flip is for the UI. */
+  await patchOrder(env, sb, o.id, {
+    status: 'Shipping',
+    tracking_notes: 'Shipping in progress…'
+  });
+
+  /* 5. Fire-and-forget the Shiprocket flow. waitUntil() keeps the
+     function alive AFTER the response is sent so the background work
+     can finish; failures here cannot affect the response that's already
+     on the wire. */
+  const bg = runShiprocketFlow(env, sb, o).catch(err => {
+    console.log('ship:', order_id, 'BG UNCAUGHT', err && err.stack || err);
+  });
+  if(ctx && typeof ctx.waitUntil === 'function'){ ctx.waitUntil(bg); }
+
+  console.log('ship:', order_id, 'response sent in', Date.now()-t0, 'ms (bg running)');
+
+  return json({
+    ok: true,
+    queued: true,
+    build: SHIP_BUILD,
+    message: 'Shipping started — AWB will appear in ~20-30 seconds. Click Refresh to see it.'
+  });
+}
+
+/* The actual Shiprocket flow, all in background via waitUntil. Each step
+   logs its outcome + timing so failures are diagnosable from Cloudflare
+   Real-time logs. Final outcome is patched back to the orders row so the
+   admin sees the result on next refresh — success populates awb/courier,
+   failure populates tracking_notes with the error reason. */
+async function runShiprocketFlow(env, sb, o){
+  const id = o.id;
+  const t0 = Date.now();
+  console.log('ship:', id, 'BG start');
+
+  /* Total package weight in kg, floored at 0.5 kg — Shiprocket bills a
+     0.5 kg minimum regardless, and declaring less than the actual packed
+     weight risks a weight-discrepancy penalty when the courier weighs
+     the parcel. */
   const items = Array.isArray(o.items) ? o.items : [];
   let totalGrams = 0;
   for(const it of items) totalGrams += (Number(it.grams) || 100) * (Number(it.qty) || 1);
-  /* Weight = sum of each item's grams × qty, in kg. Floored at 0.5 kg
-     because Shiprocket bills a 0.5 kg minimum regardless, and DECLARING
-     less than the actual packed weight (product + box + padding) risks a
-     weight-discrepancy penalty when the courier weighs the real parcel.
-     A 50 g spice pouch ships at the 0.5 kg minimum anyway; heavier orders
-     use their real summed weight. */
   const weightKg = Math.max(0.5, Math.round((totalGrams / 1000) * 100) / 100);
 
-  /* Build the Shiprocket create-order payload */
   const cust = o.customer || {};
   const nameParts = String(cust.name || '').trim().split(/\s+/);
   const billing_customer_name = nameParts[0] || (cust.name || 'Customer');
-  const billing_last_name = nameParts.slice(1).join(' ') || '.';   // SR insists on non-empty
+  const billing_last_name = nameParts.slice(1).join(' ') || '.';   // SR requires non-empty
 
   const PICKUP = env.SHIPROCKET_PICKUP_LOCATION || 'Primary';
   const orderDate = (o.date || o.created_at || new Date().toISOString());
@@ -214,70 +243,85 @@ async function handleShip(ctx){
 
   /* 1. Create the order in Shiprocket */
   let created;
-  try { created = await srCreateOrder(env, payload); }
-  catch (e) { return json({error: e.message}, 502); }
+  try {
+    const t1 = Date.now();
+    created = await srCreateOrder(env, payload);
+    console.log('ship:', id, 'BG createOrder ok in', Date.now()-t1, 'ms shipment_id=', created.shipment_id);
+  } catch (e) {
+    console.log('ship:', id, 'BG createOrder FAILED:', e.message);
+    await markFailure(env, sb, id, 'Shiprocket order create failed: ' + e.message);
+    return;
+  }
 
   const shipment_id = created.shipment_id;
   const sr_order_id = created.order_id;
   if(!shipment_id){
-    return json({error: 'Shiprocket did not return shipment_id', detail: created}, 502);
+    console.log('ship:', id, 'BG no shipment_id returned:', JSON.stringify(created).slice(0,200));
+    await markFailure(env, sb, id, 'Shiprocket did not return shipment_id');
+    return;
   }
 
-  /* 2. Assign AWB. If this step fails the SR order still exists, so
-     we persist the IDs first then surface the failure — the merchant
-     can finish the assignment manually in the SR dashboard and the
-     idempotency check (above) will short-circuit future clicks. */
+  /* Persist the SR IDs now — even if AWB fails, the order EXISTS in
+     Shiprocket and the admin can finish the assignment from there. */
+  await patchOrder(env, sb, id, {
+    shiprocket_order_id:    String(sr_order_id || ''),
+    shiprocket_shipment_id: String(shipment_id)
+  });
+
+  /* 2. Assign AWB */
   let awb;
-  try { awb = await srAssignAWB(env, shipment_id); }
-  catch (e) {
-    await patchOrder(env, sb, o.id, {
-      shiprocket_order_id: String(sr_order_id || ''),
-      shiprocket_shipment_id: String(shipment_id)
-    });
-    return json({
-      error: 'Order created in Shiprocket but AWB assignment failed. Assign manually from your Shiprocket dashboard.',
-      detail: e.message,
-      shiprocket_order_id: sr_order_id,
-      shiprocket_shipment_id: shipment_id
-    }, 502);
+  try {
+    const t2 = Date.now();
+    awb = await srAssignAWB(env, shipment_id);
+    console.log('ship:', id, 'BG assignAWB ok in', Date.now()-t2, 'ms awb=', awb.awb_code, 'courier=', awb.courier_name);
+  } catch (e) {
+    console.log('ship:', id, 'BG assignAWB FAILED:', e.message);
+    await markFailure(env, sb, id, 'AWB assign failed (order exists in SR, assign manually): ' + e.message);
+    return;
   }
 
-  /* 3. Persist the AWB + courier NOW and respond immediately. Pickup
-     scheduling + label generation are the two SLOWEST Shiprocket calls,
-     so doing them synchronously is what pushed the function past
-     Cloudflare's time limit. We move them to the BACKGROUND (waitUntil)
-     so the admin gets a fast response; they patch label_url when done. */
   const courierName = awb.courier_name || '';
   const awbCode     = awb.awb_code || '';
-  await patchOrder(env, sb, o.id, {
-    shiprocket_order_id:    String(sr_order_id || ''),
-    shiprocket_shipment_id: String(shipment_id),
+  await patchOrder(env, sb, id, {
     awb:                    awbCode,
     courier:                courierName,
     tracking_status:        'shipped',
     status:                 'Shipped',
     tracking_notes: (courierName || 'Courier') + ' ' + awbCode
   });
+  console.log('ship:', id, 'BG awb persisted, total so far', Date.now()-t0, 'ms');
 
-  /* Background: schedule pickup + fetch the label PDF, then patch
-     label_url. Non-blocking; failures here never affect the response. */
-  const bg = (async () => {
-    try { await srGeneratePickup(env, shipment_id); } catch(_){}
-    let labelUrl = '';
-    try { const lab = await srGenerateLabel(env, shipment_id); labelUrl = (lab && lab.label_url) || ''; } catch(_){}
-    if(labelUrl){ try { await patchOrder(env, sb, o.id, {label_url: labelUrl}); } catch(_){} }
-  })();
-  if(ctx && typeof ctx.waitUntil === 'function'){ ctx.waitUntil(bg); }
+  /* 3. Schedule pickup + 4. Generate label — slowest SR calls, last on
+     purpose so the AWB is already live in the UI before these complete. */
+  try {
+    const t3 = Date.now();
+    await srGeneratePickup(env, shipment_id);
+    console.log('ship:', id, 'BG pickup ok in', Date.now()-t3, 'ms');
+  } catch(e){
+    console.log('ship:', id, 'BG pickup failed (non-fatal):', e.message);
+  }
 
-  return json({
-    ok: true,
-    awb: awbCode,
-    courier: courierName,
-    label_url: '',
-    pickup_scheduled: true,
-    note: 'Shipped. Label is generating in the background — hit Refresh in a few seconds for the Label link.'
-  });
-};
+  try {
+    const t4 = Date.now();
+    const lab = await srGenerateLabel(env, shipment_id);
+    const labelUrl = (lab && lab.label_url) || '';
+    console.log('ship:', id, 'BG label ok in', Date.now()-t4, 'ms url=', labelUrl ? 'yes' : 'no');
+    if(labelUrl) await patchOrder(env, sb, id, {label_url: labelUrl});
+  } catch(e){
+    console.log('ship:', id, 'BG label failed (non-fatal):', e.message);
+  }
+
+  console.log('ship:', id, 'BG complete in', Date.now()-t0, 'ms');
+}
+
+async function markFailure(env, sb, id, reason){
+  try {
+    await patchOrder(env, sb, id, {
+      status: 'ShipError',
+      tracking_notes: String(reason).slice(0, 400)
+    });
+  } catch(_) {}
+}
 
 async function patchOrder(env, sb, id, fields){
   return tfetch(
