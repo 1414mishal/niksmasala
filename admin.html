@@ -620,17 +620,52 @@ function logout(){
   sessionStorage.removeItem('niks_auth');
   location.reload();
 }
+/* ===== Admin order data API =====
+   The `orders` table is RLS-protected — the public anon key the
+   browser uses is DENIED all reads/writes on it (so customers can't
+   read each other's orders). That means admin reads/writes MUST go
+   through /api/admin/orders, which authenticates with ADMIN_TOKEN and
+   uses the service role server-side. Using the anon client here is
+   why the admin panel showed "No orders yet" even though orders
+   existed, and why status changes silently failed to persist. */
+async function adminGetOrders(){
+  const token = getAdminToken();
+  if(!token) return null;
+  try{
+    const r = await fetch('/api/admin/orders', { headers:{'Authorization':'Bearer '+token} });
+    if(r.status===401){ clearAdminToken(); sessionStorage.removeItem('niks_auth'); location.reload(); return null; }
+    if(!r.ok) return null;
+    const j = await r.json().catch(()=>({}));
+    return Array.isArray(j.orders) ? j.orders : null;
+  }catch(ex){ console.warn('adminGetOrders failed', ex); return null; }
+}
+async function adminPatchOrder(id, fields){
+  const token = getAdminToken();
+  if(!token) return {ok:false, error:'Session expired'};
+  try{
+    const r = await fetch('/api/admin/orders', {
+      method:'PATCH',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body: JSON.stringify({id, ...fields})
+    });
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok) return {ok:false, error: j.error || ('HTTP '+r.status)};
+    return {ok:true, order:j.order};
+  }catch(ex){ return {ok:false, error: ex.message}; }
+}
+
 async function showApp(){
   document.getElementById('login').style.display='none';
   document.getElementById('app').classList.add('on');
   toast('Syncing from cloud…');
   try{
     const db=await getDB();
-    const[{data:cp,error:pe},{data:co},{data:cs}]=await Promise.all([
+    const[{data:cp,error:pe},{data:cs}]=await Promise.all([
       db.from('products').select('*').order('id'),
-      db.from('orders').select('*').order('created_at',{ascending:false}),
       db.from('settings').select('*')
     ]);
+    /* Orders via the admin API (anon key is RLS-blocked on orders) */
+    const co = await adminGetOrders();
     // Products: always upsert full defaults if cloud has fewer than expected
     {
       const cloudCount=(!pe&&cp)?cp.length:0;
@@ -891,18 +926,16 @@ function renderOrders(){
 }
 async function refreshOrders(){
   toast('Refreshing orders…');
-  try{
-    const db=await getDB();
-    const{data:co}=await db.from('orders').select('*').order('created_at',{ascending:false});
-    if(co){setOrders(co);renderOrders();renderDashboard();toast('✅ Orders refreshed','ok')}
-  }catch(ex){toast('Refresh failed','err')}
+  const co = await adminGetOrders();
+  if(co){ setOrders(co); renderOrders(); renderDashboard(); toast('✅ Orders refreshed','ok'); }
+  else { toast('Refresh failed — check you are still signed in','err'); }
 }
 async function changeStatus(id,status){
   const all=getOrders();
   const o=all.find(x=>x.id===id); if(!o) return;
   o.status=status; setOrders(all);
-  try{const db=await getDB();await db.from('orders').update({status}).eq('id',id)}catch(ex){console.warn(ex)}
-  toast('Status updated','ok');
+  const res = await adminPatchOrder(id, {status});
+  toast(res.ok ? 'Status updated' : ('Save failed: '+res.error), res.ok?'ok':'err');
 }
 async function changeTracking(id, tracking_status){
   const all=getOrders();
@@ -910,11 +943,8 @@ async function changeTracking(id, tracking_status){
   o.tracking_status = tracking_status;
   o.trackingStatus  = tracking_status; // keep camelCase too for any legacy code path
   setOrders(all);
-  try{
-    const db=await getDB();
-    await db.from('orders').update({tracking_status}).eq('id',id);
-  }catch(ex){console.warn(ex)}
-  toast('Tracking updated — customer can see this live ✅','ok');
+  const res = await adminPatchOrder(id, {tracking_status});
+  toast(res.ok ? 'Tracking updated — customer can see this live ✅' : ('Save failed: '+res.error), res.ok?'ok':'err');
 }
 
 async function saveTrackingNotes(id, tracking_notes){
@@ -922,11 +952,8 @@ async function saveTrackingNotes(id, tracking_notes){
   const o=all.find(x=>x.id===id); if(!o) return;
   if((o.tracking_notes||'')===tracking_notes) return; // no change
   o.tracking_notes = tracking_notes; setOrders(all);
-  try{
-    const db=await getDB();
-    await db.from('orders').update({tracking_notes}).eq('id',id);
-  }catch(ex){console.warn(ex)}
-  toast('Tracking note saved','ok');
+  const res = await adminPatchOrder(id, {tracking_notes});
+  toast(res.ok ? 'Tracking note saved' : ('Save failed: '+res.error), res.ok?'ok':'err');
 }
 
 /* One-click "Ship via Shiprocket". POSTs to /api/admin/ship which

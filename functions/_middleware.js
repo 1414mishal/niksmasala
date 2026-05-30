@@ -97,7 +97,9 @@ export const onRequest = async (ctx) => {
     '/api/products':           {limit:120, windowMs:60_000},   // GET — read-heavy
     '/api/admin/products':     {limit:30,  windowMs:60_000},   // admin write
     '/api/admin/login':        {limit:5,   windowMs:600_000},  // 5 attempts / 10 min per IP — brute-force shield
-    '/api/admin/ship':         {limit:30,  windowMs:60_000}    // Shiprocket dispatch (one click = one shipment)
+    '/api/admin/ship':         {limit:30,  windowMs:60_000},   // Shiprocket dispatch (one click = one shipment)
+    '/api/admin/orders':       {limit:120, windowMs:60_000},   // admin reads order list + patches status (read-heavy)
+    '/api/order/webhook':      {limit:300, windowMs:60_000}    // Razorpay server-to-server callback — must be generous
   };
   const rule = limits[url.pathname];
   if(rule && !rateLimit(ip, url.pathname, rule.limit, rule.windowMs)){
