@@ -130,6 +130,19 @@ buildFooter = function () {
 
     <div style="max-width:1280px;margin:48px auto 0;padding-top:24px;border-top:1px solid rgba(254,215,170,.12);display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center">
       <p style="color:rgba(254,215,170,.5);font:400 12px/1.5 'Manrope';margin:0">© <span data-year>2026</span> Niks Masala · ${esc(s.company)}. All rights reserved.</p>
+      <!-- Legal/policy links. The policy pages existed but were unreachable
+           from this footer — required for Razorpay, Meta/Google ad review,
+           and basic customer trust. Bottom-strip placement is the convention
+           so every page that renders this footer exposes them. -->
+      <nav style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px 14px">
+        <a href="privacy.html" style="color:rgba(254,215,170,.72);font:500 12px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.72)'">Privacy Policy</a>
+        <span style="color:rgba(254,215,170,.3);font-size:12px">·</span>
+        <a href="terms.html" style="color:rgba(254,215,170,.72);font:500 12px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.72)'">Terms &amp; Conditions</a>
+        <span style="color:rgba(254,215,170,.3);font-size:12px">·</span>
+        <a href="returns.html" style="color:rgba(254,215,170,.72);font:500 12px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.72)'">Returns &amp; Refunds</a>
+        <span style="color:rgba(254,215,170,.3);font-size:12px">·</span>
+        <a href="shipping.html" style="color:rgba(254,215,170,.72);font:500 12px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.72)'">Shipping Policy</a>
+      </nav>
       <!-- Owner/staff login. Centered (not in a bottom corner) so the
            floating WhatsApp + Cart buttons never cover it, and styled as
            a clear pill so the owner can find it — still understated for
