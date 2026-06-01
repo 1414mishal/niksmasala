@@ -524,6 +524,15 @@ section.block{padding:70px 24px}
 }
 .product-thumbs img:hover{border-color:var(--red)}
 
+/* Box / Pouch pack switcher — click a thumb to swap the main product image */
+.pack-switch{display:flex;gap:12px;margin-top:14px;flex-wrap:wrap}
+.pack-view{display:flex;flex-direction:column;align-items:center;gap:6px;padding:0;background:none;border:none;cursor:pointer;font:inherit}
+.pack-view img{width:84px;height:84px;object-fit:cover;border:2px solid var(--line);border-radius:var(--radius-sm);background:var(--cream);transition:border-color .2s}
+.pack-view:hover img,
+.pack-view.active-thumb img{border-color:var(--red)}
+.pack-view__label{font-size:12px;font-weight:600;color:var(--muted);transition:color .2s}
+.pack-view.active-thumb .pack-view__label{color:var(--red)}
+
 .product-info h1{font-size:clamp(24px,3vw,34px);margin-bottom:10px}
 .product-info .price-row{font-size:22px;margin:18px 0}
 .product-info .price{font-size:30px}

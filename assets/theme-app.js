@@ -188,6 +188,27 @@ const _HOVER = {
   'Soya Chunks':'assets/products/pouch-soya.webp'
 };
 
+/* Pack views for the product page gallery — an ordered list of {label, src}.
+   Box first (the primary `p.image`), then the pouch when one exists. Pouch-only
+   products show just the pouch; box-only products (Sabji, Tikka) show just the
+   box; products with neither fall back to a single shot. Drives the Box / Pouch
+   image switcher on product.html. Adding a box later = set its _PIMG primary to
+   the box + add its _HOVER pouch, and the second thumbnail appears automatically. */
+function productGalleryViews(p){
+  const primary = (p && p.image) || FALLBACK_IMG;
+  const pouch = (p && _HOVER[p.name]) || '';
+  const views = [];
+  if (/\/box-/.test(primary)) {
+    views.push({ label: 'Box', src: primary });
+    if (pouch) views.push({ label: 'Pouch', src: pouch });
+  } else if (/\/pouch-/.test(primary)) {
+    views.push({ label: 'Pouch', src: primary });
+  } else {
+    views.push({ label: '', src: primary });
+  }
+  return views;
+}
+
 /* Premium product card v2 — soft shadow, hover lift. Products with a box show
    the box, and reveal the pouch on hover (two-image flip). */
 productCardHTML = function (p) {

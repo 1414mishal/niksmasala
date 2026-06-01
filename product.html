@@ -47,6 +47,7 @@ mountHeaderFooter('shop');
 
 const id = qs('id');
 const p = getProducts().find(x => x.id===id);
+let _views = [];
 
 if(!p){
   document.getElementById('productContainer').innerHTML = `
@@ -68,6 +69,7 @@ if(!p){
 
   /* Product JSON-LD — uses lowest variant price as `lowPrice` */
   const variants = p.variants || [{pack:p.weight||'',grams:p.grams||100,price:p.price}];
+  _views = productGalleryViews(p);
   const lowP = Math.min(...variants.map(v=>v.price));
   const highP = Math.max(...variants.map(v=>v.price));
   const ld = {
@@ -96,10 +98,14 @@ if(!p){
     <div class="product-single">
       <div class="product-gallery">
         <div class="main-img">
-          <img id="mainImg" src="${attr(p.image)}" alt="${attr(p.name)}" onerror="this.src='assets/products/garam-masala.webp'">
+          <img id="mainImg" src="${attr(_views[0].src)}" alt="${attr(p.name)}" onerror="this.src='assets/products/garam-masala.webp'">
         </div>
-        <div class="product-thumbs">
-          <img src="${attr(p.image)}" alt="${attr(p.name)}" class="active-thumb" onclick="document.getElementById('mainImg').src=this.src">
+        <div class="pack-switch">
+          ${_views.map((v,i)=>`
+            <button type="button" class="pack-view${i===0?' active-thumb':''}" onclick="pickView(${i})" aria-label="${attr(p.name)}${v.label?' — '+attr(v.label)+' pack':''}">
+              <img src="${attr(v.src)}" alt="${attr(p.name)}${v.label?' '+attr(v.label)+' pack':''}" onerror="this.src='assets/products/garam-masala.webp'">
+              ${v.label?`<span class="pack-view__label">${esc(v.label)}</span>`:''}
+            </button>`).join('')}
         </div>
       </div>
       <div class="product-info">
@@ -198,6 +204,11 @@ if(!p){
 }
 
 function setQty(d){const q=document.getElementById('qty');q.value=Math.max(1,+q.value+d)}
+function pickView(i){
+  const v=_views[i]; if(!v) return;
+  const m=document.getElementById('mainImg'); if(m) m.src=v.src;
+  document.querySelectorAll('.pack-view').forEach((el,x)=>el.classList.toggle('active-thumb',x===i));
+}
 function pickVariant(i){
   _selectedVariant[id]=i;
   const variants=(p&&p.variants)||[];
