@@ -322,7 +322,7 @@
         <div class="form-row"><label>Category *</label>
           <input type="text" id="pm-category" list="catList" required>
           <datalist id="catList">
-            <option>Direct Grinding</option><option>Veg Specialities</option><option>Non-Veg Specialities</option><option>Ready-Mix Products</option>
+            <option>Direct Grinding</option><option>Veg Specialities</option><option>Non-Veg Specialities</option><option>Other Products</option>
           </datalist>
         </div>
         <div class="form-row"><label>Weight / Unit</label><input type="text" id="pm-weight" placeholder="100g"></div>
@@ -392,7 +392,7 @@ function _acat(name){
     return 'Non-Veg Specialities';
   if(n.includes('papad')||n.includes('kasuri')||n.includes('soya')||
      n.includes('ginger')||n.includes('garlic')||n.includes('asafoetida'))
-    return 'Ready-Mix Products';
+    return 'Other Products';
   return 'Veg Specialities';
 }
 const _ARAW=[
@@ -519,6 +519,13 @@ function getSettings(){try{return{...DEFAULT_SETTINGS,...(JSON.parse(localStorag
 function setSettings(s){localStorage.setItem('niks_settings',JSON.stringify(s))}
 function getOrders(){try{return JSON.parse(localStorage.getItem('niks_orders'))||[]}catch(e){return[]}}
 function setOrders(o){localStorage.setItem('niks_orders',JSON.stringify(o))}
+/* An order only counts once money is committed: a verified online payment
+   (payment_id is set server-side by /api/order/verify) or a COD order. Orders
+   stuck at AwaitingPayment — checkout opened but the Razorpay payment failed or
+   was abandoned — are hidden from the order list + dashboard so failed
+   transactions don't show up as sales. Lookups by id (view/ship/delete) still
+   use the unfiltered getOrders(), so a stuck order can always be cleaned up. */
+function txnSettled(o){ return !!(o && (o.payment_id || o.payment === 'COD')); }
 /* ====== Admin API token ======
    Server-side write endpoints (/api/admin/products) require:
      Authorization: Bearer <ADMIN_TOKEN>
@@ -753,7 +760,7 @@ function go(view){
 
 /* Dashboard */
 function renderDashboard(){
-  const orders=getOrders(), products=getProducts();
+  const orders=getOrders().filter(txnSettled), products=getProducts();
   const revenue=orders.filter(o=>o.status!=='Cancelled').reduce((s,o)=>s+o.total,0);
   const pending=orders.filter(o=>o.status==='Pending').length;
   const low=products.filter(p=>(p.stock||0)<15);
@@ -926,7 +933,7 @@ const TRACK_STEPS=['placed','processing','packed','shipped','delivery','delivere
 const TRACK_LABELS={placed:'📋 Placed',processing:'⚙️ Processing',packed:'📦 Packed',shipped:'🚚 Shipped',delivery:'🏠 Out for Delivery',delivered:'✅ Delivered'};
 function renderOrders(){
   const f=document.getElementById('orderFilter').value;
-  let orders=getOrders();
+  let orders=getOrders().filter(txnSettled);
   if(f) orders=orders.filter(o=>o.status===f);
   document.getElementById('ordersTable').innerHTML=orders.length===0
     ? `<tr><td colspan="9"><div class="empty"><span>📦</span>No orders ${f?'with status '+f:'yet'}</div></td></tr>`

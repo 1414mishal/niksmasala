@@ -39,14 +39,6 @@
       <ul class="filter-list" id="catList"></ul>
     </div>
     <div class="filter-box">
-      <h4>Price Range</h4>
-      <div class="price-range">
-        <input type="number" id="minP" placeholder="Min" min="0">
-        <input type="number" id="maxP" placeholder="Max" min="0">
-      </div>
-      <button class="btn btn-primary btn-sm" style="margin-top:12px;width:100%" onclick="applyPrice()">Apply</button>
-    </div>
-    <div class="filter-box">
       <h4>Quick Filters</h4>
       <ul class="filter-list">
         <li onclick="filterBy('sale',true)">On Sale</li>
@@ -90,7 +82,7 @@
 <script>
 mountHeaderFooter('shop');
 
-let FILTER = {cat:qs('cat')||'', q:qs('q')||'', minP:null, maxP:null, sale:null, badge:null};
+let FILTER = {cat:qs('cat')||'', q:qs('q')||'', sale:null, badge:null};
 
 function buildCatList(){
   const cats=['All', ...new Set(getProducts().map(p=>p.category))];
@@ -106,12 +98,7 @@ function buildCatList(){
 
 function setCat(c){FILTER.cat=c;renderShop();buildCatList();updateURL()}
 function filterBy(k,v){FILTER[k]=v;renderShop()}
-function applyPrice(){
-  FILTER.minP=+document.getElementById('minP').value||null;
-  FILTER.maxP=+document.getElementById('maxP').value||null;
-  renderShop();
-}
-function resetFilters(){FILTER={cat:'',q:'',minP:null,maxP:null,sale:null,badge:null};document.getElementById('minP').value='';document.getElementById('maxP').value='';buildCatList();renderShop();updateURL()}
+function resetFilters(){FILTER={cat:'',q:'',sale:null,badge:null};buildCatList();renderShop();updateURL()}
 function updateURL(){
   const u=new URL(location);
   if(FILTER.cat) u.searchParams.set('cat',FILTER.cat); else u.searchParams.delete('cat');
@@ -124,9 +111,6 @@ function renderShop(){
   let list=[...getProducts()];
   if(FILTER.cat) list=list.filter(p=>p.category===FILTER.cat);
   if(FILTER.q){const q=FILTER.q.toLowerCase();list=list.filter(p=>(p.name+' '+(p.desc||'')+' '+p.category).toLowerCase().includes(q))}
-  // Price filter: pass if any variant falls in range
-  if(FILTER.minP) list=list.filter(p=>(p.variants||[{price:p.price}]).some(v=>v.price>=FILTER.minP));
-  if(FILTER.maxP) list=list.filter(p=>(p.variants||[{price:p.price}]).some(v=>v.price<=FILTER.maxP));
   if(FILTER.sale) list=list.filter(p=>p.oldPrice);
   if(FILTER.badge) list=list.filter(p=>p.badge===FILTER.badge);
   const sort=document.getElementById('sortSel').value;

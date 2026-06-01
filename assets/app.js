@@ -112,7 +112,7 @@ function _cat(name){
     return 'Non-Veg Specialities';
   if(n.includes('papad')||n.includes('kasuri')||n.includes('soya')||
      n.includes('ginger')||n.includes('garlic')||n.includes('asafoetida'))
-    return 'Ready-Mix Products';
+    return 'Other Products';
   return 'Veg Specialities';
 }
 
@@ -337,6 +337,10 @@ async function loadProductsFromCloud(){
     fresh.forEach(p => {
       if(!p) return;
       if(p.name === 'Jajeera Powder') p.name = 'Jal Jeera Powder';
+      /* Category rename: the cloud DB still labels these "Ready-Mix Products".
+         Normalise client-side so the shop filter, nav links and homepage tile
+         all use "Other Products" without needing a DB re-seed. */
+      if(p.category === 'Ready-Mix Products') p.category = 'Other Products';
       if(p.name) p.image = _pick(p.name);
     });
     localStorage.setItem('niks_products', JSON.stringify(fresh));
@@ -525,7 +529,7 @@ function buildFooter(){
         <li><a href="shop.html?cat=Direct%20Grinding">Ground Spices</a></li>
         <li><a href="shop.html?cat=Veg%20Specialities">Veg Masalas</a></li>
         <li><a href="shop.html?cat=Non-Veg%20Specialities">Non-Veg Masalas</a></li>
-        <li><a href="shop.html?cat=Ready-Mix%20Products">Ready-Mix</a></li>
+        <li><a href="shop.html?cat=Other%20Products">Other</a></li>
       </ul></div>
       <div class="footer-col"><h5>Company</h5><ul>
         <li><a href="about.html">About Us</a></li>

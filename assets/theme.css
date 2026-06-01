@@ -740,20 +740,42 @@ header[data-sticky-nav].is-scrolled {
               0 8px 32px -16px rgba(46,26,22,0.18);
 }
 
-/* Nav text is rich black at all scroll states for guaranteed legibility. */
+/* Nav links: white + a little bolder over the transparent header (it sits on
+   the hero / coloured band at the top of the page). The white gets a soft
+   shadow so it stays legible over lighter imagery. */
 header[data-sticky-nav] .nav-link {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,.55), 0 0 5px rgba(0,0,0,.25) !important;
+}
+header[data-sticky-nav] .nav-link.active {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+/* Once the header morphs to its light-cream scrolled state — and on mobile,
+   which is forced solid — white would vanish, so flip nav + active back to
+   rich black. */
+header[data-sticky-nav].is-scrolled .nav-link,
+header[data-sticky-nav].is-scrolled .nav-link.active {
   color: #1a0e08 !important;
   text-shadow: none !important;
 }
-/* Active link: the header bar is light cream, so the old terracotta was
-   barely legible. Keep it dark + bold; the gold underline marks "active". */
-header[data-sticky-nav] .nav-link.active {
-  color: #1a0e08 !important;
-  font-weight: 700 !important;
-}
+/* Header icon buttons (Instagram / Account / Cart): white + slightly bolder
+   strokes over the transparent top, rich black on the scrolled cream bar. */
 header[data-sticky-nav] a[aria-label="Instagram"],
 header[data-sticky-nav] a[aria-label="Account"],
 header[data-sticky-nav] a[aria-label="Cart"] {
+  color: #ffffff !important;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.45)) !important;
+}
+header[data-sticky-nav] a[aria-label="Instagram"] svg,
+header[data-sticky-nav] a[aria-label="Account"] svg,
+header[data-sticky-nav] a[aria-label="Cart"] svg {
+  stroke-width: 2 !important;
+}
+header[data-sticky-nav].is-scrolled a[aria-label="Instagram"],
+header[data-sticky-nav].is-scrolled a[aria-label="Account"],
+header[data-sticky-nav].is-scrolled a[aria-label="Cart"] {
   color: #1a0e08 !important;
   filter: none !important;
 }
