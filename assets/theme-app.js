@@ -209,6 +209,19 @@ function productGalleryViews(p){
   return views;
 }
 
+/* The pack shot that matches a variant's pack string — so tapping a
+   "500gm Pouch" pill shows the pouch and "100gm Box" shows the box on the
+   listing cards (works on tap, unlike the desktop-only hover flip). Jar /
+   unknown packs fall back to the product's primary image. */
+function packImageFor(p, pack){
+  const views = productGalleryViews(p);
+  const box = (views.find(v => v.label === 'Box') || {}).src || '';
+  const pouch = (views.find(v => v.label === 'Pouch') || {}).src || '';
+  if (/pouch/i.test(pack) && pouch) return pouch;
+  if (/box/i.test(pack) && box) return box;
+  return (p && p.image) || FALLBACK_IMG;
+}
+
 /* Premium product card v2 — soft shadow, hover lift. Products with a box show
    the box, and reveal the pouch on hover (two-image flip). */
 productCardHTML = function (p) {
@@ -226,7 +239,7 @@ productCardHTML = function (p) {
   <article class="product-card-v2">
     <a href="product.html?id=${attr(p.id)}" class="product-card-v2__media${hoverImg ? ' has-hover' : ''}" aria-label="${attr(p.name)}">
       ${badgeHtml}
-      <img class="pc-pack" src="${attr(p.image || FALLBACK_IMG)}" alt="${attr(p.name)}" loading="lazy" onerror="this.src='${FALLBACK_IMG}'">
+      <img class="pc-pack" src="${attr(packImageFor(p, first.pack))}" alt="${attr(p.name)}" loading="lazy" onerror="this.src='${FALLBACK_IMG}'">
       ${hoverImg ? `<img class="pc-pack pc-pack--hover" src="${attr(hoverImg)}" alt="${attr(p.name)} pouch pack" loading="lazy" aria-hidden="true">` : ''}
     </a>
     <div class="product-card-v2__body">
@@ -260,11 +273,20 @@ productCardHTML = function (p) {
     if (!v) return;
     const priceEl = document.getElementById('vprice-' + id);
     if (priceEl) priceEl.textContent = money(v.price);
-    document.querySelectorAll('#vpills-' + id + ' .variant-pill').forEach((el, i) => {
-      const isActive = i === idx;
-      el.classList.toggle('is-active', isActive);
-      el.classList.toggle('active', isActive);
-    });
+    const pills = document.getElementById('vpills-' + id);
+    if (pills) {
+      pills.querySelectorAll('.variant-pill').forEach((el, i) => {
+        const isActive = i === idx;
+        el.classList.toggle('is-active', isActive);
+        el.classList.toggle('active', isActive);
+      });
+      /* Swap the card image to match the selected pack (Box / Pouch). Scoped
+         to this card so it's safe even if a product appears in two grids. */
+      const card = pills.closest('.product-card-v2');
+      const img = card && card.querySelector('.pc-pack:not(.pc-pack--hover)');
+      const src = packImageFor(p, v.pack);
+      if (img && src) img.src = src;
+    }
   };
 })();
 
