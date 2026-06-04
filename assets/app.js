@@ -278,6 +278,9 @@ const _PIMG = {
   'Bafath Masala':'assets/products/pouch-bafath.webp',
   'Egg Curry Masala':'assets/products/pouch-egg.webp',
   'Kitchen King Masala':'assets/products/pouch-kitchen-king.webp',
+  'Compounded Asafoetida Powder':'assets/products/Compound asafoetida.png',
+  'Ginger-Garlic Paste':'assets/products/Ginger garlic paste.jpg',
+  'Niks Papad':'assets/products/Niks Papad.png',
   'Kasuri Methi':'assets/products/box-kasuri-methi.webp',
   'Soya Chunks':'assets/products/box-soya.webp'
 };
@@ -303,7 +306,7 @@ const DEFAULT_PRODUCTS = _RAW.map((r,i)=>{
 
 const DEFAULT_SETTINGS = {
   brand:'Niks Masala',
-  phone:'+91 73385 19975',
+  phone:'+91 76766 22222',
   email:'inihaex@gmail.com',
   address:'Plot no. L-6, 5-50, Yeyyadi Industrial Area, Mangaluru, Dakshina Kannada, Karnataka 575015',
   gstin:'29AAFCI2793E1ZD',

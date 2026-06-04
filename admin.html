@@ -480,7 +480,7 @@ const _PIMG = {
 function _apick(name){ return _PIMG[name] || 'nobgnikslogo.webp'; }
 
 const DEFAULT_PRODUCTS=_ARAW.map((r,i)=>{const minP=Math.min(...r.variants.map(v=>v.price));return{id:'p'+(i+1),name:r.name,slug:r.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),category:_acat(r.name),price:minP,image:_apick(r.name),variants:r.variants,rating:4.6+(i%4)*0.1,reviews:20+(i*7)%180,desc:'Authentic Mangalorean spice blend — traditionally crafted, export-quality.',long:'Packed at our FSSAI-certified 11,000 sq.ft. facility in Yeyyadi, Mangalore.',badge:r.badge||null,stock:50};});
-const DEFAULT_SETTINGS = {brand:'Niks Masala',phone:'+91 73385 19975',email:'inihaex@gmail.com',address:'Plot no. L-6, 5-50, Yeyyadi Industrial Area, Mangaluru, Karnataka 575015',currency:'₹',shippingFree:799,shippingFee:60,shippingFeeHeavy:120};
+const DEFAULT_SETTINGS = {brand:'Niks Masala',phone:'+91 76766 22222',email:'inihaex@gmail.com',address:'Plot no. L-6, 5-50, Yeyyadi Industrial Area, Mangaluru, Karnataka 575015',currency:'₹',shippingFree:799,shippingFee:60,shippingFeeHeavy:120};
 /* Admin auth is server-side now — /api/admin/login validates the password
    against env.ADMIN_PASSWORD (timing-safe compare) and returns env.ADMIN_TOKEN.
    Rate-limited to 5 attempts / 10 min per IP in functions/_middleware.js.
