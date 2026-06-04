@@ -2,9 +2,13 @@
 <html class="scroll-smooth" lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Checkout — Niks Masala</title>
-<link rel="icon" href="nobgnikslogo.webp">
+
 <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/theme.css">
@@ -76,6 +80,8 @@ function getMinOrder(state, pincode){
   return MIN_ORDER.OTHER;
 }
 function checkMinOrder(state, pincode){
+  // Wait until both state and a full 6-digit pincode are entered
+  if(!state || !pincode || String(pincode).length < 6) return true;
   const sub = cartSubtotal();
   const min = getMinOrder(state, pincode);
   if(min > 0 && sub < min){
