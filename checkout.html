@@ -90,7 +90,7 @@ if(cart.length===0){
         <div class="form-grid-2">
           <div class="form-row"><label>City *</label><input type="text" name="city" required autocomplete="address-level2"></div>
           <div class="form-row"><label>State / UT *</label>
-            <select name="state" required autocomplete="address-level1" onchange="updateCoShipping(this.value)">
+            <select name="state" required autocomplete="address-level1" onchange="updateCoShipping()">
               <option value="">Select State / UT</option>
               <optgroup label="States">
                 <option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option>
@@ -122,7 +122,7 @@ if(cart.length===0){
             <label>Pincode *</label>
             <!-- Uses [0-9] instead of \d to dodge any HTML/JS backslash-escape
                  ambiguity between editors, browsers and devtools renderers. -->
-            <input type="text" name="pin" required maxlength="6" minlength="6" pattern="[0-9]{6}" title="6-digit Indian pincode" inputmode="numeric" autocomplete="postal-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6)">
+            <input type="text" name="pin" required maxlength="6" minlength="6" pattern="[0-9]{6}" title="6-digit Indian pincode" inputmode="numeric" autocomplete="postal-code" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,6);if(this.value.length===6)updateCoShipping()">
           </div>
           <div class="form-row"><label>Country</label><input type="text" value="India" readonly></div>
         </div>
@@ -159,10 +159,15 @@ if(cart.length===0){
     </div>`;
 }
 
-/* Live shipping recalc when customer picks a state */
-function updateCoShipping(state){
-  const sub=cartSubtotal(), ship=computeShipping(state), total=sub+ship;
-  const zone=(typeof _STATE_ZONE!=='undefined'&&_STATE_ZONE[state])||(state?'D':'');
+/* Live shipping recalc — triggered by state or pincode change */
+function updateCoShipping(){
+  const form=document.querySelector('.checkout-form-card');
+  const state=form?form.querySelector('[name="state"]').value:'';
+  const pin=form?form.querySelector('[name="pin"]').value:'';
+  const sub=cartSubtotal(), ship=computeShipping(state,pin), total=sub+ship;
+  let zone='';
+  if(pin&&pin.startsWith('575')) zone='LOCAL';
+  else if(state&&typeof _STATE_ZONE!=='undefined') zone=_STATE_ZONE[state]||'D';
   const label=zone&&typeof _ZONE_LABEL!=='undefined'?_ZONE_LABEL[zone]:'';
   const shipEl=document.getElementById('co-ship');
   const totalEl=document.getElementById('co-total');

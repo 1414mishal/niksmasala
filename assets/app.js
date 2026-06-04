@@ -372,19 +372,23 @@ function cartSubtotal(){return getCart().reduce((s,i)=>s+i.price*i.qty,0)}
 function cartWeight(){
   return getCart().reduce((s,i)=>s+(i.grams||100)*i.qty, 0);
 }
-/* ---- Zone-based shipping rates (from Mangalore) ----
-   Adjust the rupee values here whenever courier contracts change.
-   Zone A = Karnataka (home state)
-   Zone B = South India
-   Zone C = Central / West India
-   Zone D = North / East India
-   Zone E = Remote (islands, Ladakh) */
+/* ---- Zone-based shipping rates (from Mangalore 575015 via Shiprocket) ----
+   Rates sourced from Shiprocket rate calculator, June 2026.
+   Update these whenever courier contracts change.
+
+   LOCAL  = Mangalore city (pincode 575xxx) — own/local courier
+   Zone A = Rest of Karnataka          (confirmed 0.5kg ₹78.75 Blue Dart Surface)
+   Zone B = South India                (estimated — close to Zone A)
+   Zone C = Central / West India       (confirmed 0.5kg ₹91.35 Blue Dart Surface)
+   Zone D = North / East India         (confirmed 0.5kg ₹99.36, 1kg ₹188.36 Delhivery)
+   Zone E = Remote (islands, Ladakh)   (estimated)                                    */
 const SHIP_ZONES = {
-  A:{ light:60,  heavy:100 },
-  B:{ light:90,  heavy:140 },
-  C:{ light:110, heavy:170 },
-  D:{ light:140, heavy:210 },
-  E:{ light:220, heavy:320 },
+  LOCAL:{ light:60,  heavy:100 },  // Mangalore city, own delivery
+  A:    { light:79,  heavy:145 },  // Karnataka (confirmed 0.5kg; 1kg estimated)
+  B:    { light:85,  heavy:155 },  // South India (estimated)
+  C:    { light:92,  heavy:165 },  // Central/West (confirmed 0.5kg; 1kg estimated)
+  D:    { light:100, heavy:189 },  // North/East (both confirmed)
+  E:    { light:130, heavy:240 },  // Remote (estimated)
 };
 const _STATE_ZONE = {
   'Karnataka':'A',
@@ -400,17 +404,24 @@ const _STATE_ZONE = {
   'Ladakh':'E','Andaman & Nicobar Islands':'E','Lakshadweep':'E',
   'Dadra & Nagar Haveli and Daman & Diu':'E',
 };
-const _ZONE_LABEL = { A:'Karnataka', B:'South India', C:'Central/West India', D:'North/East India', E:'Remote' };
+const _ZONE_LABEL = {
+  LOCAL:'Mangalore local', A:'Karnataka', B:'South India',
+  C:'Central/West India', D:'North/East India', E:'Remote'
+};
 
-function computeShipping(state){
+/* pincode: string. Mangalore city = 575xxx → LOCAL rate */
+function computeShipping(state, pincode){
   const s=getSettings();
   const sub=cartSubtotal();
   if(!sub) return 0;
   if(sub>=s.shippingFree) return 0;
   const w=cartWeight();
-  // No state yet (cart drawer) → show minimum Karnataka rate
-  if(!state) return w>=1000 ? s.shippingFeeHeavy : s.shippingFee;
-  const zone = _STATE_ZONE[state] || 'D'; // unknown state → conservative North/East rate
+  // Mangalore local delivery
+  if(pincode && String(pincode).startsWith('575'))
+    return w>=1000 ? SHIP_ZONES.LOCAL.heavy : SHIP_ZONES.LOCAL.light;
+  // No state yet (cart drawer) → show Karnataka base rate
+  if(!state) return w>=1000 ? SHIP_ZONES.A.heavy : SHIP_ZONES.A.light;
+  const zone = _STATE_ZONE[state] || 'D';
   const rates = SHIP_ZONES[zone];
   return w>=1000 ? rates.heavy : rates.light;
 }
