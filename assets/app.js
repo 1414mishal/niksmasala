@@ -384,11 +384,11 @@ function cartWeight(){
    Zone E = Remote (islands, Ladakh)   (estimated)                                    */
 const SHIP_ZONES = {
   LOCAL:{ light:60,  heavy:100 },  // Mangalore city, own delivery
-  A:    { light:79,  heavy:145 },  // Karnataka (confirmed 0.5kg; 1kg estimated)
-  B:    { light:85,  heavy:155 },  // South India (estimated)
-  C:    { light:92,  heavy:165 },  // Central/West (confirmed 0.5kg; 1kg estimated)
-  D:    { light:100, heavy:189 },  // North/East (both confirmed)
-  E:    { light:130, heavy:240 },  // Remote (estimated)
+  A:    { light:84,  heavy:150 },  // Karnataka (confirmed 0.5kg; 1kg estimated)
+  B:    { light:90,  heavy:160 },  // South India (estimated)
+  C:    { light:97,  heavy:170 },  // Central/West (confirmed 0.5kg; 1kg estimated)
+  D:    { light:105, heavy:194 },  // North/East (both confirmed)
+  E:    { light:135, heavy:245 },  // Remote (estimated)
 };
 const _STATE_ZONE = {
   'Karnataka':'A',
