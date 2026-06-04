@@ -48,12 +48,50 @@
 
 <div id="checkoutContent"></div>
 
+<!-- Minimum order modal -->
+<div id="minOrderModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;display:none;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:16px;padding:40px 32px;max-width:420px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+    <div style="font-size:48px;margin-bottom:16px">🛒</div>
+    <h2 style="font-size:24px;font-weight:800;margin-bottom:12px;color:var(--ink)">Minimum Order Required</h2>
+    <p id="minOrderMsg" style="color:var(--muted);font-size:15px;line-height:1.6;margin-bottom:28px"></p>
+    <a href="shop.html" class="btn btn-primary" style="display:inline-block;padding:14px 32px;font-size:14px">Continue Shopping</a>
+  </div>
+</div>
+
 <div id="siteFooter"></div>
 
 <script src="assets/app.js"></script>
 <script src="assets/theme-app.js"></script>
 <script>
 mountHeaderFooter('shop');
+
+/* ---- Minimum order values ---- */
+const MIN_ORDER = {
+  LOCAL: 0,    // Mangalore city — no minimum
+  OTHER: 599   // All other states
+};
+function getMinOrder(state, pincode){
+  if(pincode && String(pincode).startsWith('575')) return MIN_ORDER.LOCAL;
+  if(state === 'Karnataka') return 399;
+  return MIN_ORDER.OTHER;
+}
+function checkMinOrder(state, pincode){
+  const sub = cartSubtotal();
+  const min = getMinOrder(state, pincode);
+  if(min > 0 && sub < min){
+    const modal = document.getElementById('minOrderModal');
+    const msg   = document.getElementById('minOrderMsg');
+    if(msg){
+      const zone = (pincode&&String(pincode).startsWith('575'))
+        ? 'Mangalore local' : (state||'your location');
+      msg.textContent = 'Minimum order value for '+zone+' is ₹'+min
+        +'. Your cart is ₹'+sub+'. Please add ₹'+(min-sub)+' more to proceed.';
+    }
+    if(modal){ modal.style.display='flex'; }
+    return false;
+  }
+  return true;
+}
 
 const cart=getCart();
 const s=getSettings();
@@ -164,6 +202,7 @@ function updateCoShipping(){
   const form=document.querySelector('.checkout-form-card');
   const state=form?form.querySelector('[name="state"]').value:'';
   const pin=form?form.querySelector('[name="pin"]').value:'';
+  checkMinOrder(state, pin);
   const sub=cartSubtotal(), ship=computeShipping(state,pin), total=sub+ship;
   let zone='';
   if(pin&&pin.startsWith('575')) zone='LOCAL';
@@ -204,6 +243,8 @@ function updateCoShipping(){
 async function placeOrder(e){
   e.preventDefault();
   const f=new FormData(e.target);
+  // Block if minimum order not met
+  if(!checkMinOrder(f.get('state')||'', f.get('pin')||'')) return;
   const phoneRaw=(f.get('phone')||'').replace(/\D/g,'');
   const phone10=phoneRaw.length===12&&phoneRaw.startsWith('91')?phoneRaw.slice(2):phoneRaw.slice(-10);
 
