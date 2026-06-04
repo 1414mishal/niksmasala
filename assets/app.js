@@ -38,69 +38,7 @@ function newOrderId(){
   return 'NM' + yy + '-' + hex;
 }
 
-/* ---------- Product image lookup ---------- */
-const IMG = {
-  turmeric:   'assets/products/turmeric.webp',
-  redchilli:  'assets/products/red-chilli.webp',
-  coriander:  'assets/products/coriander.webp',
-  jeera:      'assets/products/jeera.webp',
-  pepper:     'assets/products/pepper.webp',
-  kashmiri:   'assets/products/kashmiri.webp',
-  kitchenking:'assets/products/kitchen-king.webp',
-  sambar:     'assets/products/sambar.webp',
-  rasam:      'assets/products/rasam.webp',
-  puliyogare: 'assets/products/puliyogare.webp',
-  pulav:      'assets/products/pulav.webp',
-  chhole:     'assets/products/chhole.webp',
-  pavbhaji:   'assets/products/pav-bhaji.webp',
-  jaljeera:   'assets/products/jaljeera.webp',
-  kundapura:  'assets/products/kundapura.webp',
-  chicken:    'assets/products/chicken-masala.webp',
-  tandoori:   'assets/products/tandoori.webp',
-  tikka:      'assets/products/tikka.webp',
-  gheeRoast:  'assets/products/ghee-roast.webp',
-  mutton:     'assets/products/mutton.webp',
-  fish:       'assets/products/fish-masala.webp',
-  garam:      'assets/products/garam-masala.webp',
-  soya:       'assets/products/soya.webp',
-  methi:      'assets/products/kasuri-methi.webp',
-  sabji:      'assets/products/sabji-masala.webp'
-};
 const FALLBACK_IMG = 'assets/products/garam-masala.webp';
-
-function _pick(name){
-  const n=(name||'').toLowerCase();
-  if(n.includes('turmeric'))                        return IMG.turmeric;
-  if(n.includes('kashmiri'))                        return IMG.kashmiri;
-  if(n.includes('red chilli')||n.includes('red chili')) return IMG.redchilli;
-  if(n.includes('coriander'))                       return IMG.coriander;
-  if(n.includes('jeera')||n.includes('cumin'))      return IMG.jeera;
-  if(n.includes('black pepper'))                    return IMG.pepper;
-  if(n.includes('sabji'))                           return IMG.sabji;
-  if(n.includes('puliyogare'))                      return IMG.puliyogare;
-  if(n.includes('pulav')||n.includes('pulao'))      return IMG.pulav;
-  if(n.includes('chhole'))                          return IMG.chhole;
-  if(n.includes('pav bhaji'))                       return IMG.pavbhaji;
-  if(n.includes('jajeera')||n.includes('jaljeera')) return IMG.jaljeera;
-  if(n.includes('chaat'))                           return IMG.jaljeera;
-  if(n.includes('sambar'))                          return IMG.sambar;
-  if(n.includes('rasam'))                           return IMG.rasam;
-  if(n.includes('ghee roast'))                      return IMG.gheeRoast;
-  if(n.includes('kundapura'))                       return IMG.kundapura;
-  if(n.includes('tandoori'))                        return IMG.tandoori;
-  if(n.includes('tikka'))                           return IMG.tikka;
-  if(n.includes('biriyani')||n.includes('biryani')) return IMG.chicken;
-  if(n.includes('kabab')||n.includes('65'))         return IMG.tandoori;
-  if(n.includes('sukka')||n.includes('pulimunchi')) return IMG.chicken;
-  if(n.includes('chicken'))                         return IMG.chicken;
-  if(n.includes('fish'))                            return IMG.fish;
-  if(n.includes('mutton')||n.includes('meat')||n.includes('bafath')||n.includes('egg')) return IMG.mutton;
-  if(n.includes('kitchen king'))                    return IMG.kitchenking;
-  if(n.includes('garam'))                           return IMG.garam;
-  if(n.includes('soya'))                            return IMG.soya;
-  if(n.includes('methi'))                           return IMG.methi;
-  return FALLBACK_IMG;
-}
 
 function _cat(name){
   const n=(name||'').toLowerCase();
@@ -220,19 +158,50 @@ const _RAW = [
 ];
 
 const _DESCRIPTIONS = {
+  /* Ground Spices */
+  'Turmeric Powder':'Stone-ground farm-fresh turmeric with high curcumin content. Pure, vibrant and absolutely unadulterated.',
+  'Red Chilli Powder':'Bold, bright red chilli powder — sun-dried Byadgi chillies traditionally ground for deep colour and clean heat.',
+  'Coriander Powder':'Freshly stone-ground coriander — earthy, fragrant and kitchen-essential. The base of every great curry.',
+  'Kashmiri Chilli Powder':'Vibrant red colour with mild heat — sourced from premium Kashmiri chillies for colour-rich gravies without the burn.',
+  'Jeera Powder':'Sun-dried and stone-ground cumin — warm, earthy and deeply aromatic. The backbone of Indian cooking.',
+  'Black Pepper Powder':'Bold heat and rich aroma from Malabar\'s finest black pepper, stone-ground to preserve every note.',
+  /* Veg Specialities */
+  'Garam Masala':'The soul of Indian kitchens — a warm, balanced blend of hand-roasted whole spices.',
+  'Super Garam Masala':'An elevated blend — richer, deeper and more complex than the classic. For special occasion cooking.',
+  'Udupi Sambar Masala':'Classic Udupi-style sambar masala with hand-roasted lentils, coriander and fenugreek.',
+  'Super Sambar Masala':'A premium sambar masala with extra hand-roasted lentils and spices for a thicker, richer sambar.',
+  'Udupi Rasam Masala':'A bowl of warmth rooted in tradition — light, aromatic and deeply comforting rasam blend.',
+  'Vegetable Pulav Masala':'Fragrant basmati-ready blend with whole spices, bay leaf and mace — turns a simple pulav into a celebration.',
+  'Chaat Masala':'That signature tangy-spicy punch — black salt, amchur and roasted cumin. Essential for chaats, salads and snacks.',
+  'Chhole Masala':'Smoky, tangy and deeply spiced — the authentic chhole blend that takes your chickpeas to restaurant level.',
+  'Jal Jeera Powder':'Cooling, tangy and refreshingly aromatic — mix with water, lemon and mint for India\'s favourite summer drink.',
+  'Pav Bhaji Masala':'The essential Mumbai street-food blend — bold, buttery and unmistakably pav-bhaji. Just add vegetables and butter.',
+  'Sabji Masala':'A perfectly balanced all-purpose masala for any vegetable dish, dal or dry sabji — every day cooking made exceptional.',
+  'Puliyogare Powder':'The classic Udupi temple rice blend — tamarind, sesame and hand-roasted spices that make a simple rice dish absolutely addictive.',
+  'Kitchen King Masala':'The master spice blend — works with vegetables, paneer, lentils and gravies. A must-have in every kitchen.',
+  /* Non-Veg Specialities */
   'Chicken Ghee Roast Masala':'A Mangalorean masterpiece — roasted spices, red chillies & pure ghee aroma. Bold, buttery and bursting with coastal flavour.',
   'Chicken Kundapura Masala':'Fiery and flavourful — the authentic taste of Mangalore\'s famous kitchens, crafted with handpicked coastal spices.',
   'Chicken Sukka Masala (Mangalore No.1)':'The iconic dry Mangalorean chicken preparation. Robust, fragrant and deeply traditional.',
-  'Chicken Kabab / Chicken 65 Masala':'Juicy, crispy and bursting with bold spices — restaurant-style kabab & chicken 65 made easy.',
-  'Fish Fry Masala':'Coastal fish-fry blend — authentic colour, aroma and that unforgettable crispy-outside, juicy-inside finish.',
   'Chicken Masala':'Slow-cooked perfection in a packet — aromatic spices that blend into a rich, thick, flavourful gravy.',
-  'Udupi Rasam Masala':'A bowl of warmth rooted in tradition — light, aromatic and deeply comforting rasam blend.',
-  'Udupi Sambar Masala':'Classic Udupi-style sambar masala with hand-roasted lentils, coriander and fenugreek.',
-  'Garam Masala':'The soul of Indian kitchens — a warm, balanced blend of hand-roasted whole spices.',
-  'Turmeric Powder':'Stone-ground farm-fresh turmeric with high curcumin content. Pure and vibrant.',
-  'Red Chilli Powder':'Bold, bright red chilli powder — sun-dried and traditionally ground.',
-  'Kashmiri Chilli Powder':'Vibrant red colour with mild heat. Sourced from premium Kashmiri chillies.',
-  'Coriander Powder':'Freshly ground coriander — earthy, fragrant and kitchen-essential.'
+  'Super Chicken Masala':'Richer, bolder, more aromatic — the premium version of our classic for a truly restaurant-grade chicken gravy.',
+  'Chicken Pulimunchi Masala':'Pulimunchi — the Tulu word for tamarind heat. A tangy, fiery Mangalorean curry that\'s intensely coastal.',
+  'Chicken Kabab / Chicken 65 Masala':'Juicy, crispy and bursting with bold spices — restaurant-style kabab & chicken 65 made effortlessly at home.',
+  'Chicken Biriyani Masala':'All the whole spices, perfectly balanced — for a fragrant, restaurant-style biryani every single time.',
+  'Chicken Tandoori Masala':'Smoky, vibrant red and packed with Kashmiri chillies — true tandoor flavour from your own oven or grill.',
+  'Chicken Tikka Masala':'The classic restaurant blend — mildly spiced, aromatic and creamy. Pairs perfectly with yoghurt and cream.',
+  'Fish Curry Masala':'Coastal Mangalorean fish curry at its finest — tamarind, kokum and hand-ground spices in one aromatic blend.',
+  'Fish Pulimunchi Masala':'Tangy, fiery and intensely flavoured — the legendary Mangalorean fish pulimunchi, ready in minutes.',
+  'Fish Fry Masala':'Coastal fish-fry blend — authentic colour, aroma and that unforgettable crispy-outside, juicy-inside finish.',
+  'Mutton / Meat Masala':'Robust and deeply aromatic — slow-roasted spices that bring out the very best in mutton, lamb and red meat.',
+  'Bafath Masala':'A Mangalorean Catholic classic — the traditional spice blend for slow-cooked bafath, rich, fiery and full of history.',
+  'Egg Curry Masala':'Simple, comforting and packed with flavour — a versatile blend for quick, deeply satisfying egg curries.',
+  /* Other Products */
+  'Compounded Asafoetida Powder':'Pure, pungent and kitchen-essential — a pinch transforms dal, curries and achaar with that unmistakable hing aroma.',
+  'Ginger-Garlic Paste':'Fresh, preservative-free ginger-garlic paste — the foundational base for almost every Indian curry and marinade.',
+  'Niks Papad':'Crisp, light and perfectly seasoned — traditional Mangalorean papad that\'s perfect as a side or snack.',
+  'Kasuri Methi':'Sun-dried fenugreek leaves with a distinctive bitter depth — essential in dals, curries, parathas and rotis.',
+  'Soya Chunks':'High-protein textured soya chunks — versatile in curries, biryani and dry preparations. A great meat substitute.'
 };
 
 /* Ratings & review counts removed — we don't have real customer reviews yet.
@@ -310,15 +279,18 @@ const DEFAULT_SETTINGS = {
   email:'inihaex@gmail.com',
   address:'Plot no. L-6, 5-50, Yeyyadi Industrial Area, Mangaluru, Dakshina Kannada, Karnataka 575015',
   gstin:'29AAFCI2793E1ZD',
+  fssai:'',  /* ← ADD YOUR FSSAI LICENSE NUMBER HERE */
   company:'Iniha Exports Pvt Ltd',
   currency:'₹',
   shippingFree:799,
-  shippingFee:60,
-  shippingFeeHeavy:120,
+  /* shippingFee / shippingFeeHeavy kept for backwards-compat with any
+     cached settings in localStorage. computeShipping() uses SHIP_ZONES. */
+  shippingFee:84,
+  shippingFeeHeavy:150,
   instagram:'https://www.instagram.com/niks.masala/',
-  /* TODO(backend): move this to a server env var and pass an `order_id`
-     issued by your Razorpay server-side `orders.create` call. Never trust
-     `amount` computed in the browser. */
+  /* ⚠️  IMPORTANT: Replace rzp_test_ key with your LIVE key before going live.
+     Better still — fetch this from the server so it never ships in client JS.
+     Test key = NO real money collected. */
   razorpayKey:'rzp_test_SgFzfBVh4i57d2'
 };
 
@@ -418,12 +390,12 @@ function computeShipping(state, pincode){
   const w=cartWeight();
   // Mangalore local delivery
   if(pincode && String(pincode).startsWith('575'))
-    return w>=1000 ? SHIP_ZONES.LOCAL.heavy : SHIP_ZONES.LOCAL.light;
+    return w>=500 ? SHIP_ZONES.LOCAL.heavy : SHIP_ZONES.LOCAL.light;
   // No state yet (cart drawer) → show Karnataka base rate
-  if(!state) return w>=1000 ? SHIP_ZONES.A.heavy : SHIP_ZONES.A.light;
+  if(!state) return w>=500 ? SHIP_ZONES.A.heavy : SHIP_ZONES.A.light;
   const zone = _STATE_ZONE[state] || 'D';
   const rates = SHIP_ZONES[zone];
-  return w>=1000 ? rates.heavy : rates.light;
+  return w>=500 ? rates.heavy : rates.light;
 }
 
 const _selectedVariant = {};
@@ -549,7 +521,7 @@ function buildFooter(){
   return `
   <section class="newsletter">
     <h2>Join the Niks Family</h2>
-    <p>Subscribe for exclusive recipes, early access to new blends &amp; 10% off your first order.</p>
+    <p>Subscribe for exclusive recipes, new blend launches and early access to offers.</p>
     <form class="news-form" onsubmit="handleNewsletter(event)">
       <input type="email" name="email" placeholder="Your email address" required aria-label="Your email address">
       <button type="submit">Subscribe</button>
@@ -595,7 +567,7 @@ function buildFooter(){
         <p style="font-size:13.5px;margin-bottom:10px"><strong>${esc(s.company)}</strong><br>${esc(s.address)}</p>
         <p style="font-size:13px;margin-bottom:6px">📞 <a href="tel:${attr(s.phone.replace(/\s/g,''))}">${esc(s.phone)}</a></p>
         <p style="font-size:13px;margin-bottom:6px">✉ <a href="mailto:${attr(s.email)}">${esc(s.email)}</a></p>
-        <p style="font-size:12px;color:#c9b999;margin-top:8px">GSTIN: ${esc(s.gstin)} · FSSAI Lic. (display in production)</p>
+        <p style="font-size:12px;color:#c9b999;margin-top:8px">GSTIN: ${esc(s.gstin)} · FSSAI Lic. No: ${esc(s.fssai||'— (add to settings)')}</p>
       </div>
     </div>
     <div class="footer-bot">
