@@ -99,12 +99,15 @@
   <div class="shipping-wrap">
     <table class="shipping-table">
       <thead>
-        <tr><th>Order Value</th><th>Total Weight</th><th>Shipping Fee</th></tr>
+        <tr><th>Zone</th><th>Up to 500g</th><th>Above 500g</th></tr>
       </thead>
       <tbody>
-        <tr><td>Below ₹799</td><td>Up to 1 kg</td><td>₹60</td></tr>
-        <tr><td>Below ₹799</td><td>Above 1 kg</td><td>₹120</td></tr>
-        <tr><td><strong>₹799 and above</strong></td><td>Any weight</td><td><strong style="color:#1f6b3a">FREE</strong></td></tr>
+        <tr><td>Mangalore local (575xxx)</td><td>₹60</td><td>₹100</td></tr>
+        <tr><td>Karnataka</td><td>₹84</td><td>₹150</td></tr>
+        <tr><td>South India</td><td>₹90</td><td>₹160</td></tr>
+        <tr><td>Central / West India</td><td>₹97</td><td>₹170</td></tr>
+        <tr><td>North / East India</td><td>₹105</td><td>₹194</td></tr>
+        <tr><td><strong>All zones — ₹799 and above</strong></td><td colspan="2"><strong style="color:#1f6b3a">FREE</strong></td></tr>
       </tbody>
     </table>
     <div class="shipping-note">
@@ -141,7 +144,7 @@ document.getElementById('c-addr').textContent=s.address;
 document.getElementById('c-wa').href='https://wa.me/'+s.phone.replace(/\D/g,'');
 
 const FAQ=[
-  ['How long does shipping take?','Orders are dispatched within 24–48 hours from our Mangalore facility. Standard delivery across India takes 3–7 business days. Shipping is FREE on orders above ₹799; below that, ₹60 (up to 1 kg) or ₹120 (heavier orders).'],
+  ['How long does shipping take?','Orders are dispatched within 24–48 hours from our Mangalore facility. Delivery takes 3–7 business days. Shipping is FREE on orders above ₹799. Below that, rates vary by zone — from ₹60 (Mangalore local) to ₹105 (North/East India). Exact charge shown at checkout once you enter your pincode.'],
   // COD removed - online-only payments
   ['Are your spices organic?','Our turmeric is certified organic, and most of our spices are sourced from farms practicing natural farming. Every blend is 100% pure with no additives.'],
   ['How should I store Niks Masala products?','Store in an airtight container in a cool, dry place away from direct sunlight. Use within 12 months of opening for peak flavor.'],
