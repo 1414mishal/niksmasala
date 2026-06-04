@@ -279,7 +279,7 @@ const DEFAULT_SETTINGS = {
   email:'inihaex@gmail.com',
   address:'Plot no. L-6, 5-50, Yeyyadi Industrial Area, Mangaluru, Dakshina Kannada, Karnataka 575015',
   gstin:'29AAFCI2793E1ZD',
-  fssai:'',  /* ← ADD YOUR FSSAI LICENSE NUMBER HERE */
+  fssai:'11221312000820',
   company:'Iniha Exports Pvt Ltd',
   currency:'₹',
   shippingFree:799,
