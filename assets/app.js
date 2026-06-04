@@ -372,13 +372,47 @@ function cartSubtotal(){return getCart().reduce((s,i)=>s+i.price*i.qty,0)}
 function cartWeight(){
   return getCart().reduce((s,i)=>s+(i.grams||100)*i.qty, 0);
 }
-function computeShipping(){
+/* ---- Zone-based shipping rates (from Mangalore) ----
+   Adjust the rupee values here whenever courier contracts change.
+   Zone A = Karnataka (home state)
+   Zone B = South India
+   Zone C = Central / West India
+   Zone D = North / East India
+   Zone E = Remote (islands, Ladakh) */
+const SHIP_ZONES = {
+  A:{ light:60,  heavy:100 },
+  B:{ light:90,  heavy:140 },
+  C:{ light:110, heavy:170 },
+  D:{ light:140, heavy:210 },
+  E:{ light:220, heavy:320 },
+};
+const _STATE_ZONE = {
+  'Karnataka':'A',
+  'Kerala':'B','Tamil Nadu':'B','Goa':'B','Andhra Pradesh':'B',
+  'Telangana':'B','Puducherry':'B',
+  'Maharashtra':'C','Gujarat':'C','Madhya Pradesh':'C','Rajasthan':'C',
+  'Chhattisgarh':'C','Odisha':'C',
+  'Delhi':'D','Uttar Pradesh':'D','Bihar':'D','Jharkhand':'D',
+  'West Bengal':'D','Haryana':'D','Punjab':'D','Himachal Pradesh':'D',
+  'Uttarakhand':'D','Jammu & Kashmir':'D','Chandigarh':'D','Assam':'D',
+  'Manipur':'D','Meghalaya':'D','Mizoram':'D','Nagaland':'D',
+  'Arunachal Pradesh':'D','Tripura':'D','Sikkim':'D',
+  'Ladakh':'E','Andaman & Nicobar Islands':'E','Lakshadweep':'E',
+  'Dadra & Nagar Haveli and Daman & Diu':'E',
+};
+const _ZONE_LABEL = { A:'Karnataka', B:'South India', C:'Central/West India', D:'North/East India', E:'Remote' };
+
+function computeShipping(state){
   const s=getSettings();
   const sub=cartSubtotal();
   if(!sub) return 0;
   if(sub>=s.shippingFree) return 0;
   const w=cartWeight();
-  return w>=1000 ? s.shippingFeeHeavy : s.shippingFee;
+  // No state yet (cart drawer) → show minimum Karnataka rate
+  if(!state) return w>=1000 ? s.shippingFeeHeavy : s.shippingFee;
+  const zone = _STATE_ZONE[state] || 'D'; // unknown state → conservative North/East rate
+  const rates = SHIP_ZONES[zone];
+  return w>=1000 ? rates.heavy : rates.light;
 }
 
 const _selectedVariant = {};
