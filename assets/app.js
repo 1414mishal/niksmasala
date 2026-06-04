@@ -279,7 +279,7 @@ const _PIMG = {
   'Egg Curry Masala':'assets/products/pouch-egg.webp',
   'Kitchen King Masala':'assets/products/pouch-kitchen-king.webp',
   'Compounded Asafoetida Powder':'assets/products/Compound asafoetida.png',
-  'Ginger-Garlic Paste':'assets/products/Ginger garlic paste.png',
+  'Ginger-Garlic Paste':'assets/products/Ginger garlic paste.jpg',
   'Niks Papad':'assets/products/Niks Papad.png',
   'Kasuri Methi':'assets/products/box-kasuri-methi.webp',
   'Soya Chunks':'assets/products/box-soya.webp'
