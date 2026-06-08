@@ -2302,6 +2302,11 @@ section.block:not([style*="background"]) > div{
   opacity:0; transition:opacity 1s ease;
 }
 .hero-slide.is-active{ opacity:1; }
+/* Static single-image hero (no rotation): match the banner's own aspect
+   ratio exactly so object-fit:contain fills the box edge-to-edge with no
+   letterbox bars, on desktop AND phone. Higher specificity than the
+   2.6/1 + mobile 1.9/1 rules below, so it always wins. */
+.hero-slides.hero-slides--static{ aspect-ratio: 2802 / 742; }
 .hero-intro{
   max-width:860px; margin:0 auto; text-align:center;
   padding:clamp(26px,5vw,52px) 24px clamp(40px,6vw,72px);
@@ -2316,6 +2321,20 @@ section.block:not([style*="background"]) > div{
   color:#fbeede; max-width:600px; margin:0 auto 30px;
 }
 .hero-ctas{ display:flex; flex-wrap:wrap; gap:14px; justify-content:center; align-items:center; }
+
+/* Campaign spotlight — auto-rotating ambassador banners (crossfade,
+   matches the banners' own 1400/777 aspect so they fill edge-to-edge). */
+.promo-rotator{
+  position:relative; width:100%; aspect-ratio: 1400 / 777;
+  border-radius:20px; overflow:hidden;
+  box-shadow:0 20px 54px -24px rgba(46,26,22,.32);
+}
+.promo-slide{
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; object-position:center;
+  opacity:0; transition:opacity 1.1s ease;
+}
+.promo-slide.is-active{ opacity:1; }
 @media (max-width:768px){
   .hero-slides{ aspect-ratio:1.9 / 1; }
 }

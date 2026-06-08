@@ -231,13 +231,11 @@
      HERO — original dark-overlay banner
      ============================================================ -->
 <section class="hero-rotator">
-  <!-- Auto-rotating slideshow of the landscape product banners. Shown at
-       their natural aspect (object-fit:contain on the spice texture) so the
-       full banner + its baked-in text is never cropped — on desktop OR phone.
-       Order: Fish Fry, then the clean (non-gemini) nikshero banner. -->
-  <div class="hero-slides" role="img" aria-label="Niks Masala featured masalas">
-    <img class="hero-slide is-active" src="assets/2.webp" fetchpriority="high" alt="Niks Fish Fry Masala Powder — Mangalore-style fish fry"/>
-    <img class="hero-slide" src="assets/nikshero.webp" loading="lazy" alt="Niks Masala range — a taste you won't forget"/>
+  <!-- Static hero banner — the full Niks Masala range + branding, shown at
+       its natural aspect (object-fit:contain) so the baked-in text is never
+       cropped on desktop OR phone. -->
+  <div class="hero-slides hero-slides--static">
+    <img class="hero-slide is-active" src="assets/banner-hero-gem.webp" fetchpriority="high" alt="Niks Masala — full range of authentic Mangalorean masalas and spices"/>
   </div>
 
   <div class="hero-intro">
@@ -254,19 +252,6 @@
     </div>
   </div>
 </section>
-<script>
-/* Crossfade the hero banners every few seconds. */
-(function(){
-  var slides = document.querySelectorAll('.hero-rotator .hero-slide');
-  if (slides.length < 2) return;
-  var i = 0;
-  setInterval(function(){
-    slides[i].classList.remove('is-active');
-    i = (i + 1) % slides.length;
-    slides[i].classList.add('is-active');
-  }, 4500);
-})();
-</script>
 
 <!-- ============================================================
      TRUST STRIP
@@ -549,6 +534,31 @@
     .featured-banners { padding: 64px 16px !important; }
   }
 </style>
+
+<!-- ============================================================
+     CAMPAIGN SPOTLIGHT — auto-rotating ambassador banners
+     ============================================================ -->
+<section style="background:#fcf8f0;padding:0 24px 96px">
+  <div style="max-width:1100px;margin:0 auto">
+    <div class="promo-rotator" data-reveal="up" role="img" aria-label="Niks Masala campaign banners">
+      <img class="promo-slide is-active" src="assets/banner-aravind-bolar.webp" alt="Niks Masala campaign banner with chef Aravind Bolar holding the Niks Masala range" loading="lazy"/>
+      <img class="promo-slide" src="assets/banner-kid.webp" alt="Niks Masala campaign banner — a young brand ambassador holding Niks Rasam Powder" loading="lazy"/>
+    </div>
+  </div>
+</section>
+<script>
+/* Crossfade the campaign banners every few seconds. */
+(function(){
+  var slides = document.querySelectorAll('.promo-rotator .promo-slide');
+  if (slides.length < 2) return;
+  var i = 0;
+  setInterval(function(){
+    slides[i].classList.remove('is-active');
+    i = (i + 1) % slides.length;
+    slides[i].classList.add('is-active');
+  }, 5000);
+})();
+</script>
 
 <!-- Recipes carousel removed from homepage. The 10 recipe videos now
      live on their own page (/recipes.html) where they get a proper
