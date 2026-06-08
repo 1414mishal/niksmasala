@@ -160,9 +160,10 @@ buildFooter = function () {
   </style>`;
 };
 
-/* Pouch image shown on hover for box products (keyed by name → works for
-   default and cloud-synced products). Box-only products (Sabji, Tikka) and
-   pouch-only products have no hover. */
+/* Secondary pack image shown on hover / as the second gallery view (keyed by
+   name → works for default and cloud-synced products). For box-primary
+   products this is the pouch shot; for pouch-primary products (Sabji, Tikka,
+   Chaat) this is the box shot. Products with only one pack photo have none. */
 const _HOVER = {
   'Turmeric Powder':'assets/products/pouch-turmeric.webp',
   'Red Chilli Powder':'assets/products/pouch-red-chilli.webp',
@@ -182,6 +183,9 @@ const _HOVER = {
   'Chicken Kundapura Masala':'assets/products/pouch-kundapura.webp',
   'Chicken Masala':'assets/products/pouch-chicken.webp',
   'Chicken Tandoori Masala':'assets/products/pouch-tandoori.webp',
+  'Chaat Masala':'assets/products/pouch-chaat.webp',
+  'Sabji Masala':'assets/products/box-sabji.webp',
+  'Chicken Tikka Masala':'assets/products/box-tikka.webp',
   'Fish Curry Masala':'assets/products/pouch-fish2.webp',
   'Mutton / Meat Masala':'assets/products/pouch-mutton.webp',
   'Kasuri Methi':'assets/products/pouch-kasuri-methi.webp',
@@ -196,13 +200,14 @@ const _HOVER = {
    the box + add its _HOVER pouch, and the second thumbnail appears automatically. */
 function productGalleryViews(p){
   const primary = (p && p.image) || FALLBACK_IMG;
-  const pouch = (p && _HOVER[p.name]) || '';
+  const secondary = (p && _HOVER[p.name]) || '';
   const views = [];
   if (/\/box-/.test(primary)) {
     views.push({ label: 'Box', src: primary });
-    if (pouch) views.push({ label: 'Pouch', src: pouch });
+    if (secondary) views.push({ label: 'Pouch', src: secondary });
   } else if (/\/pouch-/.test(primary)) {
     views.push({ label: 'Pouch', src: primary });
+    if (secondary) views.push({ label: 'Box', src: secondary });
   } else {
     views.push({ label: '', src: primary });
   }
@@ -228,7 +233,10 @@ productCardHTML = function (p) {
   const variants = p.variants || [{ pack: p.weight || '', grams: p.grams || 100, price: p.price }];
   const first = variants[0];
   const hasMany = variants.length > 1;
-  const hoverImg = _HOVER[p.name] || '';
+  const _views = productGalleryViews(p);
+  const _hoverView = _views[1] || null;
+  const hoverImg = (_hoverView && _hoverView.src) || '';
+  const hoverLabel = ((_hoverView && _hoverView.label) || 'pouch').toLowerCase();
   const badgeHtml = p.badge === 'BESTSELLER'
     ? `<span class="product-card-v2__badge">Bestseller</span>`
     : p.badge
@@ -240,7 +248,7 @@ productCardHTML = function (p) {
     <a href="product.html?id=${attr(p.id)}" class="product-card-v2__media${hoverImg ? ' has-hover' : ''}" aria-label="${attr(p.name)}">
       ${badgeHtml}
       <img class="pc-pack" src="${attr(packImageFor(p, first.pack))}" alt="${attr(p.name)}" loading="lazy" onerror="this.src='${FALLBACK_IMG}'">
-      ${hoverImg ? `<img class="pc-pack pc-pack--hover" src="${attr(hoverImg)}" alt="${attr(p.name)} pouch pack" loading="lazy" aria-hidden="true">` : ''}
+      ${hoverImg ? `<img class="pc-pack pc-pack--hover" src="${attr(hoverImg)}" alt="${attr(p.name)} ${esc(hoverLabel)} pack" loading="lazy" aria-hidden="true">` : ''}
     </a>
     <div class="product-card-v2__body">
       <p class="product-card-v2__cat">${esc(p.category)}</p>
