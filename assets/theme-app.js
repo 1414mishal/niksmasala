@@ -102,8 +102,8 @@ buildFooter = function () {
         <ul style="list-style:none;padding:0;margin:0;display:grid;gap:12px">
           <li><a href="shop.html" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">All Products</a></li>
           <li><a href="shop.html?cat=Direct%20Grinding" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Ground Spices</a></li>
-          <li><a href="shop.html?cat=Veg%20Specialities" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Veg Masalas</a></li>
-          <li><a href="shop.html?cat=Non-Veg%20Specialities" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Non-Veg Masalas</a></li>
+          <li><a href="shop.html?cat=Veg%20Masalas" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Veg Masalas</a></li>
+          <li><a href="shop.html?cat=Non-Veg%20Masalas" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Non-Veg Masalas</a></li>
           <li><a href="shop.html?cat=Other%20Products" style="color:rgba(254,215,170,.8);font:500 14px/1 'Manrope';text-decoration:none;transition:color .25s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(254,215,170,.8)'">Other</a></li>
         </ul>
       </div>

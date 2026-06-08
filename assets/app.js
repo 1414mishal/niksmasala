@@ -6,7 +6,7 @@
  * those TODOs are closed.
  */
 
-const LOGO = 'nobgnikslogo.webp';
+const LOGO = 'assets/logo-niks-masala.jpg';
 
 /* ---------- Safety helpers ---------- */
 /* HTML-escape any string before it goes into innerHTML. Prevents stored XSS
@@ -47,11 +47,11 @@ function _cat(name){
     return 'Direct Grinding';
   if(n.includes('chicken')||n.includes('fish')||n.includes('mutton')||
      n.includes('meat')||n.includes('egg')||n.includes('bafath'))
-    return 'Non-Veg Specialities';
+    return 'Non-Veg Masalas';
   if(n.includes('papad')||n.includes('kasuri')||n.includes('soya')||
      n.includes('ginger')||n.includes('garlic')||n.includes('asafoetida'))
     return 'Other Products';
-  return 'Veg Specialities';
+  return 'Veg Masalas';
 }
 
 function _slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
@@ -79,16 +79,14 @@ const _RAW = [
   {name:'Black Pepper Powder', variants:[
     {pack:'50gm Box',grams:50,price:80},{pack:'100gm Box',grams:100,price:160},
     {pack:'500gm Pouch',grams:500,price:600}]},
+  {name:'Udupi Sambar Masala', variants:[
+    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
   {name:'Garam Masala', variants:[
     {pack:'50gm Box',grams:50,price:40},{pack:'100gm Pouch',grams:100,price:70},
     {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
   {name:'Super Garam Masala', variants:[
     {pack:'50gm Pouch',grams:50,price:35},{pack:'100gm Pouch',grams:100,price:60},
     {pack:'200gm Pouch',grams:200,price:110},{pack:'500gm Pouch',grams:500,price:240}]},
-  {name:'Udupi Sambar Masala', variants:[
-    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Super Sambar Masala', variants:[
-    {pack:'500gm Pouch',grams:500,price:350}]},
   {name:'Udupi Rasam Masala', variants:[
     {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
   {name:'Vegetable Pulav Masala', variants:[
@@ -165,11 +163,10 @@ const _DESCRIPTIONS = {
   'Kashmiri Chilli Powder':'Vibrant red colour with mild heat — sourced from premium Kashmiri chillies for colour-rich gravies without the burn.',
   'Jeera Powder':'Sun-dried and stone-ground cumin — warm, earthy and deeply aromatic. The backbone of Indian cooking.',
   'Black Pepper Powder':'Bold heat and rich aroma from Malabar\'s finest black pepper, stone-ground to preserve every note.',
-  /* Veg Specialities */
+  /* Veg Masalas */
   'Garam Masala':'The soul of Indian kitchens — a warm, balanced blend of hand-roasted whole spices.',
   'Super Garam Masala':'An elevated blend — richer, deeper and more complex than the classic. For special occasion cooking.',
   'Udupi Sambar Masala':'Classic Udupi-style sambar masala with hand-roasted lentils, coriander and fenugreek.',
-  'Super Sambar Masala':'A premium sambar masala with extra hand-roasted lentils and spices for a thicker, richer sambar.',
   'Udupi Rasam Masala':'A bowl of warmth rooted in tradition — light, aromatic and deeply comforting rasam blend.',
   'Vegetable Pulav Masala':'Fragrant basmati-ready blend with whole spices, bay leaf and mace — turns a simple pulav into a celebration.',
   'Chaat Masala':'That signature tangy-spicy punch — black salt, amchur and roasted cumin. Essential for chaats, salads and snacks.',
@@ -179,7 +176,7 @@ const _DESCRIPTIONS = {
   'Sabji Masala':'A perfectly balanced all-purpose masala for any vegetable dish, dal or dry sabji — every day cooking made exceptional.',
   'Puliyogare Powder':'The classic Udupi temple rice blend — tamarind, sesame and hand-roasted spices that make a simple rice dish absolutely addictive.',
   'Kitchen King Masala':'The master spice blend — works with vegetables, paneer, lentils and gravies. A must-have in every kitchen.',
-  /* Non-Veg Specialities */
+  /* Non-Veg Masalas */
   'Chicken Ghee Roast Masala':'A Mangalorean masterpiece — roasted spices, red chillies & pure ghee aroma. Bold, buttery and bursting with coastal flavour.',
   'Chicken Kundapura Masala':'Fiery and flavourful — the authentic taste of Mangalore\'s famous kitchens, crafted with handpicked coastal spices.',
   'Chicken Sukka Masala (Mangalore No.1)':'The iconic dry Mangalorean chicken preparation. Robust, fragrant and deeply traditional.',
@@ -221,14 +218,13 @@ const _PIMG = {
   'Garam Masala':'assets/products/box-garam.webp',
   'Super Garam Masala':'assets/products/pouch-super-garam.webp',
   'Udupi Sambar Masala':'assets/products/box-sambar.webp',
-  'Super Sambar Masala':'assets/products/pouch-sambar.webp',
   'Udupi Rasam Masala':'assets/products/box-rasam.webp',
   'Vegetable Pulav Masala':'assets/products/box-pulav.webp',
-  'Chaat Masala':'assets/products/pouch-chaat.webp',
+  'Chaat Masala':'assets/products/chaat-masala-box-new.png',
   'Chhole Masala':'assets/products/box-chhole.webp',
   'Jal Jeera Powder':'assets/products/box-jaljeera.webp',
   'Pav Bhaji Masala':'assets/products/box-pavbhaji.webp',
-  'Sabji Masala':'assets/products/box-sabji.webp',
+  'Sabji Masala':'assets/products/sabji-masala-pouch-new.png',
   'Puliyogare Powder':'assets/products/box-puliyogare.webp',
   'Chicken Ghee Roast Masala':'assets/products/box-ghee-roast.webp',
   'Chicken Kundapura Masala':'assets/products/box-kundapura.webp',
@@ -239,7 +235,7 @@ const _PIMG = {
   'Chicken Kabab / Chicken 65 Masala':'assets/products/pouch-kabab.webp',
   'Chicken Biriyani Masala':'assets/products/pouch-biriyani.webp',
   'Chicken Tandoori Masala':'assets/products/box-tandoori.webp',
-  'Chicken Tikka Masala':'assets/products/box-tikka.webp',
+  'Chicken Tikka Masala':'assets/products/chicken-tikka-masala-pouch-new.png',
   'Fish Curry Masala':'assets/products/box-fish.webp',
   'Fish Pulimunchi Masala':'assets/products/pouch-fish.webp',
   'Fish Fry Masala':'assets/products/pouch-fish-fry.webp',
@@ -316,6 +312,8 @@ async function loadProductsFromCloud(){
          Normalise client-side so the shop filter, nav links and homepage tile
          all use "Other Products" without needing a DB re-seed. */
       if(p.category === 'Ready-Mix Products') p.category = 'Other Products';
+      if(p.category === 'Veg Specialities') p.category = 'Veg Masalas';
+      if(p.category === 'Non-Veg Specialities') p.category = 'Non-Veg Masalas';
       if(p.name) p.image = _pick(p.name);
     });
     localStorage.setItem('niks_products', JSON.stringify(fresh));
@@ -463,8 +461,8 @@ function buildHeader(activePage){
     {href:'index.html',label:'Home',key:'home'},
     {href:'shop.html',label:'Shop',key:'shop'},
     {href:'shop.html?cat=Direct%20Grinding',label:'Ground Spices',key:'ground'},
-    {href:'shop.html?cat=Veg%20Specialities',label:'Veg Masalas',key:'veg'},
-    {href:'shop.html?cat=Non-Veg%20Specialities',label:'Non-Veg Masalas',key:'nonveg'},
+    {href:'shop.html?cat=Veg%20Masalas',label:'Veg Masalas',key:'veg'},
+    {href:'shop.html?cat=Non-Veg%20Masalas',label:'Non-Veg Masalas',key:'nonveg'},
     {href:'index.html#recipes',label:'Recipes',key:'recipes'},
     {href:'about.html',label:'About',key:'about'},
     {href:'contact.html',label:'Contact',key:'contact'}
@@ -547,8 +545,8 @@ function buildFooter(){
       <div class="footer-col"><h5>Shop</h5><ul>
         <li><a href="shop.html">All Products</a></li>
         <li><a href="shop.html?cat=Direct%20Grinding">Ground Spices</a></li>
-        <li><a href="shop.html?cat=Veg%20Specialities">Veg Masalas</a></li>
-        <li><a href="shop.html?cat=Non-Veg%20Specialities">Non-Veg Masalas</a></li>
+        <li><a href="shop.html?cat=Veg%20Masalas">Veg Masalas</a></li>
+        <li><a href="shop.html?cat=Non-Veg%20Masalas">Non-Veg Masalas</a></li>
         <li><a href="shop.html?cat=Other%20Products">Other</a></li>
       </ul></div>
       <div class="footer-col"><h5>Company</h5><ul>
