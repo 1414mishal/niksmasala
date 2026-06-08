@@ -6,7 +6,7 @@
  * those TODOs are closed.
  */
 
-const LOGO = 'assets/logo-niks-masala.jpg';
+const LOGO = 'assets/logo-niks-masala.png';
 
 /* ---------- Safety helpers ---------- */
 /* HTML-escape any string before it goes into innerHTML. Prevents stored XSS
