@@ -59,6 +59,78 @@ function _slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|
 /* ---- Grouped catalog: one entry per product, variants = size/pack options ----
    SINGLE SOURCE OF TRUTH. admin.html now imports from this file. */
 const _RAW = [
+  /* ---- Non-Veg Masalas — Chicken ---- */
+  {name:'Super Chicken Masala', variants:[
+    {pack:'200gm Pouch',grams:200,price:135}]},
+  {name:'Chicken Masala', variants:[
+    {pack:'50gm Box',grams:50,price:40},{pack:'100gm Pouch',grams:100,price:70},
+    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Chicken Sukka Masala (Mangalore No.1)', badge:'BESTSELLER', variants:[
+    {pack:'100gm Pouch',grams:100,price:70},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Chicken Kundapura Masala', variants:[
+    {pack:'100gm Pouch',grams:100,price:70},{pack:'100gm Box',grams:100,price:80},
+    {pack:'200gm Jar',grams:200,price:160},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Chicken Kabab / Chicken 65 Masala', variants:[
+    {pack:'100gm Pouch',grams:100,price:40},{pack:'200gm Pouch',grams:200,price:75},
+    {pack:'500gm Pouch',grams:500,price:250}]},
+  {name:'Chicken Ghee Roast Masala', badge:'BESTSELLER', variants:[
+    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:450}]},
+  {name:'Chicken Pulimunchi Masala', variants:[
+    {pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Chicken Biriyani Masala', variants:[
+    {pack:'500gm Pouch',grams:500,price:400}]},
+  {name:'Chicken Tandoori Masala', variants:[
+    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Chicken Tikka Masala', variants:[
+    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  /* ---- Non-Veg Masalas — Fish ---- */
+  {name:'Fish Fry Masala', badge:'BESTSELLER', variants:[
+    {pack:'100gm Pouch',grams:100,price:40},{pack:'500gm Pouch',grams:500,price:250}]},
+  {name:'Fish Curry Masala', variants:[
+    {pack:'100gm Pouch',grams:100,price:60},{pack:'100gm Box',grams:100,price:80},
+    {pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Fish Pulimunchi Masala', variants:[
+    {pack:'100gm Pouch',grams:100,price:60},{pack:'500gm Pouch',grams:500,price:350}]},
+  /* ---- Non-Veg Masalas — Mutton / Other ---- */
+  {name:'Mutton / Meat Masala', variants:[
+    {pack:'50gm Box',grams:50,price:40},{pack:'100gm Box',grams:100,price:80},
+    {pack:'500gm Pouch',grams:500,price:400}]},
+  {name:'Bafath Masala', variants:[
+    {pack:'100gm Pouch',grams:100,price:70},{pack:'500gm Pouch',grams:500,price:400}]},
+  {name:'Egg Curry Masala', variants:[
+    {pack:'500gm Pouch',grams:500,price:250}]},
+  /* ---- Veg Masalas ---- */
+  {name:'Udupi Rasam Masala', variants:[
+    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Udupi Sambar Masala', variants:[
+    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Vegetable Pulav Masala', variants:[
+    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Sabji Masala', variants:[
+    {pack:'50gm Box',grams:50,price:40},{pack:'100gm Pouch',grams:100,price:70},
+    {pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Puliyogare Powder', variants:[
+    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Kitchen King Masala', variants:[
+    {pack:'100gm Pouch',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:370}]},
+  {name:'Super Garam Masala', variants:[
+    {pack:'50gm Pouch',grams:50,price:35},{pack:'100gm Pouch',grams:100,price:60},
+    {pack:'200gm Pouch',grams:200,price:110},{pack:'500gm Pouch',grams:500,price:240}]},
+  {name:'Garam Masala', variants:[
+    {pack:'50gm Box',grams:50,price:40},{pack:'100gm Pouch',grams:100,price:70},
+    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Chaat Masala', variants:[
+    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:300}]},
+  {name:'Chhole Masala', variants:[
+    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Jal Jeera Powder', variants:[
+    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Pav Bhaji Masala', variants:[
+    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  /* ---- Direct Grinding — Black Pepper first ---- */
+  {name:'Black Pepper Powder', variants:[
+    {pack:'50gm Box',grams:50,price:80},{pack:'100gm Box',grams:100,price:160},
+    {pack:'500gm Pouch',grams:500,price:600}]},
   {name:'Turmeric Powder', variants:[
     {pack:'50gm Pouch',grams:50,price:25},{pack:'100gm Pouch',grams:100,price:45},
     {pack:'200gm Pouch',grams:200,price:85},{pack:'500gm Pouch',grams:500,price:250},
@@ -76,73 +148,7 @@ const _RAW = [
   {name:'Jeera Powder', variants:[
     {pack:'50gm Pouch',grams:50,price:55},{pack:'50gm Box',grams:50,price:60},
     {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:400}]},
-  {name:'Black Pepper Powder', variants:[
-    {pack:'50gm Box',grams:50,price:80},{pack:'100gm Box',grams:100,price:160},
-    {pack:'500gm Pouch',grams:500,price:600}]},
-  {name:'Udupi Sambar Masala', variants:[
-    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Garam Masala', variants:[
-    {pack:'50gm Box',grams:50,price:40},{pack:'100gm Pouch',grams:100,price:70},
-    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Super Garam Masala', variants:[
-    {pack:'50gm Pouch',grams:50,price:35},{pack:'100gm Pouch',grams:100,price:60},
-    {pack:'200gm Pouch',grams:200,price:110},{pack:'500gm Pouch',grams:500,price:240}]},
-  {name:'Udupi Rasam Masala', variants:[
-    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Vegetable Pulav Masala', variants:[
-    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Chaat Masala', variants:[
-    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:300}]},
-  {name:'Chhole Masala', variants:[
-    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Jal Jeera Powder', variants:[
-    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Pav Bhaji Masala', variants:[
-    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Sabji Masala', variants:[
-    {pack:'50gm Box',grams:50,price:40},{pack:'100gm Pouch',grams:100,price:70},
-    {pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Puliyogare Powder', variants:[
-    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Chicken Ghee Roast Masala', badge:'BESTSELLER', variants:[
-    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:450}]},
-  {name:'Chicken Kundapura Masala', variants:[
-    {pack:'100gm Pouch',grams:100,price:70},{pack:'100gm Box',grams:100,price:80},
-    {pack:'200gm Jar',grams:200,price:160},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Chicken Sukka Masala (Mangalore No.1)', badge:'BESTSELLER', variants:[
-    {pack:'100gm Pouch',grams:100,price:70},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Chicken Masala', variants:[
-    {pack:'50gm Box',grams:50,price:40},{pack:'100gm Pouch',grams:100,price:70},
-    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Super Chicken Masala', variants:[
-    {pack:'200gm Pouch',grams:200,price:135}]},
-  {name:'Chicken Pulimunchi Masala', variants:[
-    {pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Chicken Kabab / Chicken 65 Masala', variants:[
-    {pack:'100gm Pouch',grams:100,price:40},{pack:'200gm Pouch',grams:200,price:75},
-    {pack:'500gm Pouch',grams:500,price:250}]},
-  {name:'Chicken Biriyani Masala', variants:[
-    {pack:'500gm Pouch',grams:500,price:400}]},
-  {name:'Chicken Tandoori Masala', variants:[
-    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Chicken Tikka Masala', variants:[
-    {pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Fish Curry Masala', variants:[
-    {pack:'100gm Pouch',grams:100,price:60},{pack:'100gm Box',grams:100,price:80},
-    {pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Fish Pulimunchi Masala', variants:[
-    {pack:'100gm Pouch',grams:100,price:60},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Fish Fry Masala', badge:'BESTSELLER', variants:[
-    {pack:'100gm Pouch',grams:100,price:40},{pack:'500gm Pouch',grams:500,price:250}]},
-  {name:'Mutton / Meat Masala', variants:[
-    {pack:'50gm Box',grams:50,price:40},{pack:'100gm Box',grams:100,price:80},
-    {pack:'500gm Pouch',grams:500,price:400}]},
-  {name:'Bafath Masala', variants:[
-    {pack:'100gm Pouch',grams:100,price:70},{pack:'500gm Pouch',grams:500,price:400}]},
-  {name:'Egg Curry Masala', variants:[
-    {pack:'500gm Pouch',grams:500,price:250}]},
-  {name:'Kitchen King Masala', variants:[
-    {pack:'100gm Pouch',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:370}]},
+  /* ---- Other Products ---- */
   {name:'Compounded Asafoetida Powder', variants:[
     {pack:'25gm Jar',grams:25,price:55},{pack:'50gm Jar',grams:50,price:100}]},
   {name:'Ginger-Garlic Paste', variants:[
