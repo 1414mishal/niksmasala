@@ -356,7 +356,12 @@ async function placeOrder(e){
         setCart([]);
         location.href='thankyou.html?id='+encodeURIComponent(created.order_id);
       }catch(_){
-        toast('Payment captured — verifying. If you do not see a confirmation, contact us with order '+created.order_id,'err');
+        /* Verify call failed (flaky network) — but Razorpay only invokes this
+           handler after a successful payment, and the server-side webhook
+           confirms it independently. Show the confirmation page instead of
+           stranding the buyer on checkout. */
+        setCart([]);
+        location.href='thankyou.html?id='+encodeURIComponent(created.order_id);
       }
     },
     modal:{

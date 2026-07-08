@@ -85,6 +85,7 @@
   .status.Shipped{background:#d1ffe4;color:#1a8a4a}
   .status.Delivered{background:#d6ffd1;color:#2d7a3e}
   .status.Cancelled{background:#ffd6d1;color:#8a2414}
+  .status.AwaitingPayment{background:#ffe9c7;color:#8a5a1a}
   .row-actions{display:flex;gap:6px}
 
   /* Form modal */
@@ -252,6 +253,7 @@
           <select id="orderFilter" onchange="renderOrders()" style="padding:8px 14px;border:1px solid var(--line);border-radius:8px;background:#fff">
             <option value="">All Statuses</option>
             <option>Pending</option><option>Processing</option><option>Shipped</option><option>Delivered</option><option>Cancelled</option>
+            <option value="AwaitingPayment">⚠ Awaiting Payment (stuck)</option>
           </select>
         </div>
       </div>
@@ -931,8 +933,16 @@ const TRACK_STEPS=['placed','processing','packed','shipped','delivery','delivere
 const TRACK_LABELS={placed:'📋 Placed',processing:'⚙️ Processing',packed:'📦 Packed',shipped:'🚚 Shipped',delivery:'🏠 Out for Delivery',delivered:'✅ Delivered'};
 function renderOrders(){
   const f=document.getElementById('orderFilter').value;
-  let orders=getOrders().filter(txnSettled);
-  if(f) orders=orders.filter(o=>o.status===f);
+  let orders;
+  if(f==='AwaitingPayment'){
+    /* Show the normally-hidden unsettled orders. If a customer says money
+       was deducted but you can't find the order, it's here — cross-check
+       the payment in the Razorpay dashboard, then use "Mark Paid". */
+    orders=getOrders().filter(o=>!txnSettled(o));
+  }else{
+    orders=getOrders().filter(txnSettled);
+    if(f) orders=orders.filter(o=>o.status===f);
+  }
   document.getElementById('ordersTable').innerHTML=orders.length===0
     ? `<tr><td colspan="9"><div class="empty"><span>📦</span>No orders ${f?'with status '+f:'yet'}</div></td></tr>`
     : orders.map(o=>{
@@ -956,7 +966,7 @@ function renderOrders(){
     <tr>
       <td><strong>${esc(o.id)}</strong><br><a href="track.html?id=${attr(o.id)}" target="_blank" style="font-size:11px;color:var(--red)">🔍 Track</a></td>
       <td>${esc(cust.name||'')}<br><small style="color:var(--muted)">${esc(cust.phone||'')}</small></td>
-      <td>${(o.items||[]).reduce((s,i)=>s+(Number(i.qty)||0),0)} items</td>
+      <td style="font-size:12px;line-height:1.5">${(o.items||[]).map(i=>`${Number(i.qty)||1}× ${esc(i.name)}${i.pack?` <small style="color:var(--muted)">· ${esc(i.pack)}</small>`:''}`).join('<br>')||'—'}</td>
       <td><strong>₹${Number(o.total)||0}</strong></td>
       <td>${esc(o.payment||'')}</td>
       <td><select onchange="changeStatus('${attr(o.id)}',this.value)" class="status ${attr(o.status||'')}" style="border:none;padding:3px 10px">
@@ -972,6 +982,7 @@ function renderOrders(){
       <td><small>${esc(new Date(o.date).toLocaleDateString('en-IN'))}<br>${esc(new Date(o.date).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}))}</small></td>
       <td>
         <button class="btn btn-secondary btn-sm" onclick="viewOrder('${attr(o.id)}')">View</button>
+        ${!isPaid && o.payment!=='COD' ? `<button class="btn btn-sm" onclick="markPaid('${attr(o.id)}')" title="Confirmed the payment in the Razorpay dashboard? Record it here." style="background:#e7f6e7;color:#1a7a2e;border:1px solid #bfe5bf;margin-top:6px;display:block;width:100%">✔ Mark Paid</button>`:''}
         <button class="btn btn-sm" onclick="deleteOrder('${attr(o.id)}')" title="Delete this order" style="background:#fde8e8;color:#c0392b;border:1px solid #f5c6cb;margin-top:6px;display:block;width:100%">🗑 Delete</button>
       </td>
     </tr>`;}).join('');
@@ -1006,6 +1017,29 @@ async function saveTrackingNotes(id, tracking_notes){
   o.tracking_notes = tracking_notes; setOrders(all);
   const res = await adminPatchOrder(id, {tracking_notes});
   toast(res.ok ? 'Tracking note saved' : ('Save failed: '+res.error), res.ok?'ok':'err');
+}
+
+/* Recovery path for orders stuck at AwaitingPayment where the money WAS
+   captured (browser died before /api/order/verify ran and the Razorpay
+   webhook wasn't configured yet). Cross-check the payment in the Razorpay
+   dashboard first, then record its payment ID here — this flips the order
+   to Processing so it shows in the normal list and can be shipped. */
+async function markPaid(id){
+  const pid = prompt(
+    'Order '+id+'\n\nFirst confirm the payment is CAPTURED in the Razorpay dashboard '+
+    '(Transactions → search by amount/phone).\n\nPaste the Razorpay payment ID (starts with "pay_"):');
+  if(pid===null) return;
+  const clean = pid.trim();
+  if(!/^pay_[A-Za-z0-9]{8,}$/.test(clean)){ toast('That does not look like a Razorpay payment ID (pay_...)','err'); return; }
+  const res = await adminPatchOrder(id, {status:'Processing', payment_id: clean, paid_at: new Date().toISOString()});
+  if(res.ok){
+    const all=getOrders(); const o=all.find(x=>x.id===id);
+    if(o){ o.status='Processing'; o.payment_id=clean; setOrders(all); }
+    renderOrders(); renderDashboard();
+    toast('✅ Order '+id+' marked paid — now in Processing','ok');
+  }else{
+    toast('Save failed: '+res.error,'err');
+  }
 }
 
 /* One-click "Ship via Shiprocket". POSTs to /api/admin/ship which
@@ -1086,7 +1120,7 @@ async function shipOrder(id, btn){
 }
 function viewOrder(id){
   const o=getOrders().find(x=>x.id===id); if(!o) return;
-  const items=o.items.map(i=>`  • ${i.name} × ${i.qty} = ₹${i.price*i.qty}`).join('\n');
+  const items=o.items.map(i=>`  • ${i.name}${i.pack?' ['+i.pack+']':''} × ${i.qty} = ₹${i.price*i.qty}`).join('\n');
   alert(
 `ORDER ${o.id}
 ${new Date(o.date).toLocaleString('en-IN')}

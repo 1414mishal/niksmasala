@@ -174,7 +174,7 @@ function renderTrackResult(order){
       <div class="track-order-info">
         <div class="track-info-card"><small>Customer</small><strong>${esc(maskName((order.customer&&order.customer.name)||''))||'—'}</strong></div>
         <div class="track-info-card"><small>City</small><strong>${esc(maskCity((order.customer&&order.customer.city)||''))}</strong></div>
-        <div class="track-info-card"><small>Est. Delivery</small><strong>3–7 Business Days</strong></div>
+        <div class="track-info-card"><small>Est. Delivery</small><strong>${trackStatus==='delivered'?'Delivered ✅':'3–7 business days from dispatch'}</strong></div>
       </div>
       <div class="track-steps">
         ${STEPS.map((s,i)=>{
