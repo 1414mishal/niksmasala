@@ -157,6 +157,24 @@ function maskCity(s){
   return s[0].toUpperCase()+'*'.repeat(Math.max(1,s.length-1));
 }
 
+/* Renders the /api/order/track `eta` field. This is real Shiprocket data
+   when available (per-pincode serviceability before dispatch, the
+   courier's own EDD after dispatch) — never a made-up number. If
+   Shiprocket couldn't be reached, we say so honestly instead of showing
+   a number we can't stand behind. */
+function etaLabel(eta, trackStatus){
+  if(trackStatus==='delivered' || (eta&&eta.type==='delivered')) return 'Delivered ✅';
+  if(eta && eta.type==='live' && eta.edd){
+    const d = new Date(eta.edd);
+    if(!isNaN(d)) return 'Expected ' + d.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    return 'Expected ' + eta.edd;
+  }
+  if(eta && eta.type==='estimate' && eta.days){
+    return eta.days + ' business day' + (eta.days===1?'':'s') + ' after dispatch';
+  }
+  return '3–7 business days (estimate)';
+}
+
 function renderTrackResult(order){
   const trackStatus = order.trackingStatus || order.tracking_status || 'placed';
   const stepIdx = STEPS.findIndex(s=>s.key===trackStatus);
@@ -174,7 +192,7 @@ function renderTrackResult(order){
       <div class="track-order-info">
         <div class="track-info-card"><small>Customer</small><strong>${esc(maskName((order.customer&&order.customer.name)||''))||'—'}</strong></div>
         <div class="track-info-card"><small>City</small><strong>${esc(maskCity((order.customer&&order.customer.city)||''))}</strong></div>
-        <div class="track-info-card"><small>Est. Delivery</small><strong>${trackStatus==='delivered'?'Delivered ✅':'3–7 business days from dispatch'}</strong></div>
+        <div class="track-info-card"><small>Est. Delivery</small><strong>${esc(etaLabel(order.eta, trackStatus))}</strong></div>
       </div>
       <div class="track-steps">
         ${STEPS.map((s,i)=>{
