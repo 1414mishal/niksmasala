@@ -294,10 +294,17 @@ async function sendResetLink(email){
   if(!email){toast('Email required','err');return}
   const db=await sb();
   /* Important: we always show the same success message regardless of
-     whether the email exists — prevents user enumeration. */
-  await db.auth.resetPasswordForEmail(email,{
+     whether the email exists — prevents user enumeration. The ONE
+     exception is a rate-limit error: that's about OUR sending quota,
+     not about whether the account exists, so it's safe to surface —
+     and hiding it made "forgot password" look silently broken. */
+  const {error}=await db.auth.resetPasswordForEmail(email,{
     redirectTo: new URL('account.html?reset=1', location.href).href
   });
+  if(error && (error.status===429 || /rate limit/i.test(error.message||''))){
+    toast('Our email service is at its hourly limit — please try again in about an hour, or contact us on WhatsApp.','err');
+    return;
+  }
   toast('If an account exists for that email, a reset link is on its way.','ok');
   setTimeout(render, 1200);
 }
