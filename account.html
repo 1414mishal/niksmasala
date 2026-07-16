@@ -107,7 +107,7 @@ async function render(){
   document.getElementById('accSub').textContent='Manage your orders, addresses & account details';
   const orders = await getMyOrders();
   box.innerHTML=`
-    <div style="max-width:1200px;margin:40px auto;padding:0 24px;display:grid;grid-template-columns:260px 1fr;gap:28px">
+    <div class="acc-layout" style="max-width:1200px;margin:40px auto;padding:0 24px;display:grid;grid-template-columns:260px 1fr;gap:28px">
       <aside style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:22px;align-self:start">
         <div style="text-align:center;padding-bottom:18px;border-bottom:1px solid var(--line);margin-bottom:14px">
           <div style="width:72px;height:72px;margin:0 auto 10px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:28px;font-weight:700">${esc(name[0].toUpperCase())}</div>
@@ -363,6 +363,17 @@ async function completeReset(e){
 .acc-nav{color:var(--ink);text-decoration:none;transition:all .2s;display:block}
 .acc-nav:hover{background:var(--cream)}
 .acc-nav.active{background:var(--red);color:#fff}
+/* Mobile: the JS-generated layouts use inline grid styles, which media
+   queries can't override without !important. Without these rules the two
+   auth cards render side-by-side at ~262px each on a 375px phone — the
+   Create Account card is clipped off-screen entirely. */
+@media(max-width:760px){
+  #authGrid{grid-template-columns:1fr !important;margin:24px auto !important;gap:18px !important;padding:0 16px !important}
+  #authGrid > div{padding:22px !important}
+  .acc-layout{grid-template-columns:1fr !important;margin:20px auto !important;padding:0 16px !important;gap:16px !important}
+  .acc-layout aside nav{flex-direction:row !important;flex-wrap:wrap}
+  .acc-layout aside nav a{flex:1 1 40%;text-align:center}
+}
 </style>
 <script src="assets/theme-anim.js"></script>
 </body>
