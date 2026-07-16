@@ -984,7 +984,8 @@ function renderOrders(){
       <td><small>${esc(new Date(o.date).toLocaleDateString('en-IN'))}<br>${esc(new Date(o.date).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}))}</small></td>
       <td>
         <button class="btn btn-secondary btn-sm" onclick="viewOrder('${attr(o.id)}')">View</button>
-        ${!isPaid && o.payment!=='COD' ? `<button class="btn btn-sm" onclick="markPaid('${attr(o.id)}')" title="Confirmed the payment in the Razorpay dashboard? Record it here." style="background:#e7f6e7;color:#1a7a2e;border:1px solid #bfe5bf;margin-top:6px;display:block;width:100%">✔ Mark Paid</button>`:''}
+        ${!isPaid && o.payment!=='COD' ? `<button class="btn btn-sm" onclick="reconcileOrders('${attr(o.id)}',this)" title="Ask Razorpay whether this order was actually paid — recovers it automatically if so." style="background:#e8f0fe;color:#1a4a8a;border:1px solid #bcd0f0;margin-top:6px;display:block;width:100%">↺ Check Razorpay</button>
+        <button class="btn btn-sm" onclick="markPaid('${attr(o.id)}')" title="Confirmed the payment in the Razorpay dashboard? Record it here." style="background:#e7f6e7;color:#1a7a2e;border:1px solid #bfe5bf;margin-top:6px;display:block;width:100%">✔ Mark Paid</button>`:''}
         <button class="btn btn-sm" onclick="deleteOrder('${attr(o.id)}')" title="Delete this order" style="background:#fde8e8;color:#c0392b;border:1px solid #f5c6cb;margin-top:6px;display:block;width:100%">🗑 Delete</button>
       </td>
     </tr>`;}).join('');
@@ -996,17 +997,59 @@ function renderStuckBanner(currentFilter){
   if(!banner) return;
   banner.textContent='';
   const stuck=getOrders().filter(o=>!txnSettled(o)).length;
-  if(stuck===0 || currentFilter==='AwaitingPayment') return;
+  if(stuck===0) return;
   const box=document.createElement('div');
   box.style.cssText='background:#fff3e0;border:1px solid #f0c987;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:13.5px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap';
   const msg=document.createElement('span');
-  msg.textContent='⚠ '+stuck+' order'+(stuck===1?'':'s')+' awaiting payment '+(stuck===1?'is':'are')+' hidden from this list (payment never confirmed — abandoned checkout, or money captured but verification failed).';
   const btn=document.createElement('button');
-  btn.className='btn btn-secondary btn-sm';
-  btn.textContent='Show them →';
-  btn.onclick=()=>{document.getElementById('orderFilter').value='AwaitingPayment';renderOrders();};
+  if(currentFilter==='AwaitingPayment'){
+    /* Viewing the stuck list — offer to reconcile all of them against
+       Razorpay's records in one click. */
+    msg.textContent='These orders were never confirmed. Some may actually be PAID (placed before the webhook was fixed, or the buyer’s browser died mid-payment). Ask Razorpay directly:';
+    btn.className='btn btn-primary btn-sm';
+    btn.textContent='↺ Check all '+stuck+' with Razorpay';
+    btn.onclick=()=>reconcileOrders(null,btn);
+  }else{
+    msg.textContent='⚠ '+stuck+' order'+(stuck===1?'':'s')+' awaiting payment '+(stuck===1?'is':'are')+' hidden from this list (payment never confirmed — abandoned checkout, or money captured but verification failed).';
+    btn.className='btn btn-secondary btn-sm';
+    btn.textContent='Show them →';
+    btn.onclick=()=>{document.getElementById('orderFilter').value='AwaitingPayment';renderOrders();};
+  }
   box.append(msg,btn);
   banner.appendChild(box);
+}
+
+/* Ask /api/admin/reconcile to check stuck order(s) against Razorpay's
+   payment records. Captured payments are auto-flipped to Processing
+   server-side (same fulfilment as the webhook: stock, coupon, email). */
+async function reconcileOrders(id, btn){
+  const token=getAdminToken();
+  if(!token){ toast('Session expired — please sign in again','err'); sessionStorage.removeItem('niks_auth'); location.reload(); return; }
+  const original=btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.textContent='Checking with Razorpay…'; }
+  try{
+    const r=await fetch('/api/admin/reconcile',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body: JSON.stringify(id?{id}:{all:true})
+    });
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok || !j.ok){ toast('Check failed: '+(j.error||('HTTP '+r.status)),'err'); return; }
+    const rs=j.results||[];
+    const paid=rs.filter(x=>x.outcome==='captured').length;
+    const unpaid=rs.filter(x=>x.outcome==='unpaid'||x.outcome==='failed').length;
+    const refunded=rs.filter(x=>x.outcome==='refunded').length;
+    const errs=rs.filter(x=>x.outcome==='error'||x.outcome==='no-rzp-order');
+    let summary='Razorpay says: '+paid+' PAID (now recovered)'+', '+unpaid+' unpaid/failed'+(refunded?', '+refunded+' refunded':'');
+    if(errs.length) summary+=', '+errs.length+' could not be checked';
+    toast(summary, paid>0?'ok':'');
+    if(errs.length) console.warn('reconcile issues:', errs);
+    await refreshOrders();
+  }catch(e){
+    toast('Network error: '+e.message,'err');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent=original; }
+  }
 }
 
 async function refreshOrders(){
