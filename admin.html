@@ -257,6 +257,7 @@
           </select>
         </div>
       </div>
+      <div id="stuckBanner"></div>
       <div class="panel" style="padding:0;overflow:hidden">
         <table>
           <thead><tr><th>Order ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Tracking</th><th>Date</th><th></th></tr></thead>
@@ -943,6 +944,7 @@ function renderOrders(){
     orders=getOrders().filter(txnSettled);
     if(f) orders=orders.filter(o=>o.status===f);
   }
+  renderStuckBanner(f);
   document.getElementById('ordersTable').innerHTML=orders.length===0
     ? `<tr><td colspan="9"><div class="empty"><span>📦</span>No orders ${f?'with status '+f:'yet'}</div></td></tr>`
     : orders.map(o=>{
@@ -987,6 +989,26 @@ function renderOrders(){
       </td>
     </tr>`;}).join('');
 }
+/* Orders "disappearing" = stuck at AwaitingPayment and hidden by the
+   default settled-only filter. Show a count so they're impossible to miss. */
+function renderStuckBanner(currentFilter){
+  const banner=document.getElementById('stuckBanner');
+  if(!banner) return;
+  banner.textContent='';
+  const stuck=getOrders().filter(o=>!txnSettled(o)).length;
+  if(stuck===0 || currentFilter==='AwaitingPayment') return;
+  const box=document.createElement('div');
+  box.style.cssText='background:#fff3e0;border:1px solid #f0c987;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:13.5px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap';
+  const msg=document.createElement('span');
+  msg.textContent='⚠ '+stuck+' order'+(stuck===1?'':'s')+' awaiting payment '+(stuck===1?'is':'are')+' hidden from this list (payment never confirmed — abandoned checkout, or money captured but verification failed).';
+  const btn=document.createElement('button');
+  btn.className='btn btn-secondary btn-sm';
+  btn.textContent='Show them →';
+  btn.onclick=()=>{document.getElementById('orderFilter').value='AwaitingPayment';renderOrders();};
+  box.append(msg,btn);
+  banner.appendChild(box);
+}
+
 async function refreshOrders(){
   toast('Refreshing orders…');
   const co = await adminGetOrders();
