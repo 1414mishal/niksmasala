@@ -113,6 +113,26 @@ export const onRequestPost = async ({request, env}) => {
     }
   }
 
+  /* 4b. Optional: resolve the buyer's Supabase session → user_id.
+   *     Sent by checkout.html when the buyer is signed in; links the
+   *     order to their Account → My Orders page. Best-effort — an
+   *     invalid/expired token just means a guest order, never a
+   *     failed checkout. */
+  let userId = null;
+  const authHdr = request.headers.get('Authorization') || '';
+  const userToken = authHdr.replace(/^Bearer\s+/i, '').trim();
+  if(userToken){
+    try{
+      const uRes = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
+        headers: {'apikey': env.SUPABASE_SERVICE_ROLE, 'Authorization': 'Bearer ' + userToken}
+      });
+      if(uRes.ok){
+        const u = await uRes.json();
+        if(u && u.id) userId = u.id;
+      }
+    }catch(_){ /* guest */ }
+  }
+
   /* 5. Create internal order ID + Razorpay order */
   const orderId = makeOrderId();
   const rzpRes = await fetch('https://api.razorpay.com/v1/orders', {
@@ -141,6 +161,7 @@ export const onRequestPost = async ({request, env}) => {
     body: JSON.stringify({
       id: orderId,
       date: new Date().toISOString(),
+      user_id: userId,
       customer,
       notes,
       items: lineItems,

@@ -57,15 +57,30 @@ async function signOut(){
   render();
 }
 
-/* Fetch this customer's orders. RLS ensures we only get their own rows.
-   Guests (no account) won't appear here — they look up by order ID on track.html. */
+/* Fetch this customer's orders via /api/account/orders.
+   (The old direct table query relied on the RLS policy user_id=auth.uid(),
+   but orders were inserted with user_id NULL — so "My Orders" was always
+   empty. The endpoint matches by user_id OR the account's verified email,
+   which also picks up past/guest orders placed with the same email.) */
 async function getMyOrders(){
   const db = await sb();
-  const { data, error } = await db.from('orders')
-    .select('*')
-    .order('created_at',{ascending:false});
-  if(error){ console.warn('orders fetch',error); return []; }
-  return data||[];
+  const { data:{ session } } = await db.auth.getSession();
+  if(!session || !session.access_token) return [];
+  try{
+    const r = await fetch('/api/account/orders', {
+      headers:{'Authorization':'Bearer '+session.access_token}
+    });
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok || !j.ok){ console.warn('orders fetch', j.error||r.status); return []; }
+    return Array.isArray(j.orders) ? j.orders : [];
+  }catch(e){ console.warn('orders fetch', e); return []; }
+}
+
+/* Customer-facing status label — "AwaitingPayment" is internal jargon. */
+function statusLabel(s){
+  return s==='AwaitingPayment' ? 'Payment Pending'
+       : s==='ShipError'       ? 'Processing'
+       : (s||'Pending');
 }
 
 /* ---------- RENDER ---------- */
@@ -147,7 +162,7 @@ function _drawTab(t, orders, u, name){
       <div style="background:#fff;border:1px solid var(--line);border-radius:8px;padding:24px">
         <h3 style="font-size:18px;margin-bottom:14px">Recent Orders</h3>
         ${orders.length===0?'<p style="color:var(--muted);padding:20px 0">No orders yet. <a href="shop.html" style="color:var(--red)">Shop now →</a></p>':
-        orders.slice(0,5).map(o=>`<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)"><div><strong>${esc(o.id)}</strong><br><small style="color:var(--muted)">${esc(new Date(o.date||o.created_at).toLocaleDateString('en-IN'))}</small></div><div style="text-align:right"><strong style="color:var(--red)">${money(o.total)}</strong><br><small>${esc(o.status||'')}</small></div></div>`).join('')}
+        orders.slice(0,5).map(o=>`<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)"><div><strong>${esc(o.id)}</strong><br><small style="color:var(--muted)">${esc(new Date(o.date||o.created_at).toLocaleDateString('en-IN'))}</small></div><div style="text-align:right"><strong style="color:var(--red)">${money(o.total)}</strong><br><small>${esc(statusLabel(o.status))}</small></div></div>`).join('')}
       </div>`;
   }
   if(t==='orders'){
@@ -159,7 +174,7 @@ function _drawTab(t, orders, u, name){
           <div style="border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:14px">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
               <div><strong>${esc(o.id)}</strong> · <small style="color:var(--muted)">${esc(new Date(o.date||o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}))}</small></div>
-              <span style="background:var(--cream);color:var(--red);padding:4px 12px;border-radius:50px;font-size:12px;font-weight:600">${esc(o.status||'Pending')}</span>
+              <span style="background:var(--cream);color:var(--red);padding:4px 12px;border-radius:50px;font-size:12px;font-weight:600">${esc(statusLabel(o.status))}</span>
             </div>
             <div style="display:flex;gap:8px;margin:12px 0;flex-wrap:wrap">${(o.items||[]).map(i=>`<div style="width:48px;height:48px;border-radius:6px;overflow:hidden"><img alt="${attr(i.name||'')}" style="width:100%;height:100%;object-fit:cover" title="${attr(i.name||'')}" onerror="this.src='assets/products/garam-masala.webp'"></div>`).join('')}</div>
             <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--line);font-size:14px">

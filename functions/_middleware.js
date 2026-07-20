@@ -99,6 +99,8 @@ export const onRequest = async (ctx) => {
     '/api/admin/login':        {limit:5,   windowMs:600_000},  // 5 attempts / 10 min per IP — brute-force shield
     '/api/admin/ship':         {limit:30,  windowMs:60_000},   // Shiprocket dispatch (one click = one shipment)
     '/api/admin/orders':       {limit:120, windowMs:60_000},   // admin reads order list + patches status (read-heavy)
+    '/api/account/orders':     {limit:60,  windowMs:60_000},   // signed-in customer's own order history
+    '/api/admin/reconcile':    {limit:10,  windowMs:60_000},   // admin reconcile vs Razorpay (batch, expensive)
     '/api/order/webhook':      {limit:300, windowMs:60_000}    // Razorpay server-to-server callback — must be generous
   };
   const rule = limits[url.pathname];

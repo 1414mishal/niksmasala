@@ -279,11 +279,21 @@ async function placeOrder(e){
   const submitBtn = e.target.querySelector('button[type="submit"]');
   if(submitBtn){ submitBtn.disabled=true; submitBtn.textContent='Processing…'; }
 
+  /* If the buyer is signed in, pass their Supabase session token so the
+     server can stamp user_id on the order — that's what links it to
+     their Account → My Orders page. Guests order exactly as before. */
+  const createHeaders = {'Content-Type':'application/json'};
+  try{
+    const db = await getSB();
+    const { data:{ session } } = await db.auth.getSession();
+    if(session && session.access_token) createHeaders['Authorization'] = 'Bearer ' + session.access_token;
+  }catch(_){ /* not signed in / SDK unavailable — guest checkout */ }
+
   let created;
   try{
     const res = await fetch('/api/order/create',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers: createHeaders,
       body: JSON.stringify(payload)
     });
     created = await res.json();
