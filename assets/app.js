@@ -87,10 +87,10 @@ const _RAW = [
   {name:'Fish Fry Masala', badge:'BESTSELLER', variants:[
     {pack:'100gm Pouch',grams:100,price:40},{pack:'500gm Pouch',grams:500,price:250}]},
   {name:'Fish Curry Masala', variants:[
-    {pack:'100gm Pouch',grams:100,price:60},{pack:'100gm Box',grams:100,price:80},
+    {pack:'100gm Box',grams:100,price:80},
     {pack:'500gm Pouch',grams:500,price:350}]},
   {name:'Fish Pulimunchi Masala', variants:[
-    {pack:'100gm Pouch',grams:100,price:60},{pack:'500gm Pouch',grams:500,price:350}]},
+    {pack:'500gm Pouch',grams:500,price:350}]},
   /* ---- Non-Veg Masalas — Mutton / Other ---- */
   {name:'Mutton / Meat Masala', variants:[
     {pack:'50gm Box',grams:50,price:40},{pack:'100gm Box',grams:100,price:80},

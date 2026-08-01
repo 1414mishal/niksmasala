@@ -232,6 +232,7 @@
       <div class="topbar">
         <div><h1>Products</h1><p>Add, edit, or remove items from your store.</p></div>
         <div class="topbar-actions">
+          <button class="btn btn-secondary" onclick="restoreMissingProducts(this)" title="Re-adds only catalogue products that are missing from the store. Never touches products you already have.">↺ Restore Missing</button>
           <button class="btn btn-secondary" onclick="resetProducts()">Reset Defaults</button>
           <button class="btn btn-primary" onclick="openProduct()">+ Add Product</button>
         </div>
@@ -365,6 +366,15 @@
         <input type="hidden" id="pm-image">
       </div>
       <div class="form-row"><label>Description</label><textarea id="pm-desc" rows="3"></textarea></div>
+      <!-- Pack sizes / variants. Without this editor the only way to drop a
+           single pack was to delete the whole product (taking every other
+           pack with it) — exactly how the Fish 500gm pouches were lost. -->
+      <div class="form-row">
+        <label>Pack Sizes <span style="font-weight:400;text-transform:none;letter-spacing:0">— what the customer picks on the product page</span></label>
+        <div id="pm-variants"></div>
+        <button type="button" class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addVariantRow()">+ Add pack size</button>
+        <small style="color:var(--muted);font-size:11.5px;display:block;margin-top:6px">"From" price on the shop card is the cheapest pack. At least one pack is required.</small>
+      </div>
       <div class="modal-foot">
         <button type="button" class="btn btn-secondary" onclick="closeProduct()">Cancel</button>
         <button type="submit" class="btn btn-primary">Save Product</button>
@@ -426,8 +436,8 @@ const _ARAW=[
   {name:'Chicken Biriyani Masala',variants:[{pack:'500gm Pouch',grams:500,price:400}]},
   {name:'Chicken Tandoori Masala',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
   {name:'Chicken Tikka Masala',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Fish Curry Masala',variants:[{pack:'100gm Pouch',grams:100,price:60},{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
-  {name:'Fish Pulimunchi Masala',variants:[{pack:'100gm Pouch',grams:100,price:60},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Fish Curry Masala',variants:[{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:350}]},
+  {name:'Fish Pulimunchi Masala',variants:[{pack:'500gm Pouch',grams:500,price:350}]},
   {name:'Fish Fry Masala',badge:'BESTSELLER',variants:[{pack:'100gm Pouch',grams:100,price:40},{pack:'500gm Pouch',grams:500,price:250}]},
   {name:'Mutton / Meat Masala',variants:[{pack:'50gm Box',grams:50,price:40},{pack:'100gm Box',grams:100,price:80},{pack:'500gm Pouch',grams:500,price:400}]},
   {name:'Bafath Masala',variants:[{pack:'100gm Pouch',grams:100,price:70},{pack:'500gm Pouch',grams:500,price:400}]},
@@ -480,7 +490,28 @@ const _PIMG = {
 };
 function _apick(name){ return _PIMG[name] || 'nobgnikslogo.webp'; }
 
-const DEFAULT_PRODUCTS=_ARAW.map((r,i)=>{const minP=Math.min(...r.variants.map(v=>v.price));return{id:'p'+(i+1),name:r.name,slug:r.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),category:_acat(r.name),price:minP,image:_apick(r.name),variants:r.variants,rating:4.6+(i%4)*0.1,reviews:20+(i*7)%180,desc:'Authentic Mangalorean spice blend — traditionally crafted, export-quality.',long:'Packed at our FSSAI-certified 11,000 sq.ft. facility in Yeyyadi, Mangalore.',badge:r.badge||null,stock:50};});
+/* Canonical Supabase row ids, keyed by name. The old positional
+   'p'+(i+1) does NOT match the live products table (Super Garam sits at
+   p8, and there is an unused gap at p10), so anything that upserted by
+   position — "Reset Defaults", the restore below — would have written
+   over the WRONG rows and scrambled the catalog. Always resolve by name. */
+const _AIDS={
+  'Turmeric Powder':'p1','Red Chilli Powder':'p2','Coriander Powder':'p3',
+  'Kashmiri Chilli Powder':'p4','Jeera Powder':'p5','Black Pepper Powder':'p6',
+  'Garam Masala':'p7','Super Garam Masala':'p8','Udupi Sambar Masala':'p9',
+  'Udupi Rasam Masala':'p11','Vegetable Pulav Masala':'p12','Chaat Masala':'p13',
+  'Chhole Masala':'p14','Jal Jeera Powder':'p15','Pav Bhaji Masala':'p16',
+  'Sabji Masala':'p17','Puliyogare Powder':'p18','Chicken Ghee Roast Masala':'p19',
+  'Chicken Kundapura Masala':'p20','Chicken Sukka Masala (Mangalore No.1)':'p21',
+  'Chicken Masala':'p22','Super Chicken Masala':'p23','Chicken Pulimunchi Masala':'p24',
+  'Chicken Kabab / Chicken 65 Masala':'p25','Chicken Biriyani Masala':'p26',
+  'Chicken Tandoori Masala':'p27','Chicken Tikka Masala':'p28','Fish Curry Masala':'p29',
+  'Fish Pulimunchi Masala':'p30','Fish Fry Masala':'p31','Mutton / Meat Masala':'p32',
+  'Bafath Masala':'p33','Egg Curry Masala':'p34','Kitchen King Masala':'p35',
+  'Compounded Asafoetida Powder':'p36','Ginger-Garlic Paste':'p37','Niks Papad':'p38',
+  'Kasuri Methi':'p39','Soya Chunks':'p40'
+};
+const DEFAULT_PRODUCTS=_ARAW.map((r,i)=>{const minP=Math.min(...r.variants.map(v=>v.price));return{id:_AIDS[r.name]||('p'+(i+1)),name:r.name,slug:r.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),category:_acat(r.name),price:minP,image:_apick(r.name),variants:r.variants,rating:4.6+(i%4)*0.1,reviews:20+(i*7)%180,desc:'Authentic Mangalorean spice blend — traditionally crafted, export-quality.',long:'Packed at our FSSAI-certified 11,000 sq.ft. facility in Yeyyadi, Mangalore.',badge:r.badge||null,stock:50};});
 const DEFAULT_SETTINGS = {brand:'Niks Masala',phone:'+91 76766 22222',email:'inihaex@gmail.com',address:'Plot no. L-6, 5-50, Yeyyadi Industrial Area, Mangaluru, Karnataka 575015',currency:'₹',shippingFree:799,shippingFee:60,shippingFeeHeavy:120};
 /* Admin auth is server-side now — /api/admin/login validates the password
    against env.ADMIN_PASSWORD (timing-safe compare) and returns env.ADMIN_TOKEN.
@@ -718,20 +749,18 @@ async function showApp(){
     ]);
     /* Orders via the admin API (anon key is RLS-blocked on orders) */
     const co = await adminGetOrders();
-    // Products: always upsert full defaults if cloud has fewer than expected
-    {
-      const cloudCount=(!pe&&cp)?cp.length:0;
-      if(cloudCount < DEFAULT_PRODUCTS.length){
-        // Upsert each product individually so one failure doesn't block others
-        for(const p of DEFAULT_PRODUCTS){
-          await db.from('products').upsert(_toCloud(p)).catch(()=>{});
-        }
-      }
-      // Load whatever is in cloud now
-      const{data:cp2}=await db.from('products').select('*').order('id');
-      if(cp2&&cp2.length) setProducts(cp2.map(_fromCloud));
-      else setProducts(DEFAULT_PRODUCTS);
-    }
+    /* Products: the cloud is the source of truth — never auto-resurrect.
+       An earlier build re-upserted ALL of DEFAULT_PRODUCTS whenever the cloud
+       had fewer rows than the defaults. That is wrong twice over: it undoes
+       deliberate deletions, and it wrote rows by POSITIONAL id ('p'+(i+1)),
+       which does not match the live table — so it would have overwritten
+       unrelated products with each other's data. It only ever looked
+       harmless because the anon key is RLS-blocked on products and the
+       failure was swallowed by .catch(()=>{}).
+       Deliberate restores now go through "Restore missing" below: explicit,
+       name-matched, admin-token authenticated. */
+    if(!pe && cp && cp.length) setProducts(cp.map(_fromCloud));
+    else if(!cp || !cp.length) setProducts(DEFAULT_PRODUCTS);
     // Orders: cloud is source of truth
     if(co) setOrders(co);
     // Settings: merge cloud values over defaults
@@ -858,6 +887,44 @@ function handleImgFile(file){
   reader.readAsDataURL(file);
 }
 
+/* ---- Pack size (variant) editor ----
+   Built with DOM APIs rather than innerHTML so nothing user-typed is ever
+   re-parsed as markup. */
+function addVariantRow(v){
+  const row=document.createElement('div');
+  row.className='pm-variant-row';
+  row.style.cssText='display:grid;grid-template-columns:1fr 88px 88px 34px;gap:8px;margin-bottom:8px;align-items:center';
+  const mk=(type,ph,key,val)=>{
+    const i=document.createElement('input');
+    i.type=type; i.placeholder=ph; i.dataset.k=key; i.value=val==null?'':val;
+    if(type==='number') i.min='0';
+    i.style.cssText='padding:8px 10px;border:2px solid var(--line);border-radius:6px;font-size:13px;min-width:0;background:var(--cream,#fff)';
+    return i;
+  };
+  const del=document.createElement('button');
+  del.type='button'; del.title='Remove this pack size'; del.textContent='✕';
+  del.style.cssText='background:#fde8e8;color:#c0392b;border:1px solid #f5c6cb;border-radius:6px;height:34px;cursor:pointer;font-size:13px';
+  del.onclick=()=>row.remove();
+  row.append(
+    mk('text','e.g. 100gm Pouch','pack',v&&v.pack),
+    mk('number','grams','grams',v&&v.grams),
+    mk('number','₹ price','price',v&&v.price),
+    del
+  );
+  document.getElementById('pm-variants').appendChild(row);
+}
+function renderVariantRows(list){
+  const wrap=document.getElementById('pm-variants');
+  wrap.textContent='';
+  (list&&list.length?list:[null]).forEach(addVariantRow);
+}
+function collectVariants(){
+  return [...document.querySelectorAll('#pm-variants .pm-variant-row')].map(r=>{
+    const g=k=>r.querySelector('[data-k="'+k+'"]').value.trim();
+    return {pack:g('pack'), grams:+g('grams')||100, price:+g('price')||0};
+  }).filter(v=>v.pack && v.price>0);
+}
+
 function openProduct(id){
   const p=id?getProducts().find(x=>x.id===id):null;
   document.getElementById('pmTitle').textContent=p?'Edit Product':'Add Product';
@@ -865,6 +932,7 @@ function openProduct(id){
   ['name','category','weight','price','oldPrice','stock','badge','emoji','desc'].forEach(f=>{
     document.getElementById('pm-'+f).value=p?(p[f]||''):'';
   });
+  renderVariantRows(p?p.variants:null);
   // Handle image separately
   const imgSrc=p?p.image||'':'';
   document.getElementById('pm-image-url').value=imgSrc.startsWith('data:') ? '' : imgSrc;
@@ -883,12 +951,24 @@ function closeProduct(){
 async function saveProduct(e){
   e.preventDefault();
   const id=document.getElementById('pm-id').value || 'p'+Date.now().toString().slice(-8);
+  /* Variants MUST be included. The API's toRow() writes
+     `variants: Array.isArray(p.variants) ? ... : []`, so a payload without
+     them upserted an EMPTY array — silently wiping every pack size off the
+     product. Editing a product used to destroy its pack list. */
+  const variants=collectVariants();
+  if(variants.length===0){
+    toast('Add at least one pack size (name + price) before saving','err');
+    return;
+  }
   const p={
     id, name:val('pm-name'), category:val('pm-category'),
-    price:+val('pm-price'), oldPrice:+val('pm-oldPrice')||undefined,
+    /* "From" price shown on shop cards = cheapest pack. */
+    price:Math.min(...variants.map(v=>v.price)),
+    oldPrice:+val('pm-oldPrice')||undefined,
     weight:val('pm-weight'), stock:+val('pm-stock')||0,
     badge:val('pm-badge')||undefined, emoji:val('pm-emoji')||'🌶️',
-    image:val('pm-image')||undefined, desc:val('pm-desc')
+    image:val('pm-image')||undefined, desc:val('pm-desc'),
+    variants
   };
   /* Cloud first — single source of truth */
   const result = await adminApi('POST', p);
@@ -916,6 +996,34 @@ async function deleteProduct(id){
   renderProductsTable();
   toast('Product deleted from Supabase','ok');
 }
+/* The cloud table still stores the pre-rename 'Jajeera Powder'. */
+function _normName(n){
+  n=String(n||'').trim();
+  return n==='Jajeera Powder' ? 'Jal Jeera Powder' : n;
+}
+/* Re-add ONLY catalogue products that are absent from the store — matched by
+   name, written with their canonical id from _AIDS. Non-destructive: products
+   already in the store are left exactly as they are. This is the safe
+   counterpart to "Reset Defaults" (which overwrites everything). */
+async function restoreMissingProducts(btn){
+  const have=new Set(getProducts().map(p=>_normName(p.name).toLowerCase()));
+  const missing=DEFAULT_PRODUCTS.filter(p=>!have.has(_normName(p.name).toLowerCase()));
+  if(missing.length===0){ toast('Nothing missing — every catalogue product is live','ok'); return; }
+  const list=missing.map(p=>'• '+p.name+'  ['+p.variants.map(v=>v.pack).join(', ')+']').join('\n');
+  if(!confirm('Restore '+missing.length+' missing product'+(missing.length===1?'':'s')+'?\n\n'+list+'\n\nProducts already in your store are NOT modified.')) return;
+  const original=btn?btn.textContent:'';
+  if(btn){ btn.disabled=true; btn.textContent='Restoring…'; }
+  try{
+    const result=await adminApi('POST', missing);
+    if(!result.ok){ toast('❌ '+result.error,'err'); return; }
+    setProducts(getProducts().concat(missing));
+    renderProductsTable();
+    toast('✅ Restored '+missing.length+' product'+(missing.length===1?'':'s'),'ok');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent=original; }
+  }
+}
+
 async function resetProducts(){
   if(!confirm('Reset all products to defaults?\n\nThis will OVERWRITE the Supabase catalog with the 40 default Niks Masala products. Custom additions you made will be lost.')) return;
   /* Bulk upsert in one request */
