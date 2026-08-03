@@ -498,18 +498,18 @@ function _apick(name){ return _PIMG[name] || 'nobgnikslogo.webp'; }
 const _AIDS={
   'Turmeric Powder':'p1','Red Chilli Powder':'p2','Coriander Powder':'p3',
   'Kashmiri Chilli Powder':'p4','Jeera Powder':'p5','Black Pepper Powder':'p6',
-  'Garam Masala':'p7','Super Garam Masala':'p8','Udupi Sambar Masala':'p9',
-  'Udupi Rasam Masala':'p11','Vegetable Pulav Masala':'p12','Chaat Masala':'p13',
-  'Chhole Masala':'p14','Jal Jeera Powder':'p15','Pav Bhaji Masala':'p16',
-  'Sabji Masala':'p17','Puliyogare Powder':'p18','Chicken Ghee Roast Masala':'p19',
-  'Chicken Kundapura Masala':'p20','Chicken Sukka Masala (Mangalore No.1)':'p21',
-  'Chicken Masala':'p22','Super Chicken Masala':'p23','Chicken Pulimunchi Masala':'p24',
-  'Chicken Kabab / Chicken 65 Masala':'p25','Chicken Biriyani Masala':'p26',
-  'Chicken Tandoori Masala':'p27','Chicken Tikka Masala':'p28','Fish Curry Masala':'p29',
-  'Fish Pulimunchi Masala':'p30','Fish Fry Masala':'p31','Mutton / Meat Masala':'p32',
-  'Bafath Masala':'p33','Egg Curry Masala':'p34','Kitchen King Masala':'p35',
-  'Compounded Asafoetida Powder':'p36','Ginger-Garlic Paste':'p37','Niks Papad':'p38',
-  'Kasuri Methi':'p39','Soya Chunks':'p40'
+  'Udupi Sambar Masala':'p7','Garam Masala':'p8','Super Garam Masala':'p9',
+  'Udupi Rasam Masala':'p10','Vegetable Pulav Masala':'p11','Chaat Masala':'p12',
+  'Chhole Masala':'p13','Jal Jeera Powder':'p14','Pav Bhaji Masala':'p15',
+  'Sabji Masala':'p16','Puliyogare Powder':'p17','Chicken Ghee Roast Masala':'p18',
+  'Chicken Kundapura Masala':'p19','Chicken Sukka Masala (Mangalore No.1)':'p20',
+  'Chicken Masala':'p21','Super Chicken Masala':'p22','Chicken Pulimunchi Masala':'p23',
+  'Chicken Kabab / Chicken 65 Masala':'p24','Chicken Biriyani Masala':'p25',
+  'Chicken Tandoori Masala':'p26','Chicken Tikka Masala':'p27','Fish Curry Masala':'p28',
+  'Fish Pulimunchi Masala':'p29','Fish Fry Masala':'p30','Mutton / Meat Masala':'p31',
+  'Bafath Masala':'p32','Egg Curry Masala':'p33','Kitchen King Masala':'p34',
+  'Compounded Asafoetida Powder':'p35','Ginger-Garlic Paste':'p36','Niks Papad':'p37',
+  'Kasuri Methi':'p38','Soya Chunks':'p39'
 };
 const DEFAULT_PRODUCTS=_ARAW.map((r,i)=>{const minP=Math.min(...r.variants.map(v=>v.price));return{id:_AIDS[r.name]||('p'+(i+1)),name:r.name,slug:r.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''),category:_acat(r.name),price:minP,image:_apick(r.name),variants:r.variants,rating:4.6+(i%4)*0.1,reviews:20+(i*7)%180,desc:'Authentic Mangalorean spice blend — traditionally crafted, export-quality.',long:'Packed at our FSSAI-certified 11,000 sq.ft. facility in Yeyyadi, Mangalore.',badge:r.badge||null,stock:50};});
 const DEFAULT_SETTINGS = {brand:'Niks Masala',phone:'+91 76766 22222',email:'inihaex@gmail.com',address:'Plot no. L-6, 5-50, Yeyyadi Industrial Area, Mangaluru, Karnataka 575015',currency:'₹',shippingFree:799,shippingFee:60,shippingFeeHeavy:120};
