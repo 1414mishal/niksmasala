@@ -361,7 +361,11 @@
         </div>
         <div class="img-url-row">
           <span style="font-size:12px;color:var(--muted);white-space:nowrap">Or paste URL:</span>
-          <input type="url" id="pm-image-url" placeholder="https://..." oninput="applyUrl(this.value)">
+          <!-- type="text", NOT type="url": every product image is a relative
+               path like assets/products/box-fish.webp, which fails HTML5 URL
+               validation ("Please enter a URL.") and silently blocks the whole
+               form from saving. -->
+          <input type="text" id="pm-image-url" placeholder="assets/products/… or https://…" oninput="applyUrl(this.value)">
         </div>
         <input type="hidden" id="pm-image">
       </div>
@@ -531,9 +535,13 @@ async function getDB(){
   return _db;
 }
 /* Map cloud row → app object */
-function _fromCloud(r){return{id:r.id,name:r.name,slug:r.slug,category:r.category,price:+r.price,oldPrice:r.old_price||undefined,weight:r.weight,image:r.image,rating:+r.rating,reviews:+r.reviews,desc:r.description,long:r.long_desc,badge:r.badge||undefined,stock:+r.stock,emoji:r.emoji||'🌶️'}}
+/* `variants` MUST be carried across both ways. Without it every product
+   loaded into the admin arrived with variants:undefined — so the pack-size
+   editor showed a single blank row for even a 6-pack product, and the
+   backup/restore path wrote products with no packs at all. */
+function _fromCloud(r){return{id:r.id,name:r.name,slug:r.slug,category:r.category,price:+r.price,oldPrice:r.old_price||undefined,weight:r.weight,image:r.image,variants:Array.isArray(r.variants)?r.variants:[],rating:+r.rating,reviews:+r.reviews,desc:r.description,long:r.long_desc,badge:r.badge||undefined,stock:+r.stock,emoji:r.emoji||'🌶️'}}
 /* Map app object → cloud row */
-function _toCloud(p){return{id:p.id,name:p.name,slug:p.slug||(p.name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-'),category:p.category,price:p.price||0,old_price:p.oldPrice||null,weight:p.weight||'',image:p.image||'',rating:p.rating||4.5,reviews:p.reviews||0,description:p.desc||'',long_desc:p.long||'',badge:p.badge||null,stock:p.stock||0,emoji:p.emoji||'🌶️'}}
+function _toCloud(p){return{id:p.id,name:p.name,slug:p.slug||(p.name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-'),category:p.category,price:p.price||0,old_price:p.oldPrice||null,weight:p.weight||'',image:p.image||'',variants:Array.isArray(p.variants)?p.variants:[],rating:p.rating||4.5,reviews:p.reviews||0,description:p.desc||'',long_desc:p.long||'',badge:p.badge||null,stock:p.stock||0,emoji:p.emoji||'🌶️'}}
 
 function getProducts(){
   try{
